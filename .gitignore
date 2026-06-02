@@ -1,0 +1,26 @@
+# --- Material original / propietario (no versionar) ---
+/legacy/
+/_decompiled/
+*.original
+
+# --- .NET build artifacts ---
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+.vs/
+
+# --- Node / web frontend (si aplica) ---
+node_modules/
+dist/
+build/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json

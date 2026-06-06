@@ -37,6 +37,7 @@ Y debe poder **revenderse con otra marca** (white-label).
 | 2026-06-06 | **Caso QA ancla de BQS:** EQUINOX MELIDA | ✅ |
 | 2026-06-06 | **White-label desde el día 1** (capa de branding + tema) | ✅ |
 | 2026-06-06 | Prototipo .NET/WPF → archivado en `/reference` (solo referencia) | ✅ |
+| 2026-06-06 | **Nombre del producto = configurable** vía `branding/brand.toml` (white-label). Codename interno: `SuperSurvey`. Renombrar (p. ej. a `YOLO.EXE`) **no toca el motor** | ✅ |
 
 ---
 

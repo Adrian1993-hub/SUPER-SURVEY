@@ -30,7 +30,8 @@ docs/00-ULTRAPLAN.md            plan maestro (LEER)
 docs/CONTEXT.md                 este archivo (handoff)
 docs/01-analisis-OGC-InfoPro.md análisis del sistema viejo (OGC/InfoPro)
 docs/SUPERSURVEY_COMPILACION_EXTERNA.md  notas de compilación externa (Codex)
-docs/operations/                doctrina por operación  ← pendiente (empezar por BQS)
+docs/operations/01-BQS.md       doctrina BQS v0.1 (borrador, validar vs EQUINOX MELIDA)
+branding/brand.toml             white-label: nombre/logo/colores del producto (única fuente)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
 .claude/skills/                 skills de desarrollo (grill-me, diagnose)
 ```
@@ -50,9 +51,9 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 ## Próximos pasos inmediatos
 
 1. **Recibir EQUINOX MELIDA** (Excel lleno + PDF del reporte firmado) — caso ancla de BQS.
-2. Escribir **`docs/operations/01-BQS.md`** (doctrina operativa de BQS).
-3. Implementar el **cálculo BQS** en Rust validado contra EQUINOX MELIDA.
-4. Aplicar los **6 fixes de hardening** del kernel (ver Ultraplan §9).
+2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
+3. Implementar **VCF/WCF reales (API 11.1) + comparison engine** (Vessel vs Barge vs BDN con tolerancia) en Rust, validado contra EQUINOX MELIDA.
+4. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**. Faltan 5.
 
 ## Cómo compilar / probar
 
@@ -73,7 +74,9 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 `grill-me` (entrevista adversarial de planes) y `diagnose` (depuración estructurada) en
 `.claude/skills/`. Nota: `/plugin` **no funciona en Claude web**; por eso se instalan como
 skills de proyecto (persisten en el repo). Pendiente de confirmar con el usuario: `agency`
-y `gstack` (ambiguos — varios candidatos).
+y `gstack` (ambiguos). **GSD ("Get Shit Done", `gsd-build/get-shit-done`):** su instalador
+externo (npx) fue **bloqueado por seguridad**; pendiente de decisión del usuario (autorizar
+instalador vs. omitir). Es un sistema grande (~4.7 MB: comandos + agents + hooks).
 
 ## Decisiones clave
 

@@ -1,0 +1,7 @@
+# Pin the Rust toolchain so local builds and GitHub Actions are reproducible.
+# (Addresses audit finding: CI toolchain was unpinned -> a future `stable` with new
+#  clippy lints under `-D warnings` could turn CI red without any code change.)
+[toolchain]
+channel = "1.94.1"
+components = ["clippy", "rustfmt"]
+profile = "minimal"

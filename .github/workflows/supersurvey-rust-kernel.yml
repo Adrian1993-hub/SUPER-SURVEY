@@ -1,0 +1,76 @@
+name: SuperSurvey Rust Kernel
+
+on:
+  push:
+    paths:
+      - "rust-kernel/**"
+      - ".github/workflows/supersurvey-rust-kernel.yml"
+  pull_request:
+    paths:
+      - "rust-kernel/**"
+      - ".github/workflows/supersurvey-rust-kernel.yml"
+  workflow_dispatch:
+
+jobs:
+  rust-kernel:
+    name: Rust kernel checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust-kernel/supersurvey_calc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup component add rustfmt clippy
+
+      - name: Show Rust versions
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Run tests
+        run: cargo test --locked
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  sqlite-schema:
+    name: SQLite schema validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate hardened schema
+        run: |
+          python - <<'PY'
+          import sqlite3
+          from pathlib import Path
+
+          schema = Path("rust-kernel/schema/supersurvey_sqlite_schema_v0_1_3_1_hardened.sql")
+          sql = schema.read_text(encoding="utf-8")
+          con = sqlite3.connect(":memory:")
+          con.execute("PRAGMA foreign_keys = ON")
+          con.executescript(sql)
+          fk_errors = list(con.execute("PRAGMA foreign_key_check"))
+          tables = list(con.execute("select name from sqlite_master where type='table' and name not like 'sqlite_%'"))
+          views = list(con.execute("select name from sqlite_master where type='view'"))
+          indexes = list(con.execute("select name from sqlite_master where type='index' and name not like 'sqlite_%'"))
+          triggers = list(con.execute("select name from sqlite_master where type='trigger'"))
+          assert not fk_errors, fk_errors
+          assert len(tables) == 37, len(tables)
+          assert len(views) == 2, len(views)
+          assert len(indexes) == 24, len(indexes)
+          assert len(triggers) == 2, len(triggers)
+          print("schema ok:", len(tables), "tables,", len(views), "views,", len(indexes), "indexes,", len(triggers), "triggers")
+          PY

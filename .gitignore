@@ -17,6 +17,10 @@ node_modules/
 dist/
 build/
 
+# --- Rust (kernel) ---
+target/
+**/target/
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db

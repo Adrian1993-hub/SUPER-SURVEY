@@ -98,6 +98,23 @@ Tanque → Densidad → Nivel (modo U/S/G) → Temp → TOV
 - **Cifra oficial de la diferencia = MT en AIRE** (las diferencias del Summary se reportan en
   aire). ✅  El BDN declara MT en **vacío** y densidad en **aire**.
 
+**Ambas bases SIEMPRE (✅ tu criterio):** calcular y mostrar **MT en aire** y **MT en vacío**.
+La oficial suele ser **aire**, pero hay deals que se liquidan en **vacío**.
+
+**Corrección por trim (✅ tu criterio):** se aplica en **algunos buques sí y otros no** (las
+**barcazas normalmente no**). El check **Applied / Not Applied** es la **constancia de que el
+inspector verificó** si, según las tablas del tanque, corresponde la corrección — **no** es una
+discrepancia.
+
+**Resumen "Quantity Transferred"** (✅ copiar del formato FOBAS): por cada fuente, bloque
+compacto de 5 columnas — **Supplier's Density · GSV (M³ @15 °C) · Weight (MT) in Vacuum ·
+WCF Tabla 56 · Weight (MT) in Air**. (Glosario del formato: `TOV` = Total Observed Volume;
+`GOV` = Gross Observed Volume; `VCF` = Vol. Correction Factor (Tabla 54B); `GSV` = Gross Standard
+Volume; `WCF` = Weight Correction Factor (Tabla 56, −0.0011); `MT(Air) = GSV × WCF`.)
+
+**Base de temperatura:** el formato contempla referencia **@15 °C** y opciones **@20 °C** (aire/
+vacío) → soportar la base de referencia como parámetro.
+
 **Estándares:** API MPMS Ch 3/7/8/9, **Ch 11.1 (VCF)**, Ch 12.1 (cantidades), **Ch 17.1**
 (inspección marina / discrepancias); **ISO 13739:2020** (procedimiento de transferencia).
 
@@ -112,9 +129,11 @@ Tanque → Densidad → Nivel (modo U/S/G) → Temp → TOV
 Tabla de 3 fuentes (A=BDN, B=Vessel Received, C=Barge Delivered) con: Densidad@15, GSV@15,
 MT vacío, WCF(T56), **MT aire**. Diferencias reportadas: **B−A**, **C−A**, **C−B** (MT aire y %).
 
-> **Tolerancia (✅ del formato real): avisar si cualquier figura excede ±0.25 % o ±5 MT.**
-> ⚠️ **Importante:** ese umbral es **política interna de la empresa (SGS)**, **no** está en
-> ISO 13739 → en SuperSurvey será un **default configurable** por perfil/cliente.
+> **Tolerancia — modelo en capas (✅ tu criterio):** el **default** será el de **ISO 13739**,
+> pero **configurable**, porque conviven varias: la del **comprador**, la del **suplidor**, la de
+> la **compañía de inspección** (p. ej. el formato real usa ±0.25 %/±5 MT) y la del **contrato**.
+> SuperSurvey tendrá **perfiles de tolerancia** y evalúa contra el que aplique.
+> *(El umbral numérico exacto de ISO 13739 está en la parte del estándar fuera del extracto → a confirmar.)*
 
 ---
 
@@ -166,6 +185,12 @@ Vessel Cargo Tank Data, Sample Report/Receipt, Bunker Survey, General Notes, Cus
   en el SOF de disputas; los **re-chequeos** (vessel/barge/shore recheck) y **llamadas** se
   inyectan desde un módulo aparte, **disparado cuando la variación ≥ ±5 MT o ±0.25 %**.
 
+**Disparadores de SOF (✅ del Cover real):** rechazo de una parte a presenciar o firmar las
+mediciones; **fluctuación extrema de temperatura** antes/después; **movimiento en tanques no
+nominados** (posible consumo → reflejar en VMR/BMR); imposibilidad de medir todos los tanques
+manualmente aun con **flowmeter**, o de aplicar pasta agua/aceite; **cantidad acordada ≠ nominada**
+de forma significativa; **precintos rotos**.
+
 ---
 
 ## 9. Muestreo (Sampling) — ✅ del caso real + ISO 13739
@@ -205,18 +230,20 @@ Vessel Cargo Tank Data, Sample Report/Receipt, Bunker Survey, General Notes, Cus
 
 ---
 
-## 13. Decisiones que necesitan TU criterio (surveyor)
+## 13. Decisiones (✅ resueltas con tu criterio · ⏳ pendientes)
 
-1. **Camino de cálculo canónico.** El Excel y el PDF emitido difieren ~0.003–0.009 MT en *Barge
-   Delivered* (densidad **pro-rata** vs **única** / orden de redondeo). Recomiendo: **densidad
-   única por fuente + precisión completa + SIN redondeo intermedio**, redondear **solo** el final.
-   ¿Confirmas?
-2. **Tolerancia default** ±0.25 % ó ±5 MT (política SGS) como configurable. ¿OK?
-3. **Cifra oficial = MT en AIRE.** ¿Confirmas?
-4. **Flag de corrección por trim**: en un grado, el Excel decía *Applied* y el PDF *Not Applied*.
-   ¿Cómo lo decides en la práctica?
-5. **NOAD vs LOP**: ¿tu empresa tiene regla formal de cuándo cada uno?
-6. **Versiones de tablas ASTM** a incluir (investigación en curso).
+1. ✅ **Camino de cálculo canónico:** densidad **única por fuente + precisión completa + SIN
+   redondeo intermedio** (redondear solo el final).
+2. ✅ **Tolerancia:** **configurable en capas** (default ISO 13739 + comprador/suplidor/compañía
+   de inspección/contrato).
+3. ✅ **Cifra oficial = MT en aire**, pero **calcular SIEMPRE también vacío** (hay deals en vacío);
+   incluir el resumen **"Quantity Transferred"**.
+4. ✅ **Trim Applied/Not Applied** = constancia de verificación del inspector (las barcazas
+   normalmente **no** llevan corrección).
+5. ⏳ **NOAD vs LOP:** falta la **regla formal de empresa** de cuándo se usa cada uno (¿la tienes?).
+6. ⏳ **En curso (agentes):** versiones de tablas **ASTM** + **sampling** a fondo (muestras por
+   parte y su registro en BDN; **muestra compuesta** de crudo → **B/L**; productos claros
+   gasolina/jet/DMA).
 
 ---
 

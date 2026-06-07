@@ -1,11 +1,14 @@
-# Operación BQS — Bunker Quantity Survey · Doctrina Operativa v0.1
+# Operación BQS — Bunker Quantity Survey · Doctrina Operativa v0.2
 
 > Parte del **Mapa de Operaciones y Documentos**. Define **QUÉ es** BQS, qué **mide** el
 > surveyor, qué **calcula** el programa, qué **compara**, qué **documentos** produce, **quién
 > firma** y cuándo se emite **NOAD/LOP/SOF**.
 >
-> **Estado: v0.1 — borrador para VALIDAR contra el caso real EQUINOX MELIDA.**
-> Las **suposiciones** llevan ⚠️ y deben confirmarse. Actualizado: 2026-06-06.
+> **Estado: v0.2 — basada en un BQS REAL** (campo + reporte emitido, 2 grados VLSFO+LSMGO,
+> barge→vessel) **+ análisis de ISO 13739:2020, manual SGS "OGC" Nivel 1 y el set de tablas
+> ASTM**. Lo **confirmado** va ✅; lo que falta confirmar, ⚠️. *(Sin datos de cliente embebidos:
+> los números reales viven en los vectores QA, fuera de git hasta confirmar privacidad del repo.)*
+> Actualizado: 2026-06-06.
 
 ---
 
@@ -14,14 +17,16 @@
 BQS mide y concilia la cantidad de **combustible (bunkers)** transferido —típicamente de una
 **barcaza a un buque**— comparando **lo que la barcaza entregó**, **lo que el buque recibió** y
 **lo que dice el BDN**, y deja constancia **firmable** de cualquier discrepancia.
+Rige **ISO 13739:2020** (excepto Singapur → SS 600/648). ✅
 
 ---
 
 ## 1. Definición operacional
 
-Survey de cantidad de bunkers en una operación de *bunkering*. El surveyor es un tercero
-independiente que verifica volúmenes, temperaturas, densidades y agua, calcula las toneladas
-métricas por las tres fuentes y certifica la diferencia. Variantes:
+Survey de cantidad de bunkers. El surveyor es un tercero independiente que verifica volúmenes,
+temperaturas, densidades y agua, calcula las toneladas métricas por las tres fuentes y certifica
+la diferencia. **Puede haber varios grados en una misma operación** (el formato real maneja hasta
+**3 grados**, cada uno con su propio **Summary + VMR + BMR**). ✅ Variantes:
 
 - **Barge → Vessel** (lo más común). *(MVP)*
 - **Shore/terminal → Vessel** (con tanques de tierra / flowmeter).
@@ -31,22 +36,17 @@ métricas por las tres fuentes y certifica la diferencia. Variantes:
 
 ## 2. Qué hace físicamente el surveyor (flujo de campo)
 
-**Antes de transferir (Opening):**
-1. Asiste a la reunión previa; revisa BDN previsto, calidad, plan.
-2. **Sondea/ullage** todos los tanques de bunker del **buque** (ROB inicial) y de la **barcaza**
-   (cantidad inicial), incluyendo trim/list.
-3. Mide **temperatura** y toma **densidad** (o la toma del certificado).
-4. Comprueba **agua libre** (pasta detectora / corte de agua).
-5. Verifica precintos de la barcaza, líneas llenas/vacías, válvulas.
-6. Toma/atestigua **muestras** (precintadas, distribuidas).
+**Antes (Opening):** reunión previa (revisa grados, tanques nominados, tasas, BDN previsto) →
+**sondea/ullage** los tanques del **buque** (ROB inicial) y de la **barcaza** (con trim/list) →
+**temperatura** y **densidad** (o del certificado del supplier) → **agua libre** → verifica
+precintos/líneas/válvulas → atestigua/toma **muestras**.
 
-**Durante:** registra eventos para el SOF (mangueras conectadas, inicio, paradas, fin).
+**Durante:** registra eventos en el **Time Log** (NOR, gangway, inspector a bordo, manguera
+conectada, inicio, paradas, fin, manguera desconectada, muestras al laboratorio…).
 
-**Después (Closing):**
-7. Sondea de nuevo **buque** (ROB final) y **barcaza** (cantidad final).
-8. Repite temperatura / densidad / agua.
-9. Calcula y **cotejа** las tres fuentes; si hay discrepancia, emite **NOAD/LOP**.
-10. Recoge **firmas** y emite reportes.
+**Después (Closing):** sondea de nuevo **buque** (ROB final) y **barcaza** (final) → repite
+T/densidad/agua → calcula y **coteja** las 3 fuentes → si supera tolerancia, **avisa a
+OPERATIONS/FOBAS ANTES de firmar el BDN** y evalúa **NOAD/LOP** → recoge **firmas** y emite.
 
 ---
 
@@ -56,7 +56,7 @@ métricas por las tres fuentes y certifica la diferencia. Variantes:
 |---|---|---|
 | **Buque (vessel)** | ROB **antes** y **después** por tanque | sondaje/ullage + tablas del buque |
 | **Barcaza (barge)** | Cantidad **antes** y **después** por tanque | sondaje/ullage + tablas de la barcaza |
-| **BDN** (Bunker Delivery Note) | Cantidad declarada por el proveedor | documento externo |
+| **BDN** (Bunker Delivery Note) | Cantidad **declarada** por el proveedor | documento externo |
 | **(opc.) Shore / flowmeter** | Entrega de tierra | medidor/tablas de tierra |
 
 ---
@@ -65,146 +65,175 @@ métricas por las tres fuentes y certifica la diferencia. Variantes:
 
 | Dato | Unidad | Fuente | Notas |
 |---|---|---|---|
-| Ullage / sondaje | mm / m | campo | seco o por interfaz |
-| Tabla de calibración → volumen | m³ / bbl | tabla del buque/barcaza | por tanque |
-| Trim / List | m / ° | campo | corrección por tabla |
-| Temperatura del producto | °C | campo (API Ch 7) | media o por tanque |
-| **Densidad @ 15 °C (vacío)** | kg/m³ ó t/m³ | certificado / medida (API Ch 9, ISO 3675/12185) | base del VCF y del peso |
-| Agua libre (FW) | m³ / mm | campo (pasta / corte) | se deduce |
-| Volumen de tablas | m³ | calibración | TOV |
-| **BDN**: volumen, T, densidad, MT | varias | externo | base de comparación |
-| Calidad / muestras | — | externo / campo (API Ch 8) | precintos, recibos |
+| Ullage / sondaje (modo **U/S/G**) | mm / m | campo | ullage, sounding o gauge |
+| **Volumen del tanque** | m³ / bbl | **el surveyor lo obtiene de la tabla de calibración física e INGRESA el volumen** | la app **NO** almacena la tabla; solo registra la **fecha de calibración** ✅ |
+| Trim / List | m / ° | campo | corrección aplicada al volumen |
+| Temperatura del producto | °C | campo (API Ch 7) | por tanque |
+| **Densidad @ 15 °C** | kg/m³ ó t/m³ | **del SUPPLIER** (barcaza) ✅ | base del VCF y del peso |
+| Agua libre (FW) | m³ / mm | campo | se deduce |
+| **BDN**: volumen, T, densidad, MT | varias | externo | base de comparación; MT en **vacío**, densidad en **aire** ✅ |
+| Muestras / precintos | — | campo (API Ch 8 / ISO 13739) | manifold, goteo continuo |
 
 ---
 
-## 5. Cálculo principal — cadena horizontal por tanque
+## 5. Cálculo principal — cadena por tanque (✅ confirmada con el caso real)
 
+Campos reales del VMR/BMR, en orden:
 ```
-Ullage/Sondaje
-  → Volumen de tabla (calibración del tanque)
-  → (corrección por Trim / List)
-  → TOV  (Total Observed Volume, a T observada)
-  → (− Agua libre FW)
-  → GOV  (Gross Observed Volume, a T observada)
-  → × VCF  (Volume Correction Factor, API MPMS Ch 11.1 / ASTM D1250)
-  → GSV  (Gross Standard Volume @ 15 °C / 60 °F)
-  → × Densidad@15 (vac)  ó  × WCF (Tabla 56)
-  → Toneladas Métricas   (en VACÍO y en AIRE)
+Tanque → Densidad → Nivel (modo U/S/G) → Temp → TOV
+  → (− Free Water) → GOV
+  → × VCF (Tabla 54B)            → GSV (@15 °C)
+  → × WCF (Tabla 56)             → Toneladas Métricas (AIRE)   [+ vacío]
 ```
 
-**Estándares aplicables:** API MPMS Ch 3 (gauging), Ch 7 (temperatura), Ch 8 (muestreo),
-Ch 9 (densidad), **Ch 11.1 (VCF)**, Ch 12.1 (cálculo de cantidades), **Ch 17.1** (inspección
-marina y manejo de discrepancias).
+**Fórmulas confirmadas:**
+- `GOV = TOV − FW`  (para tanques de buque/barcaza; en la forma SGS general
+  `GSV = {[(TOV − FW) × CTSh] ± FRA} × CTL`, los términos CTSh y FRA = 0). ✅
+- `GSV = GOV × VCF` — **VCF = Tabla 54B** (densidad@15 + T observada → factor a 15 °C). ✅
+- `MT(vacío) = GSV × densidad@15`. ✅
+- `MT(aire)  = GSV × WCF`, con **WCF = Tabla 56 ≈ densidad@15 − 0.0011** (flotabilidad del aire;
+  confirmado en celda real `=-0.0011`). ✅
+- **Densidad de cálculo = la del supplier.** ✅
+- **SIN redondeo intermedio**: se redondea **solo el resultado final** (manual SGS p.62). ✅
+- **Cifra oficial de la diferencia = MT en AIRE** (las diferencias del Summary se reportan en
+  aire). ✅  El BDN declara MT en **vacío** y densidad en **aire**.
 
-**Fórmulas clave:**
-- `GOV = TOV − FW`
-- `GSV = GOV × VCF` — VCF según producto y temperatura. ⚠️ **Confirmar tabla**: para fueles
-  generalizados suele ser **Tabla 54B** (métrico, densidad@15) / **6B** (API@60°F).
-- **Masa (vacío):** `MT_vac = GSV(m³) × densidad15(t/m³)`
-- **Peso en aire:** `MT_aire = GSV × WCF`, con `WCF ≈ densidad15 − 0.0011` (t/m³) ó Tabla 56.
-- ⚠️ **Convención de venta:** confirmar si el BDN/contrato usa **MT en aire** o **MT en vacío**
-  (los bunkers suelen comerciarse en MT; hay que fijar cuál es la oficial del reporte).
-- ⚠️ **Redondeo / decimales:** confirmar reglas (p. ej. VCF a 4 decimales, MT a 3) con el Excel real.
+**Estándares:** API MPMS Ch 3/7/8/9, **Ch 11.1 (VCF)**, Ch 12.1 (cantidades), **Ch 17.1**
+(inspección marina / discrepancias); **ISO 13739:2020** (procedimiento de transferencia).
 
 ---
 
-## 6. Comparaciones (el corazón del reporte)
+## 6. Comparaciones — el corazón del reporte (✅ confirmado)
 
-- **Vessel Received** = ROB_buque_final − ROB_buque_inicial  (closing − opening)
+- **Vessel Received** = ROB_final − ROB_inicial  (closing − opening, sobre GSV)
 - **Barge Delivered** = Barcaza_inicial − Barcaza_final  (opening − closing)
-- **BDN** = cifra declarada por el proveedor.
+- **BDN** = cifra declarada del proveedor.
 
-| Comparación | Qué detecta |
-|---|---|
-| Barge Delivered **vs** BDN | si la barcaza entregó lo que factura |
-| Vessel Received **vs** Barge Delivered | la **diferencia de survey** (la discusión típica) |
-| Vessel Received **vs** BDN | faltante/sobrante respecto a lo facturado |
+Tabla de 3 fuentes (A=BDN, B=Vessel Received, C=Barge Delivered) con: Densidad@15, GSV@15,
+MT vacío, WCF(T56), **MT aire**. Diferencias reportadas: **B−A**, **C−A**, **C−B** (MT aire y %).
 
-Cada comparación muestra **diferencia absoluta (MT)** y **% **, y se marca contra **tolerancia**.
-
----
-
-## 7. Documentos / reportes (matriz)
-
-| Documento | Qué prueba | Quién lo usa | Cuándo se imprime | Firma | Jala del Cover | Jala de mediciones | Tipo |
-|---|---|---|---|---|---|---|---|
-| **Cover / Job Setup** | datos maestros del trabajo | todos | al iniciar | surveyor | — | — | maestro |
-| **VMR** (Vessel Measurement Report) | cantidades medidas en el **buque** | buque, cliente | opening y closing | Chief Eng. + surveyor | sí | tanques buque | soporte |
-| **BMR** (Barge Measurement Report) | cantidades medidas en la **barcaza** | barcaza, cliente | opening y closing | barge rep + surveyor | sí | tanques barcaza | soporte |
-| **Summary** | comparación de las 3 fuentes + diferencia | todas las partes | al cierre | partes + surveyor | sí | totales | **final** |
-| **Gauging Ticket** | evidencia de sondaje por tanque | soporte | en sitio | surveyor | parcial | sondajes | soporte |
-| **Sample Receipt** | muestras tomadas/entregadas/precintos | laboratorio, partes | al muestrear | quien recibe | parcial | muestras | soporte |
-| **SOF** (Statement of Facts) | cronología de eventos | todas las partes | al cierre | partes | sí (partes/fechas) | tiempos | soporte/legal |
-| **NOAD** (Notice of Apparent Discrepancy) | aviso de discrepancia aparente | partes | cuando > tolerancia | surveyor + parte | sí (a quién va) | la diferencia | advertencia |
-| **LOP** (Letter of Protest) | protesta formal | parte que protesta | ante condición/desacuerdo | emisor + receptor | sí (a quién va) | dato en disputa | protesta/legal |
-
-> ⚠️ Confirmar contra EQUINOX MELIDA: nombres exactos, qué reportes existen, su orden y su look.
+> **Tolerancia (✅ del formato real): avisar si cualquier figura excede ±0.25 % o ±5 MT.**
+> ⚠️ **Importante:** ese umbral es **política interna de la empresa (SGS)**, **no** está en
+> ISO 13739 → en SuperSurvey será un **default configurable** por perfil/cliente.
 
 ---
 
-## 8. Firmas necesarias
+## 7. Conjunto de documentos (✅ del Excel real + UI OGC)
 
-- **VMR**: Jefe de Máquinas (Chief Engineer) del buque + surveyor.
-- **BMR**: representante de la barcaza + surveyor.
-- **Summary / SOF**: ambas partes + surveyor.
-- **NOAD / LOP**: emisor + acuse de la contraparte (a veces "*signed under protest*").
+**Hojas del field report real:** `CLIENT Cover Page` · `Pre Survey Acknowledgment` ·
+`Pre Bunker Information` · **`Summary` / `VMR` / `BMR` por grado (×3)** · `Sample Receipt Form` ·
+`Sample Checklist` · `Time Log` · `Statement of Fact` · `SOF for Disputes` ·
+`Gauging Tickets OPENING` / `CLOSING` · `Vessel Non Cargo Declaration` ·
+`Barge Non Cargo Declaration` · `Receipt of FOBAS Documents`.
+**Reportes en la UI OGC (menú):** Time Log, Quality Report, Letter of Protest, NOAD, Quantity
+Certificate, Pipeline Data, Pipeline Reconciliation, Delivery/Receipt Measurement & Quantity,
+Vessel Cargo Tank Data, Sample Report/Receipt, Bunker Survey, General Notes, Custom Reports.
 
-> El destinatario (a quién va dirigida la carta) se **autollena desde el Cover** con un panel de selección.
-
----
-
-## 9. Warnings / NOAD / LOP (reglas, defaults configurables)
-
-- **Warning** si `|Vessel Received − Barge Delivered|` o `|… − BDN|` supera la **tolerancia**.
-  ⚠️ Default propuesto: **0.5 %** (configurable por perfil/cliente).
-- **NOAD** cuando hay discrepancia **aparente** de cantidad o calidad notable a las partes.
-- **LOP** (protesta formal) en casos como: faltante fuera de tolerancia, **agua excesiva**,
-  sospecha de **aireación ("cappuccino effect")**, desacuerdo de temperatura/densidad, cifras
-  del **BDN en disputa**, negativa a muestrear, precintos rotos.
-- API MPMS **17.1**: las discrepancias deben **registrarse y reportarse** a las partes (vía LOP
-  o aviso de discrepancia) y **resolverse antes de que el buque zarpe**.
-
----
-
-## 10. Export individual
-
-Cada documento exportable por separado en **PDF** y **XLSX** (con marca/tema). Útil para
-entregar al buque, a la barcaza o al cliente por separado.
-
-## 11. Paquete final
-
-Un solo **PDF** (y XLSX/JSON técnico) que reúne: Cover → VMR(s) → BMR(s) → Summary → Gauging
-Tickets → Sample Receipts → SOF → NOAD/LOP (si aplica). Es lo que se archiva como evidencia.
+| Documento | Qué prueba | Firma | Tipo |
+|---|---|---|---|
+| **Cover / Job Setup** | datos maestros | surveyor | maestro |
+| **VMR** (Vessel Measurement Report) | cantidades en el **buque** | Chief Eng. + surveyor | soporte |
+| **BMR** (Barge Measurement Report) | cantidades en la **barcaza** | barge officer + surveyor | soporte |
+| **Summary** (por grado) | comparación 3 fuentes + diferencia | surveyor + barge officer + vessel rep | **final** |
+| **Gauging Ticket** (open/close) | evidencia de sondaje | surveyor | soporte |
+| **Sample Receipt / Checklist** | muestras, precintos, distribución | quien recibe | soporte |
+| **Time Log** | cronología operacional + tiempos/tasa de bombeo | (no se firma; alimenta el SOF) | soporte |
+| **SOF / SOF for Disputes** | declaración formal / protesta | partes | soporte/legal |
+| **NOAD** | aviso de discrepancia aparente | surveyor + parte | advertencia |
+| **LOP** (Letter of Protest) | protesta formal (ISO 13739 §12.4) | emisor + acuse | protesta/legal |
+| **Quantity Certificate** | cantidad certificada | surveyor | certificado |
+| **Non Cargo Declaration** (vessel/barge) | ROB/declaración de no-carga | parte | soporte |
 
 ---
 
-## 12. Decisiones a confirmar (⚠️) y qué necesito de EQUINOX MELIDA
+## 8. Time Log y SOF (y su automatización) — ✅ del caso real
 
-1. **Convención de peso:** ¿MT en **aire** o en **vacío** para la cifra oficial?
-2. **Tabla VCF** exacta (54B/6B u otra) y de dónde sale la **densidad@15** (certificado vs medida).
-3. **Reglas de redondeo** (decimales de VCF, volumen, MT) — para reproducir el Excel al dígito.
-4. **Tolerancia** por defecto y por cliente.
-5. **Lista exacta de reportes** y su **diseño** (para el report engine).
-6. **Quién firma** cada documento en tu práctica real.
-
-**Del caso EQUINOX MELIDA necesito:** el **Excel lleno (.xls)** + el **PDF/foto del reporte
-firmado**. Súbelos a `docs/qa-cases/bqs-equinox-melida/` (o adjúntalos) y los uso para validar
-el cálculo **al dígito** y modelar los reportes.
+- **Time Log = registro cronológico operacional** (SIEMPRE, todo job). ~16 eventos estándar con
+  **Date+Time por grado**; alimenta automáticamente el **tiempo neto de bombeo** y la **tasa
+  media (MT/hr)** al Summary. Mandado por **ISO 13739:2020 §11.6 + Anexo Q** (nuevo en 2020).
+  - Columnas UI: `Submitted by Terminal/Vessel` (procedencia, para disputas) · `Exclude from
+    report` (oculta entradas internas del impreso, p. ej. llamadas a OPERATIONS) · Event ·
+    Append to Event · Date · Time · Grade.
+- **SOF = narrativa formal** dirigida a una **parte nombrada** (buque o barcaza); se crea **solo
+  si hay no-conformidad/disputa**; reserva los derechos del principal. **`SOF for Disputes`**
+  añade campos numéricos: *Quantity Stemmed, BDN, Vessel Loaded, Barge Delivered, shortloading,
+  dispute qty (= Vessel Loaded − Barge Delivered)*.
+- **Diferencia clave:** Time Log = operacional, siempre, alimenta cálculos. SOF = instrumento
+  legal, solo en disputa.
+- **Auto-generar SOF desde el Time Log (propuesta):** exportar filas con `Exclude=FALSE` como
+  narrativa cronológica, etiquetadas "Submitted by [parte]"; **inyectar** las cifras de variación
+  del Summary en los campos del SOF de disputas; las llamadas marcadas `Exclude` afloran **solo**
+  en el SOF de disputas; los **re-chequeos** (vessel/barge/shore recheck) y **llamadas** se
+  inyectan desde un módulo aparte, **disparado cuando la variación ≥ ±5 MT o ±0.25 %**.
 
 ---
 
-## 13. Mapeo doctrina → kernel (qué debe exponer el cálculo)
+## 9. Muestreo (Sampling) — ✅ del caso real + ISO 13739
 
-El kernel actual ya cubre parte de esta cadena (a endurecer):
+- **Punto:** **manifold del buque**, **goteo continuo** a *cubitainer* (ISO 13739 **Anexo L**).
+- **Botellas del surveyor por grado:** ~5–6 — (1) Vessel, (2) Supplier, (3) Lab análisis
+  completo, (3a) Lab parcial (si se pide), (4) Surveyor retained, (5) **MARPOL Anexo VI** —
+  **+ 5 del supplier** en el manifold de la barcaza.
+- **Precintos:** *cap seal + tag seal* por botella, numerados, tamper-evident (ISO 13739 §3.17);
+  los precintos SGS no se entregan a terceros (manual §2.6).
+- **"Level Sampling Calculations"** (hoja aparte) = **posicional**, NO calcula masa/volumen:
+  da la profundidad del muestreador para spot samples — `Upper = Ullage + Innage/6`,
+  `Middle = Ullage + Innage/2`, `Lower = Ullage + 5·Innage/6`.
 
-| Paso doctrina | Dónde vive hoy | Estado |
+---
+
+## 10. Warnings / NOAD / LOP
+
+- **Warning (no imprimible):** si una figura supera la **tolerancia** (default **±0.25 % o ±5 MT**,
+  configurable). Acción: llamar a OPERATIONS/FOBAS **antes de firmar el BDN**.
+- **NOAD** = aviso de **discrepancia aparente** (cantidad/calidad) a las partes.
+- **LOP** = **protesta formal** (ISO 13739 **§12.4**). Casos típicos: faltante fuera de tolerancia,
+  agua excesiva, **aireación ("cappuccino")**, desacuerdo de T/densidad, **BDN en disputa**,
+  negativa a muestrear, precintos rotos.
+- ⚠️ **NOAD vs LOP no están formalmente diferenciados** ni en ISO 13739 ni en el manual SGS
+  provistos → la regla exacta de "cuándo NOAD y cuándo LOP" es **práctica de empresa** (confirmar).
+- API MPMS **17.1**: registrar/reportar discrepancias a las partes y **resolver antes de zarpar**.
+
+---
+
+## 11. Export individual / 12. Paquete final
+
+- **Individual:** cada documento en **PDF** y **XLSX** (con marca/tema).
+- **Paquete final:** un **PDF** (+ XLSX/JSON técnico): Cover → VMR(s) → BMR(s) → Summary(es) →
+  Gauging Tickets → Sample Receipt/Checklist → Time Log → SOF/NOAD/LOP (si aplica) →
+  Non Cargo Declarations → FOBAS. Es la evidencia archivada.
+
+---
+
+## 13. Decisiones que necesitan TU criterio (surveyor)
+
+1. **Camino de cálculo canónico.** El Excel y el PDF emitido difieren ~0.003–0.009 MT en *Barge
+   Delivered* (densidad **pro-rata** vs **única** / orden de redondeo). Recomiendo: **densidad
+   única por fuente + precisión completa + SIN redondeo intermedio**, redondear **solo** el final.
+   ¿Confirmas?
+2. **Tolerancia default** ±0.25 % ó ±5 MT (política SGS) como configurable. ¿OK?
+3. **Cifra oficial = MT en AIRE.** ¿Confirmas?
+4. **Flag de corrección por trim**: en un grado, el Excel decía *Applied* y el PDF *Not Applied*.
+   ¿Cómo lo decides en la práctica?
+5. **NOAD vs LOP**: ¿tu empresa tiene regla formal de cuándo cada uno?
+6. **Versiones de tablas ASTM** a incluir (investigación en curso).
+
+---
+
+## 14. Mapeo doctrina → kernel (✅ el modelo actual alcanza)
+
+El análisis confirma que **mapea sobre el esquema SQLite actual SIN tablas nuevas**:
+
+| Paso doctrina | Dónde vive | Estado |
 |---|---|---|
-| TOV → (−FW) → GOV → ×VCF → GSV → ×WCF → Weight | `rust-kernel/.../quantity_chain.rs` | ✅ base; ⚠️ WCF→MT es placeholder |
-| opening/closing → movimiento por tanque y por set | `.../movement.rs` | ✅ base; ⚠️ no valida mismo producto |
-| Comparación entre fuentes (Vessel/Barge/BDN) | — | ❌ falta (comparison engine) |
-| Tolerancia → warning/NOAD/LOP | esquema `tolerance_*` | ❌ falta lógica |
-| Trazabilidad por paso | `.../trace.rs` | ✅ |
-| Persistencia inmutable | esquema `calculation_logs` | ✅ |
+| VMR/BMR (opening/closing) | `measurement_sets` (4 sets: V-open/close, B-open/close) | ✅ |
+| Tanques y lecturas | `measurement_tank_rows` + `measurement_records` | ✅ |
+| TOV→GOV→VCF→GSV→WCF→MT | `quantity_chain.rs` | ✅ base; ⚠️ WCF→MT placeholder |
+| Totales por set | `measurement_set_summaries` | ✅ |
+| Movimiento por tanque/set | `movement.rs` | ✅ base; ⚠️ no valida mismo producto |
+| **Comparación 3 fuentes + tolerancia** | `comparison_sets` / `comparison_results` | ❌ falta lógica (comparison engine) |
+| Trazabilidad / inmutabilidad | `trace.rs` / `calculation_logs` | ✅ |
 
-**Siguiente en código (Fase 1):** cerrar VCF/WCF reales (API 11.1) + el **comparison engine**
-(Vessel vs Barge vs BDN con tolerancia), validados contra EQUINOX MELIDA.
+**Siguiente en código (Fase 1):** VCF (Tabla 54B) + WCF (Tabla 56) reales por **ecuaciones API
+MPMS 11.1**, validados **al dígito** contra los vectores QA; luego el **comparison engine**
+(Vessel vs Barge vs BDN con tolerancia ±0.25 %/±5 MT).

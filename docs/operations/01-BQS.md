@@ -215,8 +215,12 @@ de forma significativa; **precintos rotos**.
 - **LOP** = **protesta formal** (ISO 13739 **§12.4**). Casos típicos: faltante fuera de tolerancia,
   agua excesiva, **aireación ("cappuccino")**, desacuerdo de T/densidad, **BDN en disputa**,
   negativa a muestrear, precintos rotos.
-- ⚠️ **NOAD vs LOP no están formalmente diferenciados** ni en ISO 13739 ni en el manual SGS
-  provistos → la regla exacta de "cuándo NOAD y cuándo LOP" es **práctica de empresa** (confirmar).
+- ✅ **En SuperSurvey (tu criterio):** cuando una figura **supera la tolerancia**, mostrar una
+  **alerta breve** que ofrezca **emitir LOP o SOF**, **pre-llenado** con los datos esenciales
+  (referencia, partes/destinatario del Cover, grado, las 3 cantidades, diferencia MT y %,
+  fecha/hora) + los **campos a completar**. Se usa la **regla estándar** como guía; las
+  **políticas de cada cliente** (unos piden SOF, otros LOP + llamada, otros solo resolver)
+  **no se modelan**: las trae el surveyor del nominador (owner/charterer).
 - API MPMS **17.1**: registrar/reportar discrepancias a las partes y **resolver antes de zarpar**.
 
 ---
@@ -240,7 +244,8 @@ de forma significativa; **precintos rotos**.
    incluir el resumen **"Quantity Transferred"**.
 4. ✅ **Trim Applied/Not Applied** = constancia de verificación del inspector (las barcazas
    normalmente **no** llevan corrección).
-5. ⏳ **NOAD vs LOP:** falta la **regla formal de empresa** de cuándo se usa cada uno (¿la tienes?).
+5. ✅ **NOAD/LOP:** regla estándar; la app solo dispara una **alerta al pasar la tolerancia** que
+   ofrece **LOP/SOF pre-llenado** con datos esenciales. Las políticas por cliente no se modelan.
 6. ⏳ **En curso (agentes):** versiones de tablas **ASTM** + **sampling** a fondo (muestras por
    parte y su registro en BDN; **muestra compuesta** de crudo → **B/L**; productos claros
    gasolina/jet/DMA).

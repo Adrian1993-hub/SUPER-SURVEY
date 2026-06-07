@@ -10,7 +10,7 @@ pero contiene material **útil para portar**:
 
 - **`DraftSurvey/DraftSurveyCalculator.cs`** — cálculo de *draft survey* (desplazamiento,
   correcciones por trim, densidad, deductibles) con las **fórmulas ya validadas**.
-- **`DraftSurveyTests.cs`** — validado contra el reporte real **MV BELLE PLAINE**
+- **`DraftSurveyTests.cs`** — validado contra un reporte real de draft survey (anonimizado)
   (carga descargada = **2409.733 MT**). Estos números esperados deben reproducirse cuando se
   reimplemente Draft Survey en Rust.
 

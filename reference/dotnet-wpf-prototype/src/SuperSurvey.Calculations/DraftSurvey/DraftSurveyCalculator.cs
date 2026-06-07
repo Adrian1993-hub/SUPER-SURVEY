@@ -59,7 +59,7 @@ public sealed record DraftSurveyResult
 /// <summary>
 /// Draft (draught) survey displacement calculation, per the UNECE "Code of Uniform Standards and
 /// Procedures for the Performance of Draught Surveys".
-/// Validated against the SGS Panamá worksheet "DRAFT SURVEY - MV BELLE PLAINE 238579.xls".
+/// Validated against a real draft-survey worksheet (vessel/job anonymized).
 /// </summary>
 public static class DraftSurveyCalculator
 {

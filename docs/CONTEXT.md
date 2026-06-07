@@ -30,7 +30,7 @@ docs/00-ULTRAPLAN.md            plan maestro (LEER)
 docs/CONTEXT.md                 este archivo (handoff)
 docs/01-analisis-OGC-InfoPro.md análisis del sistema viejo (OGC/InfoPro)
 docs/SUPERSURVEY_COMPILACION_EXTERNA.md  notas de compilación externa (Codex)
-docs/operations/01-BQS.md       doctrina BQS v0.1 (borrador, validar vs EQUINOX MELIDA)
+docs/operations/01-BQS.md       doctrina BQS v0.1 (borrador, validar vs el caso BQS de referencia)
 branding/brand.toml             white-label: nombre/logo/colores del producto (única fuente)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
 .claude/skills/                 skills de desarrollo (grill-me, diagnose)
@@ -50,9 +50,9 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 
 ## Próximos pasos inmediatos
 
-1. **Recibir EQUINOX MELIDA** (Excel lleno + PDF del reporte firmado) — caso ancla de BQS.
+1. **Recibir el caso BQS de referencia** (Excel lleno + PDF del reporte firmado) — caso ancla de BQS.
 2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
-3. Implementar **VCF/WCF reales (API 11.1) + comparison engine** (Vessel vs Barge vs BDN con tolerancia) en Rust, validado contra EQUINOX MELIDA.
+3. Implementar **VCF/WCF reales (API 11.1) + comparison engine** (Vessel vs Barge vs BDN con tolerancia) en Rust, validado contra el caso BQS de referencia.
 4. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**. Faltan 5.
 
 ## Cómo compilar / probar
@@ -62,7 +62,7 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 
 ## Lo que necesito del surveyor (Adrian), por operación — empezando por BQS
 
-1. Un **Excel real lleno** (EQUINOX MELIDA).
+1. Un **Excel real lleno** (el caso BQS de referencia).
 2. El **PDF / foto del reporte final firmado**.
 3. **Quién firma** cada documento.
 4. Qué datos son **de campo** vs **externos** (BDN, B/L, terminal).

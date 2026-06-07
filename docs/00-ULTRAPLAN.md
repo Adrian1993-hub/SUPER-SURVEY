@@ -34,7 +34,7 @@ Y debe poder **revenderse con otra marca** (white-label).
 | 2026-06-06 | **Repo canónico único:** `super-survey` (Codex-Playroom consolidado aquí) | ✅ |
 | 2026-06-06 | **Operación MVP:** BQS (Bunker Quantity Survey) | ✅ |
 | 2026-06-06 | **Motor de cálculo:** reimplementar estándares (API MPMS) en Rust, validados contra casos reales. **NO** reusar `firogcfn.dll` (caja negra, no portable, no auditable) | ✅ |
-| 2026-06-06 | **Caso QA ancla de BQS:** EQUINOX MELIDA | ✅ |
+| 2026-06-06 | **Caso QA ancla de BQS:** el caso BQS de referencia | ✅ |
 | 2026-06-06 | **White-label desde el día 1** (capa de branding + tema) | ✅ |
 | 2026-06-06 | Prototipo .NET/WPF → archivado en `/reference` (solo referencia) | ✅ |
 | 2026-06-06 | **Nombre del producto = configurable** vía `branding/brand.toml` (white-label). Codename interno: `SuperSurvey`. Renombrar (p. ej. a `YOLO.EXE`) **no toca el motor** | ✅ |
@@ -116,7 +116,7 @@ medición (ullage/sounding)
 
 Luego se **suma por fuente** y se **compara**: `Barge Delivered` vs `Vessel Received` vs `BDN`.
 Draft Survey es la excepción: ahí el cálculo viene de **desplazamiento/hidrostáticas**, no de
-volumen × densidad (ver `/reference` para las fórmulas ya validadas: MV BELLE PLAINE = 2409.733 MT).
+volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft survey real = 2409.733 MT).
 
 ---
 
@@ -125,7 +125,7 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: MV BELLE 
 | Fase | Entregable | Estado | Tiempo estimado |
 |---|---|---|---|
 | **F0 — Organización** | Consolidar repo, plan maestro, handoff, skills, auditoría | 🟡 en curso | — |
-| **F1 — Doctrina + Kernel BQS validado** | `docs/operations/01-BQS.md` + cálculo BQS en Rust validado vs EQUINOX MELIDA + 6 fixes de hardening | ⏭️ siguiente | 2–4 sem |
+| **F1 — Doctrina + Kernel BQS validado** | `docs/operations/01-BQS.md` + cálculo BQS en Rust validado vs el caso BQS de referencia + 6 fixes de hardening | ⏭️ siguiente | 2–4 sem |
 | **F2 — Persistencia + Comparison + IPC** | SQLite cableado, comparison engine, comandos Tauri | ⏳ | 3–5 sem |
 | **F3 — UI BQS de punta a punta** | Cover, Profiles, grid pareado, live summary | ⏳ | 4–6 sem |
 | **F4 — Report engine + white-label** | VMR/BMR/Summary/SOF → PDF/XLSX con branding | ⏳ | 3–5 sem |
@@ -182,9 +182,9 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: MV BELLE 
 instalados, auditoría completa, plan maestro y handoff escritos.
 
 **Siguiente:**
-1. Recibir **EQUINOX MELIDA** (Excel lleno + PDF del reporte firmado).
+1. Recibir **el caso BQS de referencia** (Excel lleno + PDF del reporte firmado).
 2. Escribir la **doctrina BQS** (`docs/operations/01-BQS.md`).
-3. Implementar el **cálculo BQS** en Rust validado contra EQUINOX MELIDA.
+3. Implementar el **cálculo BQS** en Rust validado contra el caso BQS de referencia.
 4. Aplicar los **6 fixes** de hardening.
 
 Ver `docs/CONTEXT.md` para el estado vivo y cómo retomar.

@@ -4,8 +4,7 @@ using Xunit;
 namespace SuperSurvey.Calculations.Tests;
 
 /// <summary>
-/// Regression tests anchored to the real SGS Panamá worksheet
-/// "DRAFT SURVEY - MV BELLE PLAINE 238579.xls" (discharge of MOP at Balboa, 2023; SGS ref 23-8579).
+/// Regression tests anchored to a real draft-survey worksheet (vessel and job anonymized).
 ///
 /// Inputs use the worksheet's drafts-at-perpendicular and interpolated hydrostatic values, which are
 /// displayed rounded to 3 dp; net displacement / cargo are therefore validated to within ~0.5 MT.
@@ -76,6 +75,6 @@ public class DraftSurveyTests
         var init = DraftSurveyCalculator.Calculate(Initial);
         var fin = DraftSurveyCalculator.Calculate(Final);
         double cargo = DraftSurveyCalculator.CargoByDifference(init.NetDisplacement, fin.NetDisplacement);
-        Assert.Equal(2409.733, cargo, 0); // SGS figure: Cargo Discharged 2,409.733 MT (±0.5)
+        Assert.Equal(2409.733, cargo, 0); // worksheet figure: Cargo Discharged 2,409.733 MT (±0.5)
     }
 }

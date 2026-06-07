@@ -18,8 +18,8 @@ por temperatura y conversión a peso según múltiples estándares (ASTM D1250 /
 IP, GOST, ANP, OIML…) → factores de experiencia del buque (VEF), OBQ/ROB, cuña (wedge)
 → muestreo/calidad → bitácora de tiempos → certificados y reportes finales en Excel/PDF/Word.
 
-La instalación analizada corresponde a **SGS Panamá Control Services, Inc.**
-(inspector configurado: *RODERICK GARCIA*, `paogcops@sgs.com`).
+La instalación analizada corresponde a un despliegue real de OGC InfoPro
+*(datos de la instalación e inspector omitidos por confidencialidad).*
 
 ---
 

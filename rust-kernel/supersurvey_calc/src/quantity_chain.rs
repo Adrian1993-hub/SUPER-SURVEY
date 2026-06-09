@@ -14,8 +14,9 @@ pub struct QuantityChainInputs {
     pub tov: VolumeValue,
     pub free_water: VolumeValue,
     pub vcf: Decimal,
-    /// Sprint 1B policy: WCF is treated as a weight factor yielding metric tons
-    /// per unit of resulting GSV. This is a placeholder until full WCF/API handling.
+    /// Weight factor in metric tons per unit of GSV. Official source: ASTM
+    /// Table 56 (`astm::table_56_wcf`, t/m³ in air); GSV m³ × WCF = MT (air).
+    /// Pass density @ 15 °C (t/m³) instead to obtain MT in vacuum.
     pub wcf: Decimal,
 }
 

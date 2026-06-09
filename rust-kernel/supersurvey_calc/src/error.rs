@@ -16,6 +16,7 @@ pub enum KernelErrorCode {
     UnsupportedConversion,
     InvalidMovementRole,
     MissingStagePair,
+    OutOfTableRange,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

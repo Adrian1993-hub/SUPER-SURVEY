@@ -167,7 +167,7 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 
 ## 9. Hardening pendiente del kernel (de la auditoría 2026-06-06)
 
-- [ ] WCF→MT es placeholder (`quantity_chain.rs`): derivar/validar la unidad de salida; no exportable como oficial hasta arreglarlo.
+- [x] WCF→MT resuelto: Tabla 56 implementada por ecuación (`astm`), unidad derivada (GSV m³ × WCF t/m³ = MT aire; densidad → MT vacío) y validada contra hoja BQS real (2026-06-09).
 - [ ] `calculate_movement_set` no valida `product_id` entre tanques → puede sumar productos distintos. Añadir chequeo (error o warning).
 - [ ] `MovementRole` (kernel) vs `movement_sign_rule` (schema) son dos fuentes de verdad. Cablearlas; soportar `CUSTOM`.
 - [ ] DTO fija `aggregate_from_unrounded: false` → la política no es seleccionable desde la UI. Exponerla en el DTO.

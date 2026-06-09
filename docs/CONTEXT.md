@@ -44,8 +44,12 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 
 ## Qué funciona hoy
 
-- Kernel Rust **compila verde**: `cargo test` (17 tests) ✅, `fmt`/`clippy` limpios, esquema
+- Kernel Rust **compila verde**: `cargo test` (29 tests) ✅, `fmt`/`clippy` limpios, esquema
   SQLite valida (37 tablas / 2 vistas / 24 índices / 2 triggers) — local **y** en GitHub Actions.
+- **ASTM D1250-80 métrico por ecuaciones** (`src/astm.rs`): Tabla 54B (VCF productos, 4 grupos),
+  54A (crudo) y 56 (WCF aire/vacío), decimal puro (exp Taylor, sin f64), **validadas contra una
+  hoja BQS real firmada** (vectores anonimizados en `tests/astm_worksheet_qa_tests.rs`): VCF/WCF
+  exactos a 4dp, filas GSV/MT exactas a 3dp, bloque Quantity Transferred exacto.
 - Cálculo decimal con `rust_decimal` en toda la cadena; frontera IPC string-in/string-out.
 - `calculation_logs` append-only (inmutable por triggers). Política de densidad "falla fuerte".
 
@@ -58,8 +62,9 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 
 1. **Recibir el caso BQS de referencia** (Excel lleno + PDF del reporte firmado) — caso ancla de BQS.
 2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
-3. Implementar **VCF/WCF reales (API 11.1) + comparison engine** (Vessel vs Barge vs BDN con tolerancia) en Rust, validado contra el caso BQS de referencia.
-4. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**. Faltan 5.
+3. ✅ **VCF/WCF reales hechos** (54B/54A/56, D1250-80 métrico) y validados vs hoja real. Falta:
+   **comparison engine** (Vessel vs Barge vs BDN con tolerancia en capas) + versión D1250-04 seleccionable.
+4. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**, **WCF→MT (Tabla 56) ✓**. Faltan 4.
 
 ## Cómo compilar / probar
 

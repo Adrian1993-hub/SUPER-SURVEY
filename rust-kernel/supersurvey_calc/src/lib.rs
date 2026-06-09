@@ -6,7 +6,8 @@
 //! - basic quantity chain: TOV - FW = GOV; GOV * VCF = GSV; GSV * WCF = Weight Air;
 //! - paired movement aggregation: opening/closing and delivery/receiving sign conventions;
 //! - trace generation for SAVE/EXPORT/QA_TEST/TRACE_VIEW;
-//! - no API MPMS 11.1 VCF algorithm yet;
+//! - ASTM D1250-80 metric tables by equation: 54A/54B VCF + 56 WCF (`astm`),
+//!   validated against a real BQS worksheet (see tests); D1250-04 revision pending;
 //! - no tank calibration interpolation yet.
 //!
 //! Important policy:
@@ -15,6 +16,7 @@
 //! - LIVE calculations may return compact/no trace;
 //! - SAVE/EXPORT/QA_TEST/TRACE_VIEW must return full trace.
 
+pub mod astm;
 pub mod conversions;
 pub mod decimal;
 pub mod dto;
@@ -27,6 +29,7 @@ pub mod units;
 pub mod value;
 
 pub mod prelude {
+    pub use crate::astm::*;
     pub use crate::conversions::*;
     pub use crate::decimal::*;
     pub use crate::dto::*;

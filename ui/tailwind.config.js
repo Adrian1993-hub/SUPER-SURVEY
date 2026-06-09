@@ -19,6 +19,7 @@ export default {
         muted: { DEFAULT: 'var(--muted)', foreground: 'var(--muted-foreground)' },
         accent: { DEFAULT: 'var(--accent)', foreground: 'var(--accent-foreground)' },
         destructive: { DEFAULT: 'var(--destructive)', foreground: 'var(--destructive-foreground)' },
+        brand: { DEFAULT: 'var(--brand)', foreground: 'var(--brand-foreground)', '2': 'var(--brand-2)' },
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',

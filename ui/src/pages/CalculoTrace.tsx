@@ -31,7 +31,7 @@ export function CalculoTrace() {
                 {c.pasos.map((s, i) => (
                   <li key={i} className="flex gap-4 pb-5 last:pb-0">
                     <div className="flex flex-col items-center">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                      <div className="bg-brand-gradient flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white">
                         {i + 1}
                       </div>
                       {i < c.pasos.length - 1 && <div className="mt-1 w-px flex-1 bg-border" />}

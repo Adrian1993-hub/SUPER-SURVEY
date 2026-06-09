@@ -98,7 +98,7 @@ export function Cover() {
           <div className="flex justify-end">
             <Button
               onClick={() => navigate(`/trabajo/${jobId}/perfiles`)}
-              className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+              className="gap-2 bg-brand text-brand-foreground hover:brightness-110"
             >
               Guardar y continuar
               <ArrowRight className="h-4 w-4" />

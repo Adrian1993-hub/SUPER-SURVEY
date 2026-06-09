@@ -20,7 +20,7 @@ export function ListaTrabajos() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-6 flex items-center justify-between">
             <h1 className="text-3xl font-bold">Lista de trabajos</h1>
-            <Button className="bg-blue-600 text-white hover:bg-blue-700">
+            <Button className="bg-brand text-brand-foreground hover:brightness-110">
               <Plus className="h-4 w-4" />
               Nuevo trabajo
             </Button>

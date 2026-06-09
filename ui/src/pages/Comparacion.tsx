@@ -83,7 +83,7 @@ export function Comparacion() {
               <FileText className="h-4 w-4" />
               Generar LOP
             </Button>
-            <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110">
               <FileText className="h-4 w-4" />
               Generar NOAD
             </Button>

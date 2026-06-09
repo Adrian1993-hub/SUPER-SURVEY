@@ -107,7 +107,7 @@ export function Perfiles() {
                       <Toggle
                         pressed={aggUnrounded}
                         onPressedChange={setAggUnrounded}
-                        className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+                        className="data-[state=on]:bg-brand data-[state=on]:text-brand-foreground"
                       >
                         {aggUnrounded ? 'Activado' : 'Desactivado'}
                       </Toggle>

@@ -21,9 +21,9 @@ export function Reporte() {
         <div className="mx-auto max-w-3xl space-y-4">
           <Card className="overflow-hidden">
             {/* Encabezado con marca (white-label) */}
-            <div className="flex items-center justify-between border-b bg-slate-50 px-8 py-5">
+            <div className="flex items-center justify-between border-b bg-muted px-8 py-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-700">
+                <div className="bg-brand-gradient flex h-10 w-10 items-center justify-center rounded-md">
                   <Ship className="h-6 w-6 text-white" />
                 </div>
                 <div>
@@ -84,7 +84,7 @@ export function Reporte() {
               <Braces className="h-4 w-4" />
               JSON técnico
             </Button>
-            <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110">
               <PenLine className="h-4 w-4" />
               Firmar
             </Button>

@@ -39,7 +39,7 @@ export function Medicion() {
                   <Toggle
                     pressed={trimAplicado}
                     onPressedChange={setTrimAplicado}
-                    className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+                    className="data-[state=on]:bg-brand data-[state=on]:text-brand-foreground"
                   >
                     {trimAplicado ? 'Aplicado' : 'No aplicado'}
                   </Toggle>
@@ -114,7 +114,7 @@ export function Medicion() {
                     ))}
                   </TableBody>
                   <TableFooter>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted">
                       <TableCell colSpan={2} className="font-medium">TOV</TableCell>
                       <TableCell className="text-right font-mono font-bold tabular-nums">{data.totales.tov.toFixed(1)} m³</TableCell>
                       <TableCell colSpan={2} className="font-medium">GOV</TableCell>

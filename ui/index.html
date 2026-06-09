@@ -1,9 +1,18 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="control-room">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SuperSurvey</title>
+    <script>
+      // Aplica el tema guardado antes de pintar (evita flash).
+      try {
+        var t = localStorage.getItem('ss-theme') || 'control-room'
+        document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'control-room')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -26,11 +26,17 @@ comparación defendible y documento firmable**. Alternativa moderna a SAT/OGC. D
 rust-kernel/supersurvey_calc/   kernel Rust (cálculo decimal + tests)   ← compila verde
 rust-kernel/schema/             esquema SQLite endurecido (37 tablas)
 .github/workflows/              CI: fmt + clippy + test + valida schema
-docs/00-ULTRAPLAN.md            plan maestro (LEER)
+docs/README.md                  índice de documentación (orden de lectura)
+docs/00-ULTRAPLAN.md            plan maestro = plan de implementación (LEER)
 docs/CONTEXT.md                 este archivo (handoff)
 docs/01-analisis-OGC-InfoPro.md análisis del sistema viejo (OGC/InfoPro)
+docs/02-PRD.md                  PRD (requisitos de producto)
+docs/03-TRD.md                  TRD (requisitos técnicos)
+docs/04-appflow.md              App Flow (flujos punta a punta)
+docs/05-esquema-backend.md      Esquema del backend (modelo de datos SQLite)
 docs/SUPERSURVEY_COMPILACION_EXTERNA.md  notas de compilación externa (Codex)
 docs/operations/01-BQS.md       doctrina BQS v0.1 (borrador, validar vs el caso BQS de referencia)
+docs/research/                  investigación de dominio (logbook · tanques · key meeting) — borradores
 branding/brand.toml             white-label: nombre/logo/colores del producto (única fuente)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
 .claude/skills/                 skills de desarrollo (grill-me, diagnose)

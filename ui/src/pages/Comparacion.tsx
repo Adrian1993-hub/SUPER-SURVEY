@@ -1,73 +1,118 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
+import { Select } from '../components/ui/select'
 import { TopBar } from '../components/TopBar'
-import { getJob, comparacionData } from '../data/demoJobs'
-import { CheckCircle2, AlertTriangle, FileText } from 'lucide-react'
+import { getJob } from '../data/demoJobs'
+import { comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, discrepanciaInfo } from '../data/vmr'
+import { CheckCircle2, AlertTriangle, FileText, PenLine } from 'lucide-react'
 
 export function Comparacion() {
   const { id } = useParams<{ id: string }>()
-  const jobId = id || '1'
-  const job = getJob(jobId)
-  const data = comparacionData[jobId] || comparacionData['1']
+  const job = getJob(id || '1')
+  const [unitIdx, setUnitIdx] = useState(3) // MT (aire) por defecto
+
+  const u = comparacionUnidades[unitIdx]
+  const vessel = u.vessel
+  const barge = u.vessel * BARGE_FACTOR
+  const bdn = u.vessel * BDN_FACTOR
+  const fmt = (n: number) =>
+    n.toLocaleString('es-ES', { minimumFractionDigits: u.decimals, maximumFractionDigits: u.decimals })
+
+  const pares = [
+    { nombre: 'Vessel Received vs Barge Delivered', a: vessel, b: barge },
+    { nombre: 'Vessel Received vs BDN', a: vessel, b: bdn },
+    { nombre: 'Barge Delivered vs BDN', a: barge, b: bdn },
+  ].map((p) => {
+    const delta = p.a - p.b
+    const pct = (delta / p.b) * 100
+    return { ...p, delta, pct, dentro: Math.abs(pct) <= TOLERANCIA_PCT }
+  })
+
+  const fuentes = [
+    { nombre: 'Vessel Received', total: vessel, highlight: true },
+    { nombre: 'Barge Delivered', total: barge, highlight: false },
+    { nombre: 'BDN', total: bdn, highlight: false },
+  ]
+
+  // diferencia principal recibido vs entregado (para los documentos)
+  const main = pares[0]
 
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Comparación" activeJob={job} />
 
       <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {data.fuentes.map((fuente) => (
-              <Card key={fuente.nombre}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{fuente.nombre}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="font-mono text-2xl font-bold tabular-nums">
-                    {fuente.total.toFixed(2)} <span className="text-lg text-muted-foreground">MT</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
+        <div className="mx-auto max-w-5xl space-y-6">
+          {/* Ventanita: selector de unidad + comparación recibido vs entregado */}
           <Card>
             <CardHeader>
-              <CardTitle>Análisis de diferencias</CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>Cantidades recibidas vs entregadas</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Unidad:</span>
+                  <div className="w-52">
+                    <Select
+                      value={unitIdx}
+                      onChange={(e) => setUnitIdx(Number(e.target.value))}
+                      className="w-full"
+                    >
+                      {comparacionUnidades.map((unit, i) => (
+                        <option key={unit.unidad} value={i}>
+                          {unit.unidad}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-3">
+                {fuentes.map((f) => (
+                  <div
+                    key={f.nombre}
+                    className={`rounded-lg border p-4 ${f.highlight ? 'border-brand/30 bg-brand/10' : ''}`}
+                  >
+                    <div className="text-sm text-muted-foreground">{f.nombre}</div>
+                    <div className="mt-1 font-mono text-2xl font-bold tabular-nums">
+                      {fmt(f.total)} <span className="text-base font-medium text-muted-foreground">{u.sufijo}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Comparación</TableHead>
-                    <TableHead className="text-right">Total A<br /><span className="text-xs font-normal text-muted-foreground">(MT)</span></TableHead>
-                    <TableHead className="text-right">Total B<br /><span className="text-xs font-normal text-muted-foreground">(MT)</span></TableHead>
-                    <TableHead className="text-right">Δ<br /><span className="text-xs font-normal text-muted-foreground">(MT)</span></TableHead>
+                    <TableHead className="text-right">A ({u.sufijo})</TableHead>
+                    <TableHead className="text-right">B ({u.sufijo})</TableHead>
+                    <TableHead className="text-right">Δ ({u.sufijo})</TableHead>
                     <TableHead className="text-right">Δ%</TableHead>
-                    <TableHead>Dentro de tolerancia</TableHead>
+                    <TableHead>Tolerancia (±{TOLERANCIA_PCT}%)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.comparaciones.map((comp) => (
-                    <TableRow key={comp.comparacion}>
-                      <TableCell className="font-medium">{comp.comparacion}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">{comp.totalA.toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">{comp.totalB.toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">{comp.delta > 0 ? '+' : ''}{comp.delta.toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">{comp.deltaPorcentaje > 0 ? '+' : ''}{comp.deltaPorcentaje.toFixed(2)}%</TableCell>
+                  {pares.map((p) => (
+                    <TableRow key={p.nombre}>
+                      <TableCell className="font-medium">{p.nombre}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{fmt(p.a)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{fmt(p.b)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{p.delta > 0 ? '+' : ''}{fmt(p.delta)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{p.pct > 0 ? '+' : ''}{p.pct.toFixed(3)}%</TableCell>
                       <TableCell>
-                        {comp.dentroTolerancia ? (
-                          <Badge className="gap-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Dentro de tolerancia
+                        {p.dentro ? (
+                          <Badge className="gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+                            <CheckCircle2 className="h-3 w-3" /> Dentro
                           </Badge>
                         ) : (
                           <Badge variant="destructive" className="gap-1.5">
-                            <AlertTriangle className="h-3 w-3" />
-                            Fuera de tolerancia
+                            <AlertTriangle className="h-3 w-3" /> Fuera
                           </Badge>
                         )}
                       </TableCell>
@@ -78,18 +123,121 @@ export function Comparacion() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Generar LOP
-            </Button>
-            <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110">
-              <FileText className="h-4 w-4" />
-              Generar NOAD
-            </Button>
-          </div>
+          {/* Documentos de discrepancia: mismo dato, distinto formato */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Documento de discrepancia</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Statement of Fact, NOAD y LOP comparten los mismos datos; cambia el formato y el tono.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="sof">
+                <TabsList>
+                  <TabsTrigger value="sof">Statement of Fact</TabsTrigger>
+                  <TabsTrigger value="noad">NOAD</TabsTrigger>
+                  <TabsTrigger value="lop">LOP</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="sof">
+                  <DocBody
+                    titulo="STATEMENT OF FACT"
+                    intro={`Por la presente se dejan constancia de los hechos de la operación ${discrepanciaInfo.operacion} a bordo del ${discrepanciaInfo.buque}, desde ${discrepanciaInfo.barcaza}, en ${discrepanciaInfo.puerto} el ${discrepanciaInfo.fecha}. Las cantidades medidas se detallan a continuación.`}
+                    main={main}
+                    unit={u}
+                    fmt={fmt}
+                  />
+                </TabsContent>
+                <TabsContent value="noad">
+                  <DocBody
+                    titulo="NOTICE OF APPARENT DISCREPANCY (NOAD)"
+                    intro={`Se notifica una aparente discrepancia entre la cantidad entregada por la barcaza (${discrepanciaInfo.barcaza}) y la recibida por el buque (${discrepanciaInfo.buque}) en la operación de ${discrepanciaInfo.grado}. Se solicita acuse de recibo de la diferencia indicada.`}
+                    main={main}
+                    unit={u}
+                    fmt={fmt}
+                  />
+                </TabsContent>
+                <TabsContent value="lop">
+                  <DocBody
+                    titulo="LETTER OF PROTEST (LOP)"
+                    intro={`Por la presente protestamos formalmente la diferencia observada entre la cantidad entregada y la recibida en la operación a bordo del ${discrepanciaInfo.buque} en ${discrepanciaInfo.puerto}, sin perjuicio de derechos posteriores.`}
+                    main={main}
+                    unit={u}
+                    fmt={fmt}
+                  />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </main>
+    </div>
+  )
+}
+
+interface MainPair {
+  a: number
+  b: number
+  delta: number
+  pct: number
+  dentro: boolean
+}
+
+function DocBody({
+  titulo,
+  intro,
+  main,
+  unit,
+  fmt,
+}: {
+  titulo: string
+  intro: string
+  main: MainPair
+  unit: { sufijo: string }
+  fmt: (n: number) => string
+}) {
+  return (
+    <div className="space-y-4 rounded-lg border bg-card p-5">
+      <div className="text-center">
+        <div className="text-lg font-bold tracking-wide">{titulo}</div>
+        <div className="text-xs text-muted-foreground">SuperSurvey · Empresa Demo (marca configurable)</div>
+      </div>
+      <p className="text-sm leading-relaxed">{intro}</p>
+
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell className="font-medium">Barge Delivered</TableCell>
+            <TableCell className="text-right font-mono tabular-nums">{fmt(main.b)} {unit.sufijo}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium">Vessel Received</TableCell>
+            <TableCell className="text-right font-mono tabular-nums">{fmt(main.a)} {unit.sufijo}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-semibold">Diferencia</TableCell>
+            <TableCell className="text-right font-mono font-semibold tabular-nums">
+              {main.delta > 0 ? '+' : ''}{fmt(main.delta)} {unit.sufijo} ({main.pct > 0 ? '+' : ''}{main.pct.toFixed(3)}%)
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+
+      <div className="grid grid-cols-2 gap-8 pt-4 text-sm">
+        <div>
+          <div className="h-10 border-b" />
+          <div className="mt-1 text-muted-foreground">Surveyor</div>
+        </div>
+        <div>
+          <div className="h-10 border-b" />
+          <div className="mt-1 text-muted-foreground">Por el buque / barcaza</div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap justify-end gap-3 pt-2">
+        <Button variant="outline" className="gap-2"><FileText className="h-4 w-4" /> Exportar PDF</Button>
+        <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110"><PenLine className="h-4 w-4" /> Firmar</Button>
+      </div>
     </div>
   )
 }

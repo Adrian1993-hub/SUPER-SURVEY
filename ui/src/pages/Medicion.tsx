@@ -1,138 +1,316 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/ui/table'
-import { Badge } from '../components/ui/badge'
-import { Toggle } from '../components/ui/toggle'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip'
+import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
-import { getJob, medicionData } from '../data/demoJobs'
-import { AlertTriangle } from 'lucide-react'
+import { getJob } from '../data/demoJobs'
+import { vmrData, comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, type VmrTank } from '../data/vmr'
+import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText } from 'lucide-react'
+
+const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
+const blankTank = (): VmrTank => ({
+  tanque: 'NUEVO', nominado: false, grade: 'VLSFO', densidad15: 0, tablesRefHeight: 0, measRefHeight: 0,
+  level: 0, usg: 'S', temp: 0, tov: 0, freeWaterLevel: 0, freeWaterVol: 0, gov: 0, vcf: 0, gsv: 0, wcf56: 0, mt: 0,
+})
+const sum = (arr: VmrTank[], key: keyof VmrTank) => arr.reduce((s, t) => s + (Number(t[key]) || 0), 0)
+
+// celdas
+const thBase = 'border border-border px-1.5 py-1 text-[10px] font-medium text-muted-foreground'
+const tdDisp = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
+const tdGrey = `${tdDisp} bg-muted/50`
+
+function NumCell({ value, onChange, step = 0.001 }: { value: number; onChange: (n: number) => void; step?: number }) {
+  return (
+    <td className="border border-border p-0">
+      <input
+        type="number"
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        className="w-full bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
+      />
+    </td>
+  )
+}
+
+function DeltaArrow({ prev, curr }: { prev?: number; curr: number }) {
+  if (prev === undefined || Math.abs(curr - prev) < 1e-9)
+    return <Minus className="h-3 w-3 shrink-0 text-muted-foreground" />
+  return curr > prev ? (
+    <ArrowUp className="h-3 w-3 shrink-0 text-emerald-500" />
+  ) : (
+    <ArrowDown className="h-3 w-3 shrink-0 text-red-500" />
+  )
+}
+
+interface SectionProps {
+  title: string
+  drafts: { draftFore: number; draftAft: number; trim: number; list: number; trimApplied: boolean }
+  tanks: VmrTank[]
+  prev?: VmrTank[] // para flechas (solo cierre)
+  totalsRef: typeof vmrData.before.totals
+  onUpdate: (i: number, patch: Partial<VmrTank>) => void
+  onRemove: (i: number) => void
+  onAdd: () => void
+}
+
+function Section({ title, drafts, tanks, prev, totalsRef, onUpdate, onRemove, onAdd }: SectionProps) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="text-base uppercase tracking-wide">{title}</CardTitle>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <span><span className="text-muted-foreground">Calado proa </span><span className="font-mono">{drafts.draftFore.toFixed(2)}</span></span>
+            <span><span className="text-muted-foreground">Calado popa </span><span className="font-mono">{drafts.draftAft.toFixed(2)}</span></span>
+            <span><span className="text-muted-foreground">Trim </span><span className="font-mono">{drafts.trim.toFixed(2)}</span></span>
+            <span><span className="text-muted-foreground">List </span><span className="font-mono">{drafts.list.toFixed(2)}</span></span>
+            <span className="rounded bg-brand/15 px-2 py-0.5 font-medium text-brand">Trim {drafts.trimApplied ? 'aplicado' : 'no aplicado'}</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={`${thBase} text-left`}>Tanque</th>
+                <th className={thBase}>Nom</th>
+                <th className={`${thBase} text-left`}>Grado</th>
+                <th className={`${thBase} text-right`}>Dens@15</th>
+                <th className={`${thBase} text-right`}>Tbl Ref</th>
+                <th className={`${thBase} text-right`}>Med Ref</th>
+                <th className={`${thBase} text-right`}>Level</th>
+                <th className={thBase}>U/S/G</th>
+                <th className={`${thBase} text-right`}>Temp °C</th>
+                <th className={`${thBase} text-right`}>TOV m³</th>
+                <th className={`${thBase} text-right`}>FW Lvl</th>
+                <th className={`${thBase} text-right`}>FW m³</th>
+                <th className={`${thBase} text-right`}>GOV m³</th>
+                <th className={`${thBase} text-right`}>VCF 54B</th>
+                <th className={`${thBase} text-right`}>GSV@15</th>
+                <th className={`${thBase} text-right`}>WCF 56</th>
+                <th className={`${thBase} text-right`}>MT</th>
+                <th className={thBase}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {tanks.map((t, i) => {
+                const p = prev?.[i]
+                return (
+                  <tr key={i}>
+                    <td className="border border-border p-0">
+                      <input value={t.tanque} onChange={(e) => onUpdate(i, { tanque: e.target.value })} className="w-24 bg-transparent px-1.5 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                    </td>
+                    <td className="border border-border text-center">
+                      <input type="checkbox" checked={t.nominado} onChange={(e) => onUpdate(i, { nominado: e.target.checked })} className="h-3.5 w-3.5 accent-slate-700" />
+                    </td>
+                    <td className="border border-border p-0">
+                      <input value={t.grade} onChange={(e) => onUpdate(i, { grade: e.target.value })} className="w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                    </td>
+                    <NumCell value={t.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} />
+                    <NumCell value={t.tablesRefHeight} onChange={(n) => onUpdate(i, { tablesRefHeight: n })} />
+                    <NumCell value={t.measRefHeight} onChange={(n) => onUpdate(i, { measRefHeight: n })} />
+                    <NumCell value={t.level} onChange={(n) => onUpdate(i, { level: n })} />
+                    <td className="border border-border p-0 text-center">
+                      <select value={t.usg} onChange={(e) => onUpdate(i, { usg: e.target.value as VmrTank['usg'] })} className="w-full bg-transparent px-1 py-1 text-center text-[11px] focus:outline-none">
+                        <option>S</option><option>U</option><option>G</option>
+                      </select>
+                    </td>
+                    {/* Temp con flecha en cierre */}
+                    <td className="border border-border p-0">
+                      <div className="flex items-center justify-end gap-1 pr-1">
+                        <input type="number" step={0.1} value={t.temp} onChange={(e) => onUpdate(i, { temp: parseFloat(e.target.value) || 0 })} className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                        {prev && <DeltaArrow prev={p?.temp} curr={t.temp} />}
+                      </div>
+                    </td>
+                    {/* TOV (grey) con flecha en cierre */}
+                    <td className={tdGrey}>
+                      <div className="flex items-center justify-end gap-1">
+                        {prev && <DeltaArrow prev={p?.tov} curr={t.tov} />}
+                        {t.tov.toFixed(3)}
+                      </div>
+                    </td>
+                    <NumCell value={t.freeWaterLevel} onChange={(n) => onUpdate(i, { freeWaterLevel: n })} />
+                    <td className={tdGrey}>{t.freeWaterVol.toFixed(3)}</td>
+                    <td className={tdGrey}>{t.gov.toFixed(3)}</td>
+                    <td className={tdGrey}>{t.vcf.toFixed(4)}</td>
+                    <td className={tdGrey}>{t.gsv.toFixed(3)}</td>
+                    <td className={tdGrey}>{t.wcf56.toFixed(4)}</td>
+                    <td className={`${tdGrey} font-semibold`}>{t.mt.toFixed(3)}</td>
+                    <td className="border border-border text-center">
+                      <button onClick={() => onRemove(i)} title="Quitar tanque" className="text-muted-foreground hover:text-red-500">
+                        <Trash2 className="mx-auto h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+              {/* Totales */}
+              <tr className="bg-muted font-semibold">
+                <td className={`${thBase} text-left`}>Totales</td>
+                <td className={thBase}></td>
+                <td className={thBase}></td>
+                <td className={tdDisp}>{totalsRef.densidad.toFixed(4)}</td>
+                <td className={thBase}></td>
+                <td className={thBase}></td>
+                <td className={thBase}></td>
+                <td className={thBase}></td>
+                <td className={tdDisp}>{totalsRef.temp.toFixed(1)}</td>
+                <td className={tdDisp}>{sum(tanks, 'tov').toFixed(3)}</td>
+                <td className={thBase}></td>
+                <td className={thBase}></td>
+                <td className={tdDisp}>{sum(tanks, 'gov').toFixed(3)}</td>
+                <td className={tdDisp}>{totalsRef.vcf.toFixed(4)}</td>
+                <td className={tdDisp}>{sum(tanks, 'gsv').toFixed(3)}</td>
+                <td className={tdDisp}>{totalsRef.wcf56.toFixed(4)}</td>
+                <td className={tdDisp}>{sum(tanks, 'mt').toFixed(3)}</td>
+                <td className={thBase}></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={onAdd}>
+            <Plus className="h-3.5 w-3.5" /> Agregar tanque
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function Medicion() {
   const { id } = useParams<{ id: string }>()
-  const jobId = id || '1'
-  const job = getJob(jobId)
-  const data = medicionData[jobId] || medicionData['1']
-  const [trimAplicado, setTrimAplicado] = useState(true)
+  const job = getJob(id || '1')
+  const h = vmrData.header
+  const [before, setBefore] = useState<VmrTank[]>(clone(vmrData.before.tanques))
+  const [after, setAfter] = useState<VmrTank[]>(clone(vmrData.after.tanques))
+
+  const updateBefore = (i: number, patch: Partial<VmrTank>) => setBefore((p) => p.map((t, idx) => (idx === i ? { ...t, ...patch } : t)))
+  const updateAfter = (i: number, patch: Partial<VmrTank>) => setAfter((p) => p.map((t, idx) => (idx === i ? { ...t, ...patch } : t)))
+  const addTank = () => { setBefore((p) => [...p, blankTank()]); setAfter((p) => [...p, blankTank()]) }
+  const removeTank = (i: number) => { setBefore((p) => p.filter((_, idx) => idx !== i)); setAfter((p) => p.filter((_, idx) => idx !== i)) }
+
+  const navigate = useNavigate()
+  const tr = vmrData.transferred
+
+  // Alerta de discrepancia (en MT aire) para el bloque Quantity Transferred
+  const vRec = comparacionUnidades.find((x) => x.unidad === 'MT (aire)')!.vessel
+  const pares = [
+    { nombre: 'Vessel Received vs Barge Delivered', a: vRec, b: vRec * BARGE_FACTOR },
+    { nombre: 'Vessel Received vs BDN', a: vRec, b: vRec * BDN_FACTOR },
+    { nombre: 'Barge Delivered vs BDN', a: vRec * BARGE_FACTOR, b: vRec * BDN_FACTOR },
+  ].map((p) => {
+    const delta = p.a - p.b
+    const pct = (delta / p.b) * 100
+    return { ...p, delta, pct, dentro: Math.abs(pct) <= TOLERANCIA_PCT }
+  })
+  const excedidas = pares.filter((p) => !p.dentro)
 
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Medición" activeJob={job} />
 
       <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-[1600px]">
+        <div className="mx-auto max-w-[1600px] space-y-5">
+          {/* Encabezado de la hoja */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Medición por tanque</CardTitle>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Trim:</span>
-                  <Toggle
-                    pressed={trimAplicado}
-                    onPressedChange={setTrimAplicado}
-                    className="data-[state=on]:bg-brand data-[state=on]:text-brand-foreground"
-                  >
-                    {trimAplicado ? 'Aplicado' : 'No aplicado'}
-                  </Toggle>
-                </div>
+            <CardContent className="p-5">
+              <div className="grid gap-x-8 gap-y-1.5 text-sm md:grid-cols-2">
+                <Field label="Referencia" value={h.referencia} />
+                <Field label="Surveyor" value={h.surveyor} />
+                <Field label="Buque" value={h.buque} />
+                <Field label="Survey Type" value={h.surveyType} />
+                <Field label="Barcaza" value={h.barcaza} />
+                <Field label="Fecha" value={h.fecha} />
+                <Field label="Puerto" value={h.puerto} />
+                <Field label="Sea Condition" value={h.seaCondition} />
               </div>
+              <div className="mt-4 flex items-center gap-2 border-t pt-3 text-sm">
+                <span className="text-muted-foreground">Densidad del suplidor @ 15 °C:</span>
+                <span className="rounded bg-brand/15 px-2 py-0.5 font-mono font-semibold text-brand">{h.suppliersDensity.toFixed(4)} kg/L</span>
+                <span className="text-xs text-muted-foreground">(usar para cálculo después de recibir)</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <p className="text-xs text-muted-foreground">
+            Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas (kernel). Celdas blancas = entrada del
+            surveyor. En el cierre, las flechas <ArrowUp className="inline h-3 w-3 text-emerald-500" />/<ArrowDown className="inline h-3 w-3 text-red-500" /> marcan
+            cambios de volumen y temperatura vs. apertura (solo referencia del inspector, no salen en el reporte).
+          </p>
+
+          <Section title="Before receiving" drafts={vmrData.before} tanks={before} totalsRef={vmrData.before.totals} onUpdate={updateBefore} onRemove={removeTank} onAdd={addTank} />
+
+          <Section title="After receiving" drafts={vmrData.after} tanks={after} prev={before} totalsRef={vmrData.after.totals} onUpdate={updateAfter} onRemove={removeTank} onAdd={addTank} />
+
+          {/* Quantity Transferred */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base uppercase tracking-wide">Quantity transferred</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead rowSpan={2} className="border-r">Tanque</TableHead>
-                      <TableHead colSpan={5} className="border-r text-center">Apertura</TableHead>
-                      <TableHead colSpan={5} className="border-r text-center">Cierre</TableHead>
-                      <TableHead rowSpan={2} className="border-r text-right">
-                        ROB logbook<br />
-                        <span className="text-xs font-normal text-muted-foreground">(m³)</span>
-                      </TableHead>
-                      <TableHead rowSpan={2} className="text-right">
-                        Δ<br />
-                        <span className="text-xs font-normal text-muted-foreground">(m³)</span>
-                      </TableHead>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead className="text-right">Sondaje<br /><span className="text-xs font-normal text-muted-foreground">(m)</span></TableHead>
-                      <TableHead className="text-right">T<br /><span className="text-xs font-normal text-muted-foreground">(°C)</span></TableHead>
-                      <TableHead className="text-right">Densidad<br /><span className="text-xs font-normal text-muted-foreground">(kg/m³)</span></TableHead>
-                      <TableHead className="text-right">Agua libre<br /><span className="text-xs font-normal text-muted-foreground">(m³)</span></TableHead>
-                      <TableHead className="border-r text-right">Vol. tabla<br /><span className="text-xs font-normal text-muted-foreground">(m³)</span></TableHead>
-                      <TableHead className="text-right">Sondaje<br /><span className="text-xs font-normal text-muted-foreground">(m)</span></TableHead>
-                      <TableHead className="text-right">T<br /><span className="text-xs font-normal text-muted-foreground">(°C)</span></TableHead>
-                      <TableHead className="text-right">Densidad<br /><span className="text-xs font-normal text-muted-foreground">(kg/m³)</span></TableHead>
-                      <TableHead className="text-right">Agua libre<br /><span className="text-xs font-normal text-muted-foreground">(m³)</span></TableHead>
-                      <TableHead className="border-r text-right">Vol. tabla<br /><span className="text-xs font-normal text-muted-foreground">(m³)</span></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.tanques.map((tanque) => (
-                      <TableRow key={tanque.tanque}>
-                        <TableCell className="border-r font-medium">{tanque.tanque}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.apertura.sondaje.toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.apertura.temperatura.toFixed(1)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.apertura.densidad.toFixed(1)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.apertura.aguaLibre.toFixed(2)}</TableCell>
-                        <TableCell className="border-r text-right font-mono tabular-nums">{tanque.apertura.volTabla.toFixed(1)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.cierre.sondaje.toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.cierre.temperatura.toFixed(1)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.cierre.densidad.toFixed(1)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{tanque.cierre.aguaLibre.toFixed(2)}</TableCell>
-                        <TableCell className="border-r text-right font-mono tabular-nums">{tanque.cierre.volTabla.toFixed(1)}</TableCell>
-                        <TableCell className="border-r text-right font-mono tabular-nums">{tanque.robLogbook.toFixed(1)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {tanque.fueraTolerance ? (
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Badge variant="destructive" className="gap-1">
-                                  <AlertTriangle className="h-3 w-3" />
-                                  {tanque.delta > 0 ? '+' : ''}
-                                  {tanque.delta.toFixed(1)}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>Fuera de tolerancia: Δ excede ±0.5%</TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {tanque.delta > 0 ? '+' : ''}
-                              {tanque.delta.toFixed(1)}
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableFooter>
-                    <TableRow className="bg-muted">
-                      <TableCell colSpan={2} className="font-medium">TOV</TableCell>
-                      <TableCell className="text-right font-mono font-bold tabular-nums">{data.totales.tov.toFixed(1)} m³</TableCell>
-                      <TableCell colSpan={2} className="font-medium">GOV</TableCell>
-                      <TableCell className="text-right font-mono font-bold tabular-nums">{data.totales.gov.toFixed(1)} m³</TableCell>
-                      <TableCell colSpan={2} className="font-medium">GSV</TableCell>
-                      <TableCell className="text-right font-mono font-bold tabular-nums">{data.totales.gsv.toFixed(1)} m³</TableCell>
-                      <TableCell colSpan={2} className="font-medium">MT (aire)</TableCell>
-                      <TableCell className="text-right font-mono font-bold tabular-nums">{data.totales.mtAire.toFixed(1)} MT</TableCell>
-                      <TableCell className="font-medium">MT (vacío)</TableCell>
-                      <TableCell className="text-right font-mono font-bold tabular-nums">{data.totales.mtVacio.toFixed(1)} MT</TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <Stat label="Densidad suplidor" value={tr.suppliersDensity.toFixed(4)} unit="kg/L" />
+                <Stat label="Gross Standard Vol @15°C" value={tr.gsv.toFixed(3)} unit="m³" />
+                <Stat label="Peso (MT) en vacío" value={tr.mtVac.toFixed(3)} unit="MT" />
+                <Stat label="WCF Tabla 56" value={tr.wcf56.toFixed(4)} unit="" />
+                <Stat label="Peso (MT) en aire" value={tr.mtAir.toFixed(3)} unit="MT" highlight />
               </div>
+
+              {excedidas.length > 0 ? (
+                <div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+                  <div className="flex items-center gap-2 font-semibold text-red-600">
+                    <AlertTriangle className="h-4 w-4" /> Discrepancia sobre tolerancia (±{TOLERANCIA_PCT}%)
+                  </div>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {excedidas.map((p) => (
+                      <li key={p.nombre}>
+                        <span className="text-muted-foreground">{p.nombre}: </span>
+                        <span className="font-mono tabular-nums">
+                          {p.delta > 0 ? '+' : ''}{p.delta.toFixed(3)} MT ({p.pct > 0 ? '+' : ''}{p.pct.toFixed(3)}%)
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-2 text-sm font-medium text-red-600">Se recomienda emitir una Letter of Protest (LOP).</div>
+                  <Button
+                    onClick={() => navigate(`/trabajo/${id || '1'}/comparacion`)}
+                    className="mt-3 gap-2 bg-red-600 text-white hover:brightness-110"
+                  >
+                    <FileText className="h-4 w-4" /> Generar LOP
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-5 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> Todas las diferencias dentro de tolerancia (±{TOLERANCIA_PCT}%) — no se requiere LOP.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </main>
+    </div>
+  )
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="w-32 shrink-0 text-muted-foreground">{label}:</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  )
+}
+
+function Stat({ label, value, unit, highlight }: { label: string; value: string; unit: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-lg border p-3 ${highlight ? 'bg-brand/10 border-brand/30' : ''}`}>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 font-mono text-lg font-bold tabular-nums">
+        {value} {unit && <span className="text-sm font-medium text-muted-foreground">{unit}</span>}
+      </div>
     </div>
   )
 }

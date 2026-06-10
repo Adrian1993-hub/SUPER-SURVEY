@@ -18,6 +18,11 @@
 //! - LIVE calculations may return compact/no trace;
 //! - SAVE/EXPORT/QA_TEST/TRACE_VIEW must return full trace.
 
+/// Version of the calculation kernel — the math, not any wrapping crate.
+/// Stamp this (not a wrapper's `CARGO_PKG_VERSION`) into traces and logs so a
+/// stored number is always traceable to the exact kernel that produced it.
+pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub mod astm;
 pub mod bqs;
 pub mod comparison;

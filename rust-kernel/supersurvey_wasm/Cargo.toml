@@ -1,0 +1,26 @@
+[package]
+name = "supersurvey_wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM bindings exposing the SuperSurvey calc kernel to the browser demo"
+license = "UNLICENSED"
+
+# cdylib -> a .wasm module; wasm-bindgen generates the JS glue the frontend imports.
+# This crate is built ONLY for wasm32-unknown-unknown (see scripts/build-wasm.sh).
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde_json = "1"
+supersurvey_calc = { path = "../supersurvey_calc" }
+
+# uuid (via the kernel's trace ids) uses getrandom for v4. On wasm32-unknown-unknown
+# the RNG backend isn't auto-selected, so enable the web-crypto backend here.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+uuid = { version = "1", features = ["js"] }
+getrandom = { version = "0.4", features = ["wasm_js"] }
+
+[profile.release]
+opt-level = "s"
+lto = true

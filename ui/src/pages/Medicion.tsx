@@ -1,18 +1,84 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { getJob } from '../data/demoJobs'
 import { vmrData, comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, type VmrTank } from '../data/vmr'
-import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText } from 'lucide-react'
+import { calcBqsRow, kernelVersion } from '../lib/kernel'
+import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu } from 'lucide-react'
 
 const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
 const blankTank = (): VmrTank => ({
   tanque: 'NUEVO', nominado: false, grade: 'VLSFO', densidad15: 0, tablesRefHeight: 0, measRefHeight: 0,
   level: 0, usg: 'S', temp: 0, tov: 0, freeWaterLevel: 0, freeWaterVol: 0, gov: 0, vcf: 0, gsv: 0, wcf56: 0, mt: 0,
 })
-const sum = (arr: VmrTank[], key: keyof VmrTank) => arr.reduce((s, t) => s + (Number(t[key]) || 0), 0)
+const numOf = (s?: string) => (s == null ? NaN : Number(s))
+
+// Kernel-computed fields for one tank row (everything the surveyor does NOT type).
+interface CalcFields {
+  gov: number
+  vcf: number
+  gsv: number
+  wcf56: number
+  mt: number
+  mtVac: number
+}
+
+// Recompute every row through the WASM calc kernel whenever a calc-relevant input
+// changes. Same validated Rust math as the desktop — no formulas live in TS.
+function useComputedRows(tanks: VmrTank[]): (CalcFields | null)[] {
+  const [calc, setCalc] = useState<(CalcFields | null)[]>([])
+  const key = JSON.stringify(tanks.map((t) => [t.densidad15, t.temp, t.tov, t.freeWaterVol]))
+  useEffect(() => {
+    let cancelled = false
+    Promise.all(
+      tanks.map((t) =>
+        calcBqsRow({ density15: t.densidad15, temperature: t.temp, tov: t.tov, freeWater: t.freeWaterVol })
+          .then((r): CalcFields | null =>
+            r.success
+              ? { gov: numOf(r.gov), vcf: numOf(r.vcf), gsv: numOf(r.gsv), wcf56: numOf(r.wcfAir), mt: numOf(r.mtAir), mtVac: numOf(r.mtVacuum) }
+              : null,
+          )
+          .catch(() => null),
+      ),
+    ).then((res) => {
+      if (!cancelled) setCalc(res)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return calc
+}
+
+// Section totals from live values (falling back to the row's seed value until the
+// kernel answers). VCF/WCF totals are the defensible aggregates (ΣGSV/ΣGOV,
+// ΣMT/ΣGSV); density & temp are GOV-weighted means (display only).
+function sectionTotals(tanks: VmrTank[], calc: (CalcFields | null)[]) {
+  let tov = 0, gov = 0, gsv = 0, mt = 0, dW = 0, tW = 0
+  tanks.forEach((t, i) => {
+    const c = calc[i]
+    const rGov = c ? c.gov : t.gov
+    tov += t.tov
+    gov += rGov
+    gsv += c ? c.gsv : t.gsv
+    mt += c ? c.mt : t.mt
+    dW += t.densidad15 * rGov
+    tW += t.temp * rGov
+  })
+  return {
+    tov,
+    gov,
+    gsv,
+    mt,
+    vcf: gov > 0 ? gsv / gov : 0,
+    wcf: gsv > 0 ? mt / gsv : 0,
+    densidad: gov > 0 ? dW / gov : 0,
+    temp: gov > 0 ? tW / gov : 0,
+  }
+}
 
 // celdas
 const thBase = 'border border-border px-1.5 py-1 text-[10px] font-medium text-muted-foreground'
@@ -48,13 +114,14 @@ interface SectionProps {
   drafts: { draftFore: number; draftAft: number; trim: number; list: number; trimApplied: boolean }
   tanks: VmrTank[]
   prev?: VmrTank[] // para flechas (solo cierre)
-  totalsRef: typeof vmrData.before.totals
+  calc: (CalcFields | null)[]
   onUpdate: (i: number, patch: Partial<VmrTank>) => void
   onRemove: (i: number) => void
   onAdd: () => void
 }
 
-function Section({ title, drafts, tanks, prev, totalsRef, onUpdate, onRemove, onAdd }: SectionProps) {
+function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }: SectionProps) {
+  const tot = sectionTotals(tanks, calc)
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -97,6 +164,7 @@ function Section({ title, drafts, tanks, prev, totalsRef, onUpdate, onRemove, on
             <tbody>
               {tanks.map((t, i) => {
                 const p = prev?.[i]
+                const c = calc[i]
                 return (
                   <tr key={i}>
                     <td className="border border-border p-0">
@@ -133,11 +201,11 @@ function Section({ title, drafts, tanks, prev, totalsRef, onUpdate, onRemove, on
                     </td>
                     <NumCell value={t.freeWaterLevel} onChange={(n) => onUpdate(i, { freeWaterLevel: n })} />
                     <td className={tdGrey}>{t.freeWaterVol.toFixed(3)}</td>
-                    <td className={tdGrey}>{t.gov.toFixed(3)}</td>
-                    <td className={tdGrey}>{t.vcf.toFixed(4)}</td>
-                    <td className={tdGrey}>{t.gsv.toFixed(3)}</td>
-                    <td className={tdGrey}>{t.wcf56.toFixed(4)}</td>
-                    <td className={`${tdGrey} font-semibold`}>{t.mt.toFixed(3)}</td>
+                    <td className={tdGrey}>{(c ? c.gov : t.gov).toFixed(3)}</td>
+                    <td className={tdGrey}>{(c ? c.vcf : t.vcf).toFixed(4)}</td>
+                    <td className={tdGrey}>{(c ? c.gsv : t.gsv).toFixed(3)}</td>
+                    <td className={tdGrey}>{(c ? c.wcf56 : t.wcf56).toFixed(4)}</td>
+                    <td className={`${tdGrey} font-semibold`}>{(c ? c.mt : t.mt).toFixed(3)}</td>
                     <td className="border border-border text-center">
                       <button onClick={() => onRemove(i)} title="Quitar tanque" className="text-muted-foreground hover:text-red-500">
                         <Trash2 className="mx-auto h-3.5 w-3.5" />
@@ -151,20 +219,20 @@ function Section({ title, drafts, tanks, prev, totalsRef, onUpdate, onRemove, on
                 <td className={`${thBase} text-left`}>Totales</td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
-                <td className={tdDisp}>{totalsRef.densidad.toFixed(4)}</td>
+                <td className={tdDisp}>{tot.densidad.toFixed(4)}</td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
-                <td className={tdDisp}>{totalsRef.temp.toFixed(1)}</td>
-                <td className={tdDisp}>{sum(tanks, 'tov').toFixed(3)}</td>
+                <td className={tdDisp}>{tot.temp.toFixed(1)}</td>
+                <td className={tdDisp}>{tot.tov.toFixed(3)}</td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
-                <td className={tdDisp}>{sum(tanks, 'gov').toFixed(3)}</td>
-                <td className={tdDisp}>{totalsRef.vcf.toFixed(4)}</td>
-                <td className={tdDisp}>{sum(tanks, 'gsv').toFixed(3)}</td>
-                <td className={tdDisp}>{totalsRef.wcf56.toFixed(4)}</td>
-                <td className={tdDisp}>{sum(tanks, 'mt').toFixed(3)}</td>
+                <td className={tdDisp}>{tot.gov.toFixed(3)}</td>
+                <td className={tdDisp}>{tot.vcf.toFixed(4)}</td>
+                <td className={tdDisp}>{tot.gsv.toFixed(3)}</td>
+                <td className={tdDisp}>{tot.wcf.toFixed(4)}</td>
+                <td className={tdDisp}>{tot.mt.toFixed(3)}</td>
                 <td className={thBase}></td>
               </tr>
             </tbody>
@@ -186,6 +254,13 @@ export function Medicion() {
   const h = vmrData.header
   const [before, setBefore] = useState<VmrTank[]>(clone(vmrData.before.tanques))
   const [after, setAfter] = useState<VmrTank[]>(clone(vmrData.after.tanques))
+  const beforeCalc = useComputedRows(before)
+  const afterCalc = useComputedRows(after)
+
+  const [kver, setKver] = useState('')
+  useEffect(() => {
+    kernelVersion().then(setKver).catch(() => setKver(''))
+  }, [])
 
   const updateBefore = (i: number, patch: Partial<VmrTank>) => setBefore((p) => p.map((t, idx) => (idx === i ? { ...t, ...patch } : t)))
   const updateAfter = (i: number, patch: Partial<VmrTank>) => setAfter((p) => p.map((t, idx) => (idx === i ? { ...t, ...patch } : t)))
@@ -235,15 +310,20 @@ export function Medicion() {
             </CardContent>
           </Card>
 
-          <p className="text-xs text-muted-foreground">
-            Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas (kernel). Celdas blancas = entrada del
-            surveyor. En el cierre, las flechas <ArrowUp className="inline h-3 w-3 text-emerald-500" />/<ArrowDown className="inline h-3 w-3 text-red-500" /> marcan
-            cambios de volumen y temperatura vs. apertura (solo referencia del inspector, no salen en el reporte).
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas en vivo por el kernel. Celdas blancas = entrada del
+              surveyor. En el cierre, las flechas <ArrowUp className="inline h-3 w-3 text-emerald-500" />/<ArrowDown className="inline h-3 w-3 text-red-500" /> marcan
+              cambios de volumen y temperatura vs. apertura (solo referencia del inspector, no salen en el reporte).
+            </p>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · WASM
+            </span>
+          </div>
 
-          <Section title="Before receiving" drafts={vmrData.before} tanks={before} totalsRef={vmrData.before.totals} onUpdate={updateBefore} onRemove={removeTank} onAdd={addTank} />
+          <Section title="Before receiving" drafts={vmrData.before} tanks={before} calc={beforeCalc} onUpdate={updateBefore} onRemove={removeTank} onAdd={addTank} />
 
-          <Section title="After receiving" drafts={vmrData.after} tanks={after} prev={before} totalsRef={vmrData.after.totals} onUpdate={updateAfter} onRemove={removeTank} onAdd={addTank} />
+          <Section title="After receiving" drafts={vmrData.after} tanks={after} prev={before} calc={afterCalc} onUpdate={updateAfter} onRemove={removeTank} onAdd={addTank} />
 
           {/* Quantity Transferred */}
           <Card>

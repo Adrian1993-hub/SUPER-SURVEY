@@ -69,6 +69,38 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+  wasm-kernel:
+    name: WASM calc kernel builds
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust-kernel/supersurvey_wasm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable + wasm32 target
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup component add rustfmt clippy
+          rustup target add wasm32-unknown-unknown
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      # Lint the binding logic on the host (wasm-bindgen types compile natively).
+      - name: Clippy (host)
+        run: cargo clippy --locked -- -D warnings
+
+      # The real target: compile the kernel to wasm32. uuid's v4 (trace ids) needs
+      # the web-crypto RNG backend, selected via this cfg (see scripts/build-wasm.sh).
+      - name: Build for wasm32
+        env:
+          RUSTFLAGS: --cfg getrandom_backend="wasm_js"
+        run: cargo build --locked --release --target wasm32-unknown-unknown
+
   sqlite-schema:
     name: SQLite schema validation
     runs-on: ubuntu-latest

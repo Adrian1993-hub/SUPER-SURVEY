@@ -4,13 +4,18 @@ Thin desktop wrapper that connects the **TypeScript UI** to the **Rust calc kern
 and **SQLite persistence**. It holds **no calculation logic** — every official number
 comes from `supersurvey_calc`; storage from `supersurvey_persistence`.
 
-## ⚠️ Not in CI (by design)
+## CI
 
 Building Tauri needs system libraries the kernel CI image doesn't install
-(`webkit2gtk`, `libsoup`, `gtk`). So this crate is **excluded from the GitHub
-Actions workflow** (which only builds `rust-kernel/**`). The math and storage it
-depends on are fully tested in their own crates. **This shell is an unverified
-skeleton** until built locally with the deps below.
+(`webkit2gtk`, `libsoup`, `gtk`). So instead of the `rust-kernel` workflow, this
+crate has its **own** workflow — [`supersurvey-desktop.yml`](../../.github/workflows/supersurvey-desktop.yml) —
+that apt-installs those deps, builds the frontend (`ui/dist`, which
+`generate_context!` embeds), and runs `cargo fmt --check` + `cargo clippy -D warnings --locked`.
+It triggers on `ui/**` and `rust-kernel/**` (the shell depends on both). The math
+and storage it wraps are also fully tested in their own crates.
+
+> Verified to compile against `tauri 2.11`, `webkit2gtk-4.1 2.52` (placeholder
+> icons in `icons/`). The `.icns` for macOS bundling is still TODO — see below.
 
 ## IPC commands (Rust → TS)
 
@@ -47,7 +52,9 @@ npx tauri build    # produces installers
 ## Status / next
 
 - [x] Shell wired to kernel (`calculate_bqs_row`) + persistence (`save_bqs_calculation`).
-- [ ] Build locally once to validate the shell compiles with system deps.
+- [x] Compiles with system deps — validated locally **and** in CI (`supersurvey-desktop.yml`).
+- [x] Placeholder icons committed (`icons/`); regenerate branded ones with `npx tauri icon`.
 - [ ] Wire the UI screens to `invoke(...)` (replace the demo data path).
 - [ ] Add commands for comparison (NOAD/LOP) and section totals.
+- [ ] Real macOS `icon.icns` (only PNG + `.ico` shipped so far).
 - [ ] SQLCipher (encryption at rest) before any distribution (`03-TRD §10`).

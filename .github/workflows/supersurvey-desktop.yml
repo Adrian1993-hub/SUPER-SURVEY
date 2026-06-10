@@ -1,0 +1,75 @@
+name: SuperSurvey Desktop Shell
+
+# Validates that the Tauri v2 desktop shell (ui/src-tauri) actually compiles.
+# It needs system libraries (webkit2gtk, gtk, libsoup) the kernel image doesn't
+# ship, plus the built frontend (ui/dist) that `generate_context!` embeds — so it
+# lives in its own workflow instead of the rust-kernel one. Triggers on UI or
+# kernel changes because the shell depends on both (path deps + embedded assets).
+
+on:
+  push:
+    paths:
+      - "ui/**"
+      - "rust-kernel/**"
+      - ".github/workflows/supersurvey-desktop.yml"
+  pull_request:
+    paths:
+      - "ui/**"
+      - "rust-kernel/**"
+      - ".github/workflows/supersurvey-desktop.yml"
+  workflow_dispatch:
+
+jobs:
+  desktop-shell:
+    name: Tauri shell compiles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Tauri system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev \
+            build-essential curl wget file libssl-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup component add rustfmt clippy
+
+      - name: Show versions
+        run: |
+          rustc --version
+          cargo --version
+          node --version
+
+      # generate_context! embeds ui/dist at compile time, so the frontend must be
+      # built first. This also validates the TypeScript build (tsc + vite).
+      - name: Build frontend (creates ui/dist)
+        working-directory: ui
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check formatting
+        working-directory: ui/src-tauri
+        run: cargo fmt -- --check
+
+      - name: Clippy (compiles + lints the shell)
+        working-directory: ui/src-tauri
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings

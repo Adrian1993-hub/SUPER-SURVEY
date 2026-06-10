@@ -25,6 +25,7 @@ comparación defendible y documento firmable**. Alternativa moderna a SAT/OGC. D
 ```
 rust-kernel/supersurvey_calc/   kernel Rust (cálculo decimal + tests)   ← compila verde
 rust-kernel/schema/             esquema SQLite endurecido (37 tablas)
+rust-kernel/supersurvey_persistence/ repos SQLite (rusqlite) + puente kernel→log inmutable
 .github/workflows/              CI: fmt + clippy + test + valida schema
 docs/README.md                  índice de documentación (orden de lectura)
 docs/00-ULTRAPLAN.md            plan maestro = plan de implementación (LEER)
@@ -38,6 +39,8 @@ docs/SUPERSURVEY_COMPILACION_EXTERNA.md  notas de compilación externa (Codex)
 docs/operations/01-BQS.md       doctrina BQS v0.1 (borrador, validar vs el caso BQS de referencia)
 docs/research/                  investigación de dominio (logbook · tanques · key meeting) — borradores
 branding/brand.toml             white-label: nombre/logo/colores del producto (única fuente)
+ui/                             frontend React+Tauri+shadcn (mockup BQS, 3 temas)
+ui/src-tauri/                   shell Tauri v2 (IPC → kernel + SQLite) — build local
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
 .claude/skills/                 skills de desarrollo (grill-me, diagnose)
 ```
@@ -57,13 +60,17 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
   tabla, agua libre, tabla 54A/54B) → fila completa (VCF→GOV→GSV→**MT aire y vacío**) + totales de
   sección, reusando `astm`. Incluye **DTO string-in/out** (`BqsRowRequestDTO.calculate()`) listo
   para el comando Tauri. Validado e2e vs hoja real (7 tests).
+- **Persistencia SQLite** (`supersurvey_persistence`, rusqlite *bundled*): repos jobs→sets→rows→records
+  + **calculation_logs append-only** (triggers verificados) + puente captura→kernel→log inmutable.
+  5 tests verdes con **job de CI propio**. **Esqueleto Tauri v2** en `ui/src-tauri` (comandos
+  `calculate_bqs_row` / `save_bqs_calculation`) — fuera de CI (deps webkit), build local (ver su README).
 - Cálculo decimal con `rust_decimal` en toda la cadena; frontera IPC string-in/string-out.
 - `calculation_logs` append-only (inmutable por triggers). Política de densidad "falla fuerte".
 
 ## En qué fase estamos
 
-**F0 (Organización) casi cerrada → F1 (Doctrina BQS + kernel BQS validado).**
-~10 % del sistema completo. El siguiente 20 % (doctrina + kernel validado) quita el riesgo.
+**F1 (kernel BQS validado) cerrada → F2 (persistencia + IPC en curso).**
+~40 % del MVP. El kernel valida vs hoja real y persiste; falta cablear UI↔kernel (Tauri build) y reportes.
 
 ## Próximos pasos inmediatos
 
@@ -71,9 +78,9 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
 3. ✅ **VCF/WCF reales** (54B/54A/56, D1250-80) y ✅ **comparison engine** (tolerancia en capas +
    NOAD/LOP), ambos validados vs hoja real / números de la UI. Falta: versión **D1250-04 seleccionable**.
-4. **F2 — cablear captura real:** ✅ **DTO de fila BQS** (`bqs::BqsRowRequestDTO.calculate()`, string-in/out)
-   listo. Falta: **esqueleto Tauri** (crate `app`) + repos **SQLite** que invoquen estos comandos para
-   que lo que teclea el surveyor se calcule y **persista**.
+4. **F2 — cablear captura real:** ✅ DTO de fila BQS, ✅ **repos SQLite** (`supersurvey_persistence`) y
+   ✅ **esqueleto Tauri** (`ui/src-tauri`). Falta: **build local** del shell (deps webkit) y **conectar
+   las pantallas** con `invoke(...)` (reemplazar datos demo) + comandos de comparación/sección.
 5. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**, **WCF→MT (Tabla 56) ✓**. Faltan 4.
 
 ## Cómo compilar / probar

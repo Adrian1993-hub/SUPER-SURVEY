@@ -1,0 +1,12 @@
+[package]
+name = "supersurvey_persistence"
+version = "0.1.0"
+edition = "2021"
+description = "SuperSurvey persistence layer — SQLite repositories over the hardened data model"
+license = "UNLICENSED"
+
+[dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+uuid = { version = "1", features = ["v4"] }
+serde_json = "1"
+supersurvey_calc = { path = "../supersurvey_calc" }

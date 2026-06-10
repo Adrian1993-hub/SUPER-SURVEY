@@ -43,6 +43,32 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+  rust-persistence:
+    name: Rust persistence checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust-kernel/supersurvey_persistence
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup component add rustfmt clippy
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Run tests
+        run: cargo test --locked
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
   sqlite-schema:
     name: SQLite schema validation
     runs-on: ubuntu-latest

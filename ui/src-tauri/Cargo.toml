@@ -1,0 +1,22 @@
+[package]
+name = "supersurvey_app"
+version = "0.1.0"
+edition = "2021"
+description = "SuperSurvey Tauri shell — thin IPC over the calc kernel + SQLite persistence"
+license = "UNLICENSED"
+
+# NOTE: This crate is the desktop shell. It is intentionally OUTSIDE the
+# rust-kernel CI workflow (which only builds rust-kernel/**), because building
+# Tauri needs system libraries (webkit2gtk, libsoup, gtk) that the kernel CI
+# image doesn't install. Build it locally — see README.md. The official
+# calculation + persistence it depends on ARE fully tested in their own crates.
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+supersurvey_calc = { path = "../../rust-kernel/supersurvey_calc" }
+supersurvey_persistence = { path = "../../rust-kernel/supersurvey_persistence" }

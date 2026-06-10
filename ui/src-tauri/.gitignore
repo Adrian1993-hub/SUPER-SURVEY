@@ -1,0 +1,4 @@
+# Build artifacts
+/target
+# Tauri-generated schemas/icons cache
+/gen/schemas

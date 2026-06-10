@@ -17,6 +17,7 @@ pub enum KernelErrorCode {
     InvalidMovementRole,
     MissingStagePair,
     OutOfTableRange,
+    ComparisonInputInvalid,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

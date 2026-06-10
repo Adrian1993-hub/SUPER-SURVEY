@@ -8,6 +8,8 @@
 //! - trace generation for SAVE/EXPORT/QA_TEST/TRACE_VIEW;
 //! - ASTM D1250-80 metric tables by equation: 54A/54B VCF + 56 WCF (`astm`),
 //!   validated against a real BQS worksheet (see tests); D1250-04 revision pending;
+//! - source comparison engine with layered tolerances + NOAD/LOP recommendation
+//!   (`comparison`: Vessel vs Barge vs BDN on weight in air);
 //! - no tank calibration interpolation yet.
 //!
 //! Important policy:
@@ -17,6 +19,7 @@
 //! - SAVE/EXPORT/QA_TEST/TRACE_VIEW must return full trace.
 
 pub mod astm;
+pub mod comparison;
 pub mod conversions;
 pub mod decimal;
 pub mod dto;
@@ -30,6 +33,7 @@ pub mod value;
 
 pub mod prelude {
     pub use crate::astm::*;
+    pub use crate::comparison::*;
     pub use crate::conversions::*;
     pub use crate::decimal::*;
     pub use crate::dto::*;

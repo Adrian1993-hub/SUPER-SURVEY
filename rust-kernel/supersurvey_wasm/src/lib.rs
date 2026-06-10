@@ -5,6 +5,7 @@
 //! persists results via Tauri + SQLite; this module only *computes*.
 
 use supersurvey_calc::bqs::BqsRowRequestDTO;
+use supersurvey_calc::comparison::ComparisonRequestDTO;
 use wasm_bindgen::prelude::*;
 
 /// Compute one BQS tank row.
@@ -18,6 +19,20 @@ use wasm_bindgen::prelude::*;
 pub fn bqs_calculate_row(request_json: &str) -> String {
     match serde_json::from_str::<BqsRowRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Compare custody figures (e.g. Vessel vs Barge vs BDN) against layered
+/// tolerances and recommend a document (NONE / ISSUE_NOAD / ISSUE_LOP).
+///
+/// `request_json` is a JSON-encoded `ComparisonRequestDTO`; returns a JSON
+/// `ComparisonResponseDTO`. Same error convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn compare_sources(request_json: &str) -> String {
+    match serde_json::from_str::<ComparisonRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.compare())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
     }

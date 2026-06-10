@@ -23,8 +23,9 @@
 //!   is a presentation concern handled in the UI.
 
 use crate::conversions::convert_weight;
+use crate::decimal::DecimalValue;
 use crate::error::{KernelError, KernelErrorCode, KernelResult};
-use crate::precision::{round_decimal, PrecisionConfiguration};
+use crate::precision::{round_decimal, PrecisionConfiguration, SystemRoundingRule};
 use crate::trace::{CalculationScope, CalculationTrace, TraceStep};
 use crate::units::WeightUnit;
 use crate::value::{UnitValue, WeightValue};
@@ -32,6 +33,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::str::FromStr;
 
 /// Decimals for percentage outputs (Δ% and margins).
 const PCT_DECIMALS: u32 = 4;
@@ -253,4 +255,172 @@ pub fn compare_sources(
         worst_delta_pct: round_decimal(worst_abs_pct, PCT_DECIMALS, precision.rounding_rule),
         trace,
     })
+}
+
+// ---------------- IPC boundary (string-in / string-out) ----------------
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ComparisonSourceDTO {
+    pub name: String,
+    pub quantity_value: String,
+    pub quantity_unit: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToleranceLayerDTO {
+    pub name: String,
+    #[serde(default)]
+    pub basis: String,
+    pub limit_pct: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ComparisonRequestDTO {
+    pub calculation_scope: String,
+    pub sources: Vec<ComparisonSourceDTO>,
+    pub layers: Vec<ToleranceLayerDTO>,
+    #[serde(default)]
+    pub target_unit: Option<String>,
+    pub rounding_rule: String,
+    pub weight_decimals: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComparisonLayerResultDTO {
+    pub name: String,
+    pub basis: String,
+    pub limit_pct: String,
+    pub within: bool,
+    pub margin_pct: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComparisonPairDTO {
+    pub source_a: String,
+    pub source_b: String,
+    pub value_a: String,
+    pub value_b: String,
+    pub delta: String,
+    pub delta_pct: String,
+    pub within_all: bool,
+    pub layers: Vec<ComparisonLayerResultDTO>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComparisonResponseDTO {
+    pub success: bool,
+    pub unit: Option<String>,
+    pub recommended_action: Option<String>,
+    pub worst_delta_pct: Option<String>,
+    pub exceeded: Option<bool>,
+    pub pairs: Option<Vec<ComparisonPairDTO>>,
+    pub trace_json: Option<serde_json::Value>,
+    pub errors: Option<Vec<KernelError>>,
+}
+
+type ComparisonDomain = (
+    Vec<ComparisonSource>,
+    Vec<ToleranceLayer>,
+    Option<WeightUnit>,
+    PrecisionConfiguration,
+    CalculationScope,
+);
+
+impl ComparisonRequestDTO {
+    fn to_domain(&self) -> KernelResult<ComparisonDomain> {
+        let scope = CalculationScope::from_str(&self.calculation_scope)?;
+        let rounding_rule = SystemRoundingRule::from_str(&self.rounding_rule)?;
+
+        let sources = self
+            .sources
+            .iter()
+            .map(|s| {
+                let value = DecimalValue::parse(&s.quantity_value, "quantity_value")?.value;
+                let unit = WeightUnit::from_str(&s.quantity_unit)?;
+                Ok(ComparisonSource {
+                    name: s.name.clone(),
+                    quantity: UnitValue::new(value, unit),
+                })
+            })
+            .collect::<KernelResult<Vec<_>>>()?;
+
+        let layers = self
+            .layers
+            .iter()
+            .map(|l| {
+                let limit = DecimalValue::parse(&l.limit_pct, "limit_pct")?.value;
+                Ok(ToleranceLayer {
+                    name: l.name.clone(),
+                    basis: l.basis.clone(),
+                    limit_pct: limit,
+                })
+            })
+            .collect::<KernelResult<Vec<_>>>()?;
+
+        let target_unit = match &self.target_unit {
+            Some(u) if !u.trim().is_empty() => Some(WeightUnit::from_str(u)?),
+            _ => None,
+        };
+
+        let precision = PrecisionConfiguration {
+            weight_decimals: self.weight_decimals,
+            rounding_rule,
+            ..PrecisionConfiguration::default()
+        };
+        Ok((sources, layers, target_unit, precision, scope))
+    }
+
+    pub fn compare(&self) -> ComparisonResponseDTO {
+        match self
+            .to_domain()
+            .and_then(|(sources, layers, target_unit, precision, scope)| {
+                compare_sources(sources, layers, target_unit, precision, scope)
+            }) {
+            Ok(result) => ComparisonResponseDTO {
+                success: true,
+                unit: Some(format!("{:?}", result.unit).to_ascii_uppercase()),
+                recommended_action: serde_json::to_value(result.recommended_action)
+                    .ok()
+                    .and_then(|v| v.as_str().map(str::to_string)),
+                worst_delta_pct: Some(result.worst_delta_pct.normalize().to_string()),
+                exceeded: Some(result.exceeded),
+                pairs: Some(result.pairs.iter().map(pair_to_dto).collect()),
+                trace_json: result.trace.and_then(|t| serde_json::to_value(t).ok()),
+                errors: None,
+            },
+            Err(err) => ComparisonResponseDTO {
+                success: false,
+                unit: None,
+                recommended_action: None,
+                worst_delta_pct: None,
+                exceeded: None,
+                pairs: None,
+                trace_json: None,
+                errors: Some(vec![err]),
+            },
+        }
+    }
+}
+
+fn pair_to_dto(p: &PairComparison) -> ComparisonPairDTO {
+    ComparisonPairDTO {
+        source_a: p.source_a.clone(),
+        source_b: p.source_b.clone(),
+        value_a: p.value_a.value.normalize().to_string(),
+        value_b: p.value_b.value.normalize().to_string(),
+        delta: p.delta.value.normalize().to_string(),
+        delta_pct: p.delta_pct.normalize().to_string(),
+        within_all: p.within_all,
+        layers: p
+            .layers
+            .iter()
+            .map(|l| ComparisonLayerResultDTO {
+                name: l.name.clone(),
+                basis: l.basis.clone(),
+                limit_pct: l.limit_pct.normalize().to_string(),
+                within: l.within,
+                margin_pct: l.margin_pct.normalize().to_string(),
+            })
+            .collect(),
+    }
 }

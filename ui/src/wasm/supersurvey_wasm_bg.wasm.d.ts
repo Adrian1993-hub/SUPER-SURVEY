@@ -2,6 +2,7 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const bqs_calculate_row: (a: number, b: number) => [number, number];
+export const compare_sources: (a: number, b: number) => [number, number];
 export const kernel_version: () => [number, number];
 export const __wbindgen_exn_store: (a: number) => void;
 export const __externref_table_alloc: () => number;

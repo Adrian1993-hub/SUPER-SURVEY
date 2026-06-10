@@ -50,7 +50,7 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 
 ## Qué funciona hoy
 
-- Kernel Rust **compila verde**: `cargo test` (44 tests) ✅, `fmt`/`clippy` limpios, esquema
+- Kernel Rust **compila verde**: `cargo test` (46 tests) ✅, `fmt`/`clippy` limpios, esquema
   SQLite valida (37 tablas / 2 vistas / 24 índices / 2 triggers) — local **y** en GitHub Actions.
 - **ASTM D1250-80 métrico por ecuaciones** (`src/astm.rs`): Tabla 54B (VCF productos, 4 grupos),
   54A (crudo) y 56 (WCF aire/vacío), decimal puro (exp Taylor, sin f64), **validadas contra una
@@ -58,7 +58,8 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
   exactos a 4dp, filas GSV/MT exactas a 3dp, bloque Quantity Transferred exacto.
 - **Comparison engine** (`src/comparison.rs`): Vessel vs Barge vs BDN por pares, **tolerancia en
   capas** (ISO + comprador/suplidor/inspección/contrato) y recomendación **None/NOAD/LOP** según
-  el peor |Δ%|; normaliza unidades, trace por scope (8 tests, alineados con los números de la UI).
+  el peor |Δ%|; normaliza unidades, trace por scope. **DTO string-in/out** (`ComparisonRequestDTO.compare()`)
+  expuesto por WASM y **cableado en la pantalla Comparación** (recomienda doc + capas; 10 tests).
 - **Orquestador BQS** (`src/bqs.rs`): toma lo que teclea el surveyor (densidad@15, T, volumen de
   tabla, agua libre, tabla 54A/54B) → fila completa (VCF→GOV→GSV→**MT aire y vacío**) + totales de
   sección, reusando `astm`. Incluye **DTO string-in/out** (`BqsRowRequestDTO.calculate()`) listo
@@ -70,16 +71,18 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
   **compila verde local Y en CI** (workflow propio `supersurvey-desktop.yml` que instala las libs
   webkit/gtk e iconos placeholder). Era un esqueleto sin compilar; ahora está verificado.
 - **Kernel en el navegador (WASM)** (`supersurvey_wasm`): el *mismo* Rust validado compilado a
-  wasm32; `ui/src/lib/kernel.ts` lo invoca. La pantalla **Medición calcula en vivo** (VCF→GOV→GSV→MT
-  por fila y totales) — **sin reimplementar nada de ASTM en TypeScript**. Verificado vía Node que
-  reproduce la hoja (gsv 219.473, mt aire 209.004). Job de CI `wasm-kernel` (build wasm32).
+  wasm32 (exporta `bqs_calculate_row`, `compare_sources`, `kernel_version`); `ui/src/lib/kernel.ts`
+  lo invoca. **Medición calcula en vivo** (VCF→GOV→GSV→MT por fila y totales) y **Comparación**
+  recomienda **None/NOAD/LOP** en vivo — **sin reimplementar nada de ASTM/tolerancia en TypeScript**.
+  Verificado vía Node (gsv 219.473, mt aire 209.004; comparación → ISSUE_LOP a 0.5282%). CI `wasm-kernel`.
 - Cálculo decimal con `rust_decimal` en toda la cadena; frontera IPC string-in/string-out.
 - `calculation_logs` append-only (inmutable por triggers). Política de densidad "falla fuerte".
 
 ## En qué fase estamos
 
-**F1 (kernel BQS validado) cerrada → F2 (persistencia + IPC en curso).**
-~40 % del MVP. El kernel valida vs hoja real y persiste; falta cablear UI↔kernel (Tauri build) y reportes.
+**F1 (kernel BQS validado) cerrada → F2 (persistencia + UI en vivo en curso).**
+~50 % del MVP. El kernel valida vs hoja real, persiste, **compila en Tauri (CI)** y **calcula en vivo
+en la UI vía WASM** (Medición + Comparación). Falta: guardado en escritorio, reportes y más pantallas.
 
 ## Próximos pasos inmediatos
 
@@ -87,10 +90,10 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
 3. ✅ **VCF/WCF reales** (54B/54A/56, D1250-80) y ✅ **comparison engine** (tolerancia en capas +
    NOAD/LOP), ambos validados vs hoja real / números de la UI. Falta: versión **D1250-04 seleccionable**.
-4. **F2 — cablear captura real:** ✅ DTO de fila BQS, ✅ **repos SQLite**, ✅ **shell Tauri compila (CI)**,
-   ✅ **kernel WASM** y ✅ **Medición calcula en vivo** (fila + totales). Falta: bloque *Quantity
-   Transferred* y **Comparación** en vivo (hoy demo); conectar el **guardado** (`save_bqs_calculation`)
-   en escritorio; extender el cálculo en vivo al resto de pantallas.
+4. **F2 — cablear captura real:** ✅ DTO de fila BQS + comparación, ✅ **repos SQLite**, ✅ **shell
+   Tauri compila (CI)**, ✅ **kernel WASM**, ✅ **Medición calcula en vivo** (fila + totales) y
+   ✅ **Comparación en vivo** (None/NOAD/LOP). Falta: bloque *Quantity Transferred* en vivo; conectar
+   el **guardado** (`save_bqs_calculation`) en escritorio; extender el cálculo en vivo al resto de pantallas.
 5. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**, **WCF→MT (Tabla 56) ✓**. Faltan 4.
 
 ## Cómo compilar / probar

@@ -208,3 +208,65 @@ impl PairUnit for PairComparison {
         self.value_a.unit
     }
 }
+
+// ---- DTO (string-in / string-out) boundary ----
+
+fn dto_source(name: &str, value: &str) -> ComparisonSourceDTO {
+    ComparisonSourceDTO {
+        name: name.into(),
+        quantity_value: value.into(),
+        quantity_unit: "MT".into(),
+    }
+}
+
+fn dto_layer(name: &str, limit: &str) -> ToleranceLayerDTO {
+    ToleranceLayerDTO {
+        name: name.into(),
+        basis: String::new(),
+        limit_pct: limit.into(),
+    }
+}
+
+#[test]
+fn dto_recommends_lop_when_worst_exceeds_widest_layer() {
+    // UI demo numbers: vessel 994.518, barge ×1.00139, bdn ×1.00531.
+    let req = ComparisonRequestDTO {
+        calculation_scope: "TRACE_VIEW".into(),
+        sources: vec![
+            dto_source("VESSEL_RECEIVED", "994.518"),
+            dto_source("BARGE_DELIVERED", "995.900"),
+            dto_source("BDN", "999.799"),
+        ],
+        layers: vec![dto_layer("ISO", "0.30"), dto_layer("CONTRATO", "0.50")],
+        target_unit: Some("MT".into()),
+        rounding_rule: "HALF_UP".into(),
+        weight_decimals: 3,
+    };
+    let resp = req.compare();
+    assert!(resp.success, "errors: {:?}", resp.errors);
+    assert_eq!(resp.recommended_action.as_deref(), Some("ISSUE_LOP"));
+    assert_eq!(resp.exceeded, Some(true));
+    let pairs = resp.pairs.expect("pairs");
+    assert_eq!(pairs.len(), 3);
+    let worst: f64 = resp.worst_delta_pct.unwrap().parse().unwrap();
+    assert!((0.50..0.60).contains(&worst), "worst={worst}");
+    assert!(resp.trace_json.is_some(), "TRACE_VIEW → trace present");
+}
+
+#[test]
+fn dto_recommends_none_within_all_layers() {
+    let req = ComparisonRequestDTO {
+        calculation_scope: "LIVE".into(),
+        sources: vec![dto_source("A", "1000.000"), dto_source("B", "1000.500")],
+        layers: vec![dto_layer("ISO", "0.30"), dto_layer("CONTRATO", "0.50")],
+        target_unit: None,
+        rounding_rule: "HALF_UP".into(),
+        weight_decimals: 3,
+    };
+    let resp = req.compare();
+    assert!(resp.success, "errors: {:?}", resp.errors);
+    // 0.5 / 1000.5 ≈ 0.05 % < 0.30 % (tightest) → within all → NONE.
+    assert_eq!(resp.recommended_action.as_deref(), Some("NONE"));
+    assert_eq!(resp.exceeded, Some(false));
+    assert!(resp.trace_json.is_none(), "LIVE → no trace");
+}

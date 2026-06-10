@@ -126,7 +126,16 @@ export const comparacionUnidades: UnitRow[] = [
   { unidad: 'Litros @ 15 °C', sufijo: 'L', decimals: 0, vessel: 1050843 },
 ]
 
-export const TOLERANCIA_PCT = 0.3 // ISO default
+export const TOLERANCIA_PCT = 0.3 // ISO default (tightest layer)
+
+// Tolerancia en capas para el motor de comparación del kernel.
+// El kernel recomienda: dentro de todas → ninguna; supera la más estricta pero
+// no la más amplia → NOAD; supera la más amplia → LOP.
+export const toleranceLayers = [
+  { name: 'ISO 91', basis: 'estándar', limitPct: 0.3 },
+  { name: 'Inspección', basis: 'inspección', limitPct: 0.4 },
+  { name: 'Contrato', basis: 'comercial', limitPct: 0.5 },
+]
 
 // Datos compartidos para los documentos de discrepancia (SOF / NOAD / LOP)
 export const discrepanciaInfo = {

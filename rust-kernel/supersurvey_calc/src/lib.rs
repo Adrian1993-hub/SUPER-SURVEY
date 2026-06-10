@@ -19,6 +19,7 @@
 //! - SAVE/EXPORT/QA_TEST/TRACE_VIEW must return full trace.
 
 pub mod astm;
+pub mod bqs;
 pub mod comparison;
 pub mod conversions;
 pub mod decimal;
@@ -33,6 +34,7 @@ pub mod value;
 
 pub mod prelude {
     pub use crate::astm::*;
+    pub use crate::bqs::*;
     pub use crate::comparison::*;
     pub use crate::conversions::*;
     pub use crate::decimal::*;

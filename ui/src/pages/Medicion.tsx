@@ -7,7 +7,8 @@ import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, type VmrTank } from '../data/vmr'
 import { commonGrades, densityOutOfRange } from '../data/grades'
 import { calcBqsRow, compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
-import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu } from 'lucide-react'
+import { isDesktop, saveMeasurement } from '../lib/ipc'
+import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save } from 'lucide-react'
 
 const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
 const blankTank = (): VmrTank => ({
@@ -301,6 +302,36 @@ export function Medicion() {
   const action = cmp?.recommendedAction ?? 'NONE'
   const excedidas = (cmp?.pairs ?? []).filter((p) => !p.withinAll)
 
+  // Guardado (solo escritorio): persiste la sección "after receiving" como un
+  // measurement set + un calculation_log inmutable por tanque.
+  const desktop = isDesktop()
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
+  async function onSave() {
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      const rows = after.map((t) => ({
+        density15: t.densidad15,
+        temperature: t.temp,
+        tov: t.tov,
+        freeWater: t.freeWaterVol,
+        table: (t.grade.trim().toUpperCase() === 'CRUDE' ? '54A' : '54B') as '54A' | '54B',
+      }))
+      const res = await saveMeasurement({
+        jobRef: h.referencia,
+        moduleTitle: `${h.surveyType} — ${h.buque}`,
+        portName: h.puerto,
+        rows,
+      })
+      setSaveMsg(`Guardado: ${res.saved} filas${res.skipped ? ` (${res.skipped} omitidas)` : ''} · set ${res.measurementSetId.slice(0, 8)}…`)
+    } catch (e) {
+      setSaveMsg((e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Medición" activeJob={job} />
@@ -315,6 +346,27 @@ export function Medicion() {
           ))}
         </datalist>
         <div className="mx-auto max-w-[1600px] space-y-5">
+          {/* Barra de acciones */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Hoja de medición</h2>
+            <div className="flex items-center gap-3">
+              {saveMsg && <span className="text-sm text-muted-foreground">{saveMsg}</span>}
+              <Button
+                onClick={onSave}
+                disabled={saving || !desktop}
+                title={desktop ? 'Guardar en SQLite local (registro inmutable)' : 'La persistencia está disponible en la app de escritorio'}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" /> {saving ? 'Guardando…' : 'Guardar medición'}
+              </Button>
+            </div>
+          </div>
+          {!desktop && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              El cálculo es en vivo aquí; el <strong>guardado</strong> (SQLite) está disponible en la app de escritorio.
+            </p>
+          )}
+
           {/* Encabezado de la hoja */}
           <Card>
             <CardContent className="p-5">

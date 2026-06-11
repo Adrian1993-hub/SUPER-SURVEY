@@ -23,6 +23,10 @@ and storage it wraps are also fully tested in their own crates.
 |---|---|
 | `calculate_bqs_row(request)` | Pure calc (no DB). Returns the full row + trace. |
 | `save_bqs_calculation(job_id, …, request)` | Calc + persist as an append-only `calculation_log`. Returns the log id. |
+| `save_measurement(args)` | Create job + measurement set, then append one immutable `calculation_log` per tank row (each recomputed with the kernel). Returns `{ job_id, measurement_set_id, saved, skipped }`. Used by the UI's **Guardar medición**. |
+
+> The UI does live calc via WASM (`src/lib/kernel.ts`); only **persistence** crosses
+> this IPC boundary (`src/lib/ipc.ts`), gated on the Tauri runtime.
 
 Both take `BqsRowRequestDTO` (string-in) and return string-out DTOs — numbers cross
 the boundary as strings, parsed to `Decimal` only inside Rust.
@@ -54,7 +58,7 @@ npx tauri build    # produces installers
 - [x] Shell wired to kernel (`calculate_bqs_row`) + persistence (`save_bqs_calculation`).
 - [x] Compiles with system deps — validated locally **and** in CI (`supersurvey-desktop.yml`).
 - [x] Placeholder icons committed (`icons/`); regenerate branded ones with `npx tauri icon`.
-- [ ] Wire the UI screens to `invoke(...)` (replace the demo data path).
-- [ ] Add commands for comparison (NOAD/LOP) and section totals.
+- [x] `save_measurement` command + UI **Guardar medición** button (desktop-gated via `src/lib/ipc.ts`).
+- [ ] Verify the save end-to-end in a packaged build (DB logic is unit-tested; GUI run pending).
 - [ ] Real macOS `icon.icns` (only PNG + `.ico` shipped so far).
 - [ ] SQLCipher (encryption at rest) before any distribution (`03-TRD §10`).

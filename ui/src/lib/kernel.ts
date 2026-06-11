@@ -23,7 +23,7 @@ export interface BqsRowInput {
   tov: number // m³ (table volume, trim/list already applied)
   freeWater?: number // m³
   table?: '54A' | '54B'
-  scope?: 'LIVE' | 'TRACE_VIEW'
+  scope?: 'LIVE' | 'TRACE_VIEW' | 'SAVE'
   intermediateRounding?: boolean
   observedVolumeDecimals?: number
   standardVolumeDecimals?: number
@@ -46,7 +46,8 @@ export interface BqsRowResult {
   errors?: { code?: string; message?: string }[]
 }
 
-function toRequest(i: BqsRowInput) {
+/** Build the kernel's string-in DTO from friendly inputs (also used by ./ipc save). */
+export function bqsRowRequest(i: BqsRowInput) {
   return {
     calculation_scope: i.scope ?? 'LIVE',
     density15_value: String(i.density15),
@@ -83,7 +84,7 @@ interface RawResponse {
 /** Compute one BQS tank row with the WASM kernel. */
 export async function calcBqsRow(input: BqsRowInput): Promise<BqsRowResult> {
   await ensureReady()
-  const raw = bqs_calculate_row(JSON.stringify(toRequest(input)))
+  const raw = bqs_calculate_row(JSON.stringify(bqsRowRequest(input)))
   const r = JSON.parse(raw) as RawResponse
   return {
     success: r.success,

@@ -43,6 +43,7 @@ docs/research/                  investigación de dominio (logbook · tanques ·
 branding/brand.toml             white-label: nombre/logo/colores del producto (única fuente)
 ui/                             frontend React+shadcn (BQS, 3 temas) — Medición calcula en vivo (WASM)
 ui/src/lib/kernel.ts            puente UI→kernel WASM (calcula); ui/src/wasm = glue generado
+ui/src/lib/ipc.ts               puente UI→Tauri (guardar en SQLite) — solo escritorio
 ui/src-tauri/                   shell Tauri v2 (persistencia → SQLite) — compila (local + CI)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
 .claude/skills/                 skills de desarrollo (grill-me, diagnose)
@@ -90,10 +91,12 @@ en la UI vía WASM** (Medición + Comparación). Falta: guardado en escritorio, 
 2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
 3. ✅ **VCF/WCF reales** (54B/54A/56, D1250-80) y ✅ **comparison engine** (tolerancia en capas +
    NOAD/LOP), ambos validados vs hoja real / números de la UI. Falta: versión **D1250-04 seleccionable**.
-4. **F2 — cablear captura real:** ✅ DTO de fila BQS + comparación, ✅ **repos SQLite**, ✅ **shell
-   Tauri compila (CI)**, ✅ **kernel WASM**, ✅ **Medición calcula en vivo** (fila + totales) y
-   ✅ **Comparación en vivo** (None/NOAD/LOP). Falta: bloque *Quantity Transferred* en vivo; conectar
-   el **guardado** (`save_bqs_calculation`) en escritorio; extender el cálculo en vivo al resto de pantallas.
+4. **F2 — cablear captura real:** ✅ DTOs (fila BQS + comparación), ✅ **repos SQLite**, ✅ **shell
+   Tauri compila (CI)**, ✅ **kernel WASM**, ✅ **Medición en vivo** (fila + totales + *Quantity
+   Transferred* con None/NOAD/LOP), ✅ **Comparación en vivo** y ✅ **Guardado** (`save_measurement`
+   + botón *Guardar medición*, **solo escritorio** vía `src/lib/ipc.ts`). Falta: **verificar el
+   guardado en un build empacado** (la lógica DB está testeada; falta correr la GUI); reportes/PDF;
+   extender el cálculo en vivo al resto de pantallas.
 5. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**, **WCF→MT (Tabla 56) ✓**. Faltan 4.
 
 ## Cómo compilar / probar

@@ -9,9 +9,10 @@
 //! - `calculate_bqs_row`   : pure calc (LIVE/SAVE), returns row + trace.
 //! - `save_bqs_calculation`: calc + persist as an append-only calculation_log.
 
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use supersurvey_calc::bqs::{BqsRowRequestDTO, BqsRowResponseDTO};
-use supersurvey_persistence::Database;
+use supersurvey_persistence::{Database, NewJob, NewMeasurementSet};
 
 /// App-wide state: a single SQLite connection guarded by a Mutex
 /// (`rusqlite::Connection` is `Send` but not `Sync`).
@@ -43,11 +44,92 @@ fn save_bqs_calculation(
         &job_id,
         measurement_set_id.as_deref(),
         measurement_record_id.as_deref(),
-        env!("CARGO_PKG_VERSION"),
+        supersurvey_calc::KERNEL_VERSION,
         &request,
         &response,
     )
     .map_err(|e| e.to_string())
+}
+
+/// Persist a whole worksheet section: create the job + measurement set, then
+/// append one immutable calculation_log per tank row. Each row is recomputed
+/// here with the official kernel (the UI cannot supply trusted numbers), so the
+/// stored output always matches the stored input + engine version.
+#[derive(Debug, Deserialize)]
+struct SaveMeasurementArgs {
+    job_ref: String,
+    operation_family: String,
+    operation_type: String,
+    report_ref: Option<String>,
+    client_ref: Option<String>,
+    port_name: Option<String>,
+    module_type: String,
+    module_title: String,
+    role: String,
+    movement_sign_rule: String,
+    rows: Vec<BqsRowRequestDTO>,
+}
+
+#[derive(Debug, Serialize)]
+struct SaveMeasurementResult {
+    job_id: String,
+    measurement_set_id: String,
+    saved: usize,
+    skipped: usize,
+}
+
+#[tauri::command]
+fn save_measurement(
+    state: tauri::State<'_, AppState>,
+    args: SaveMeasurementArgs,
+) -> Result<SaveMeasurementResult, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let job_id = db
+        .create_job(&NewJob {
+            job_ref: args.job_ref,
+            operation_family: args.operation_family,
+            operation_type: args.operation_type,
+            report_ref: args.report_ref,
+            client_ref: args.client_ref,
+            port_name: args.port_name,
+        })
+        .map_err(|e| e.to_string())?;
+    let set_id = db
+        .create_measurement_set(&NewMeasurementSet {
+            job_id: job_id.clone(),
+            module_type: args.module_type,
+            title: args.module_title,
+            role: args.role,
+            movement_sign_rule: args.movement_sign_rule,
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut saved = 0usize;
+    let mut skipped = 0usize;
+    for req in &args.rows {
+        let resp = req.calculate();
+        if !resp.success {
+            skipped += 1;
+            continue;
+        }
+        db.append_bqs_calculation(
+            &job_id,
+            Some(&set_id),
+            None,
+            supersurvey_calc::KERNEL_VERSION,
+            req,
+            &resp,
+        )
+        .map_err(|e| e.to_string())?;
+        saved += 1;
+    }
+
+    Ok(SaveMeasurementResult {
+        job_id,
+        measurement_set_id: set_id,
+        saved,
+        skipped,
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -59,7 +141,8 @@ pub fn run() {
         .manage(AppState { db: Mutex::new(db) })
         .invoke_handler(tauri::generate_handler![
             calculate_bqs_row,
-            save_bqs_calculation
+            save_bqs_calculation,
+            save_measurement
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

@@ -46,6 +46,7 @@ ui/src/lib/kernel.ts            puente UI→kernel WASM (calcula); ui/src/wasm =
 ui/src/lib/useBqsRows.ts        hooks compartidos: calc por fila/totales/transferido (kernel)
 ui/src/lib/ipc.ts               puente UI→Tauri (guardar en SQLite) — solo escritorio
 ui/src/data/grades.ts           catálogo de grados de combustible (ISO 8217 + comerciales)
+ui/src/pages/Utilidades.tsx     utilidades de densidad (API↔ρ15, lab @T, mezcla) — kernel
 ui/src/data/rob.ts              datos demo ROB (inventario por grado + ER Log)
 ui/src/pages/Reporte.tsx        reporte BQS imprimible (PDF/print + JSON); RobReport.tsx = ROB
 ui/src-tauri/                   shell Tauri v2 (persistencia → SQLite) — compila (local + CI)
@@ -104,8 +105,10 @@ diseño (reactbits) al final**.
    (PDF + JSON técnico)** y ✅ **Reporte ROB** (inventario por grado vs ER Log, ±0.5%). Falta:
    **verificar el guardado en un build empacado** (lógica DB testeada; falta correr la GUI);
    cargar/guardar el estado editado por trabajo; extender el cálculo en vivo al resto de pantallas.
-5. **Utilidades de densidad** (API↔ρ15, 60 °F↔15 °C) y **versión D1250-04 seleccionable**; luego el
-   **pase de diseño (reactbits)** — al final, por ser la capa de interacción (decisión del usuario).
+5. ✅ **Utilidades de densidad** (`density.rs` + página Utilidades): API↔ρ15 (vía SG60/60 y agua@60°F
+   999.016), ρ_obs@T↔ρ15 (inversión de la 54B por punto fijo — cubre lab @20 °C), mezcla ponderada
+   por volumen. 14 tests QA. Falta: **versión D1250-04 seleccionable**; luego el **pase de diseño
+   (reactbits)** — al final, por ser la capa de interacción (decisión del usuario).
 6. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**, **WCF→MT (Tabla 56) ✓**. Faltan 4.
 
 ## Cómo compilar / probar

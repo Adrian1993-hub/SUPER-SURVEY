@@ -28,6 +28,7 @@ pub mod bqs;
 pub mod comparison;
 pub mod conversions;
 pub mod decimal;
+pub mod density;
 pub mod dto;
 pub mod error;
 pub mod movement;
@@ -43,6 +44,7 @@ pub mod prelude {
     pub use crate::comparison::*;
     pub use crate::conversions::*;
     pub use crate::decimal::*;
+    pub use crate::density::*;
     pub use crate::dto::*;
     pub use crate::error::*;
     pub use crate::movement::*;

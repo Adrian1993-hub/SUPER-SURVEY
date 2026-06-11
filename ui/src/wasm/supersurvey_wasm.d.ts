@@ -22,6 +22,14 @@ export function bqs_calculate_row(request_json: string): string;
 export function compare_sources(request_json: string): string;
 
 /**
+ * Density utilities: API ↔ ρ15, observed ρ@t ↔ ρ15, parcel blending.
+ *
+ * `request_json` is a JSON-encoded `DensityToolRequestDTO`; returns a JSON
+ * `DensityToolResponseDTO`. Same error convention as `bqs_calculate_row`.
+ */
+export function density_tool(request_json: string): string;
+
+/**
  * Kernel version string (for the UI to show which math built a number).
  */
 export function kernel_version(): string;
@@ -32,6 +40,7 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly bqs_calculate_row: (a: number, b: number) => [number, number];
     readonly compare_sources: (a: number, b: number) => [number, number];
+    readonly density_tool: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;

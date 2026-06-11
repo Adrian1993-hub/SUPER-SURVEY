@@ -11,6 +11,7 @@ import {
   Scale,
   FileCheck2,
   Fuel,
+  FlaskConical,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -60,6 +61,10 @@ export function AppSidebar() {
           <NavLink to="/trabajos" className={itemClass}>
             <FileText className="h-4 w-4" />
             <span>Trabajos</span>
+          </NavLink>
+          <NavLink to="/utilidades" className={itemClass}>
+            <FlaskConical className="h-4 w-4" />
+            <span>Utilidades</span>
           </NavLink>
         </div>
 

@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, compare_sources, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, compare_sources, density_tool, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -187,6 +187,82 @@ interface RawCompareResponse {
   pairs?: RawComparePair[]
   trace_json?: unknown
   errors?: { code?: string; message?: string }[]
+}
+
+// ---- Density utilities (API <-> rho15, observed rho@t <-> rho15, blend) ----
+
+export type DensityOperation = 'API_TO_RHO15' | 'RHO15_TO_API' | 'OBSERVED_TO_RHO15' | 'RHO15_TO_OBSERVED' | 'BLEND'
+
+export interface DensityToolInput {
+  operation: DensityOperation
+  /** API gravity o densidad (kg/L) según la operación. */
+  value?: number
+  /** Temperatura de observación (°C) para las operaciones OBSERVED/RHO15_TO_OBSERVED. */
+  temperature?: number
+  table?: '54A' | '54B'
+  /** Parcelas para BLEND: volumen m³ @15 °C + densidad kg/L @15 °C. */
+  parcels?: { volume: number; density15: number }[]
+  scope?: 'LIVE' | 'TRACE_VIEW'
+}
+
+export interface DensityToolResult {
+  success: boolean
+  operation?: string
+  api?: string
+  sg60?: string
+  rho15KgL?: string
+  rho15KgM3?: string
+  observedKgL?: string
+  totalVolumeM3?: string
+  totalMtVacuum?: string
+  trace?: unknown
+  errors?: { code?: string; message?: string }[]
+}
+
+interface RawDensityResponse {
+  success: boolean
+  operation?: string
+  api?: string
+  sg60?: string
+  rho15_kg_l?: string
+  rho15_kg_m3?: string
+  observed_kg_l?: string
+  total_volume_m3?: string
+  total_mt_vacuum?: string
+  trace_json?: unknown
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Density conversions/blending via the kernel (no math in TS). */
+export async function densityTool(input: DensityToolInput): Promise<DensityToolResult> {
+  await ensureReady()
+  const req = {
+    operation: input.operation,
+    value: input.value !== undefined ? String(input.value) : undefined,
+    density15_unit: 'KG_L',
+    temperature_value: input.temperature !== undefined ? String(input.temperature) : undefined,
+    temperature_unit: 'CELSIUS',
+    astm_table: input.table ?? '54B',
+    parcels: (input.parcels ?? []).map((p) => ({
+      volume_value: String(p.volume),
+      density15_value: String(p.density15),
+    })),
+    calculation_scope: input.scope ?? 'LIVE',
+  }
+  const r = JSON.parse(density_tool(JSON.stringify(req))) as RawDensityResponse
+  return {
+    success: r.success,
+    operation: r.operation,
+    api: r.api,
+    sg60: r.sg60,
+    rho15KgL: r.rho15_kg_l,
+    rho15KgM3: r.rho15_kg_m3,
+    observedKgL: r.observed_kg_l,
+    totalVolumeM3: r.total_volume_m3,
+    totalMtVacuum: r.total_mt_vacuum,
+    trace: r.trace_json,
+    errors: r.errors,
+  }
 }
 
 /** Compare custody figures with the kernel; returns NONE / NOAD / LOP. */

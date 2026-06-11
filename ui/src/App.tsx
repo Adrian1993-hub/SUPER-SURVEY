@@ -11,6 +11,7 @@ import { CalculoTrace } from './pages/CalculoTrace'
 import { Comparacion } from './pages/Comparacion'
 import { Reporte } from './pages/Reporte'
 import { RobReport } from './pages/RobReport'
+import { Utilidades } from './pages/Utilidades'
 
 function AppShell() {
   const location = useLocation()
@@ -20,6 +21,7 @@ function AppShell() {
       <Routes location={location}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/trabajos" element={<ListaTrabajos />} />
+        <Route path="/utilidades" element={<Utilidades />} />
         <Route path="/trabajo/:id/cover" element={<Cover />} />
         <Route path="/trabajo/:id/perfiles" element={<Perfiles />} />
         <Route path="/trabajo/:id/key-meeting" element={<KeyMeeting />} />

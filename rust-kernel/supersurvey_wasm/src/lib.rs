@@ -6,6 +6,7 @@
 
 use supersurvey_calc::bqs::BqsRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
+use supersurvey_calc::density::DensityToolRequestDTO;
 use wasm_bindgen::prelude::*;
 
 /// Compute one BQS tank row.
@@ -33,6 +34,19 @@ pub fn bqs_calculate_row(request_json: &str) -> String {
 pub fn compare_sources(request_json: &str) -> String {
     match serde_json::from_str::<ComparisonRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.compare())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Density utilities: API ↔ ρ15, observed ρ@t ↔ ρ15, parcel blending.
+///
+/// `request_json` is a JSON-encoded `DensityToolRequestDTO`; returns a JSON
+/// `DensityToolResponseDTO`. Same error convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn density_tool(request_json: &str) -> String {
+    match serde_json::from_str::<DensityToolRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
     }

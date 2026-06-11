@@ -38,7 +38,7 @@ export function AppSidebar() {
   ]
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
+    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar print:hidden">
       <div className="flex items-center gap-3 border-b border-sidebar-border px-6 py-4">
         <div className="bg-brand-gradient flex h-9 w-9 items-center justify-center rounded-lg shadow-lg">
           <Ship className="h-5 w-5 text-white" />

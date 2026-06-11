@@ -15,7 +15,7 @@ function AppShell() {
   const location = useLocation()
   return (
     // key = pathname → re-monta y dispara la animación de entrada en cada navegación.
-    <div key={location.pathname} className="flex flex-1 animate-fade flex-col overflow-hidden">
+    <div key={location.pathname} className="flex flex-1 animate-fade flex-col overflow-hidden print:block print:overflow-visible">
       <Routes location={location}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/trabajos" element={<ListaTrabajos />} />
@@ -36,7 +36,7 @@ export function App() {
   return (
     <TooltipProvider>
       <BrowserRouter>
-        <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+        <div className="flex h-screen w-full overflow-hidden bg-background text-foreground print:block print:h-auto print:overflow-visible">
           <AppSidebar />
           <AppShell />
         </div>

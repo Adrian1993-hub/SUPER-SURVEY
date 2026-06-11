@@ -6,8 +6,9 @@ import { TopBar } from '../components/TopBar'
 import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, type VmrTank } from '../data/vmr'
 import { commonGrades, densityOutOfRange } from '../data/grades'
-import { calcBqsRow, compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
+import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { isDesktop, saveMeasurement } from '../lib/ipc'
+import { sectionTotals, useComputedRows, useTransferred, type CalcFields } from '../lib/useBqsRows'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save } from 'lucide-react'
 
 const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
@@ -15,72 +16,6 @@ const blankTank = (): VmrTank => ({
   tanque: 'NUEVO', nominado: false, grade: 'VLSFO', densidad15: 0, tablesRefHeight: 0, measRefHeight: 0,
   level: 0, usg: 'S', temp: 0, tov: 0, freeWaterLevel: 0, freeWaterVol: 0, gov: 0, vcf: 0, gsv: 0, wcf56: 0, mt: 0,
 })
-const numOf = (s?: string) => (s == null ? NaN : Number(s))
-
-// Kernel-computed fields for one tank row (everything the surveyor does NOT type).
-interface CalcFields {
-  gov: number
-  vcf: number
-  gsv: number
-  wcf56: number
-  mt: number
-  mtVac: number
-}
-
-// Recompute every row through the WASM calc kernel whenever a calc-relevant input
-// changes. Same validated Rust math as the desktop — no formulas live in TS.
-function useComputedRows(tanks: VmrTank[]): (CalcFields | null)[] {
-  const [calc, setCalc] = useState<(CalcFields | null)[]>([])
-  const key = JSON.stringify(tanks.map((t) => [t.densidad15, t.temp, t.tov, t.freeWaterVol]))
-  useEffect(() => {
-    let cancelled = false
-    Promise.all(
-      tanks.map((t) =>
-        calcBqsRow({ density15: t.densidad15, temperature: t.temp, tov: t.tov, freeWater: t.freeWaterVol })
-          .then((r): CalcFields | null =>
-            r.success
-              ? { gov: numOf(r.gov), vcf: numOf(r.vcf), gsv: numOf(r.gsv), wcf56: numOf(r.wcfAir), mt: numOf(r.mtAir), mtVac: numOf(r.mtVacuum) }
-              : null,
-          )
-          .catch(() => null),
-      ),
-    ).then((res) => {
-      if (!cancelled) setCalc(res)
-    })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
-  return calc
-}
-
-// Section totals from live values (falling back to the row's seed value until the
-// kernel answers). VCF/WCF totals are the defensible aggregates (ΣGSV/ΣGOV,
-// ΣMT/ΣGSV); density & temp are GOV-weighted means (display only).
-function sectionTotals(tanks: VmrTank[], calc: (CalcFields | null)[]) {
-  let tov = 0, gov = 0, gsv = 0, mt = 0, dW = 0, tW = 0
-  tanks.forEach((t, i) => {
-    const c = calc[i]
-    const rGov = c ? c.gov : t.gov
-    tov += t.tov
-    gov += rGov
-    gsv += c ? c.gsv : t.gsv
-    mt += c ? c.mt : t.mt
-    dW += t.densidad15 * rGov
-    tW += t.temp * rGov
-  })
-  return {
-    tov,
-    gov,
-    gsv,
-    mt,
-    vcf: gov > 0 ? gsv / gov : 0,
-    wcf: gsv > 0 ? mt / gsv : 0,
-    densidad: gov > 0 ? dW / gov : 0,
-    temp: gov > 0 ? tW / gov : 0,
-  }
-}
 
 // celdas
 const thBase = 'border border-border px-1.5 py-1 text-[10px] font-medium text-muted-foreground'
@@ -277,7 +212,19 @@ export function Medicion() {
   const removeTank = (i: number) => { setBefore((p) => p.filter((_, idx) => idx !== i)); setAfter((p) => p.filter((_, idx) => idx !== i)) }
 
   const navigate = useNavigate()
-  const tr = vmrData.transferred
+
+  // Quantity Transferred EN VIVO: ΔGSV (after − before, totales del kernel) ×
+  // densidad del suplidor, calculado por el kernel (una llamada a 15 °C).
+  const deltaGsv = sectionTotals(after, afterCalc).gsv - sectionTotals(before, beforeCalc).gsv
+  const transferred = useTransferred(deltaGsv, h.suppliersDensity)
+  // Forma única para la UI; seed demo como fallback hasta que el kernel responda.
+  const tr = {
+    suppliersDensity: h.suppliersDensity,
+    gsv: transferred?.gsv ?? vmrData.transferred.gsv,
+    mtVac: transferred?.mtVac ?? vmrData.transferred.mtVac,
+    wcf56: transferred?.wcf ?? vmrData.transferred.wcf56,
+    mtAir: transferred?.mtAir ?? vmrData.transferred.mtAir,
+  }
 
   // Alerta de discrepancia (en MT aire) por el MISMO motor del kernel que la
   // pantalla Comparación: recibido (buque) vs barcaza vs BDN → None/NOAD/LOP.

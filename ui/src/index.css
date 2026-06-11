@@ -151,6 +151,49 @@
   }
 }
 
+/* ===========================================================================
+   IMPRESIÓN — el reporte se exporta a PDF con el print del webview (offline,
+   navegador y Tauri). Sea cual sea el tema activo, el papel es blanco: se
+   sobreescriben los tokens y se desactiva el clipping de la app shell.
+   =========================================================================== */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  :root,
+  [data-theme='control-room'],
+  [data-theme='ocean'],
+  [data-theme='neon'] {
+    --background: #ffffff;
+    --foreground: #111827;
+    --card: #ffffff;
+    --card-foreground: #111827;
+    --muted: #f3f4f6;
+    --muted-foreground: #4b5563;
+    --border: #9ca3af;
+    --input: #9ca3af;
+    --brand: #1e3a5f;
+    --brand-foreground: #ffffff;
+    --brand-2: #2a6f97;
+  }
+  html,
+  body,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  .animate-fade,
+  .animate-rise {
+    animation: none !important;
+  }
+}
+
 @keyframes ssRise {
   from {
     opacity: 0;

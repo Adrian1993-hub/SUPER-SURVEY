@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { getJob } from '../data/demoJobs'
-import { vmrData, comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, type VmrTank } from '../data/vmr'
+import { vmrData, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, type VmrTank } from '../data/vmr'
 import { commonGrades, densityOutOfRange } from '../data/grades'
-import { calcBqsRow, kernelVersion } from '../lib/kernel'
+import { calcBqsRow, compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu } from 'lucide-react'
 
 const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
@@ -278,18 +278,28 @@ export function Medicion() {
   const navigate = useNavigate()
   const tr = vmrData.transferred
 
-  // Alerta de discrepancia (en MT aire) para el bloque Quantity Transferred
-  const vRec = comparacionUnidades.find((x) => x.unidad === 'MT (aire)')!.vessel
-  const pares = [
-    { nombre: 'Vessel Received vs Barge Delivered', a: vRec, b: vRec * BARGE_FACTOR },
-    { nombre: 'Vessel Received vs BDN', a: vRec, b: vRec * BDN_FACTOR },
-    { nombre: 'Barge Delivered vs BDN', a: vRec * BARGE_FACTOR, b: vRec * BDN_FACTOR },
-  ].map((p) => {
-    const delta = p.a - p.b
-    const pct = (delta / p.b) * 100
-    return { ...p, delta, pct, dentro: Math.abs(pct) <= TOLERANCIA_PCT }
-  })
-  const excedidas = pares.filter((p) => !p.dentro)
+  // Alerta de discrepancia (en MT aire) por el MISMO motor del kernel que la
+  // pantalla Comparación: recibido (buque) vs barcaza vs BDN → None/NOAD/LOP.
+  const [cmp, setCmp] = useState<ComparisonResult | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    compareSources({
+      sources: [
+        { name: 'Vessel Received', quantity: tr.mtAir },
+        { name: 'Barge Delivered', quantity: tr.mtAir * BARGE_FACTOR },
+        { name: 'BDN', quantity: tr.mtAir * BDN_FACTOR },
+      ],
+      layers: toleranceLayers,
+      scope: 'LIVE',
+    })
+      .then((r) => !cancelled && setCmp(r))
+      .catch(() => !cancelled && setCmp(null))
+    return () => {
+      cancelled = true
+    }
+  }, [tr.mtAir])
+  const action = cmp?.recommendedAction ?? 'NONE'
+  const excedidas = (cmp?.pairs ?? []).filter((p) => !p.withinAll)
 
   return (
     <div className="flex h-full flex-col">
@@ -355,32 +365,57 @@ export function Medicion() {
                 <Stat label="Peso (MT) en aire" value={tr.mtAir.toFixed(3)} unit="MT" highlight />
               </div>
 
-              {excedidas.length > 0 ? (
-                <div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
-                  <div className="flex items-center gap-2 font-semibold text-red-600">
-                    <AlertTriangle className="h-4 w-4" /> Discrepancia sobre tolerancia (±{TOLERANCIA_PCT}%)
+              {action !== 'NONE' ? (
+                <div
+                  className={`mt-5 rounded-lg border p-4 ${
+                    action === 'ISSUE_LOP' ? 'border-red-500/30 bg-red-500/10' : 'border-amber-500/30 bg-amber-500/10'
+                  }`}
+                >
+                  <div
+                    className={`flex items-center gap-2 font-semibold ${
+                      action === 'ISSUE_LOP' ? 'text-red-600' : 'text-amber-600'
+                    }`}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    {action === 'ISSUE_LOP'
+                      ? 'Discrepancia sobre tolerancia — LOP'
+                      : 'Discrepancia aparente — NOAD'}
                   </div>
                   <ul className="mt-2 space-y-1 text-sm">
                     {excedidas.map((p) => (
-                      <li key={p.nombre}>
-                        <span className="text-muted-foreground">{p.nombre}: </span>
+                      <li key={`${p.sourceA}-${p.sourceB}`}>
+                        <span className="text-muted-foreground">
+                          {p.sourceA} vs {p.sourceB}:{' '}
+                        </span>
                         <span className="font-mono tabular-nums">
-                          {p.delta > 0 ? '+' : ''}{p.delta.toFixed(3)} MT ({p.pct > 0 ? '+' : ''}{p.pct.toFixed(3)}%)
+                          {Number(p.delta) > 0 ? '+' : ''}
+                          {p.delta} MT ({Number(p.deltaPct) > 0 ? '+' : ''}
+                          {p.deltaPct}%)
                         </span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-2 text-sm font-medium text-red-600">Se recomienda emitir una Letter of Protest (LOP).</div>
+                  <div
+                    className={`mt-2 text-sm font-medium ${
+                      action === 'ISSUE_LOP' ? 'text-red-600' : 'text-amber-600'
+                    }`}
+                  >
+                    {action === 'ISSUE_LOP'
+                      ? 'Se recomienda emitir una Letter of Protest (LOP).'
+                      : 'Se recomienda notificar la discrepancia (NOAD).'}
+                  </div>
                   <Button
                     onClick={() => navigate(`/trabajo/${id || '1'}/comparacion`)}
-                    className="mt-3 gap-2 bg-red-600 text-white hover:brightness-110"
+                    className={`mt-3 gap-2 text-white hover:brightness-110 ${
+                      action === 'ISSUE_LOP' ? 'bg-red-600' : 'bg-amber-600'
+                    }`}
                   >
-                    <FileText className="h-4 w-4" /> Generar LOP
+                    <FileText className="h-4 w-4" /> {action === 'ISSUE_LOP' ? 'Generar LOP' : 'Ver comparación'}
                   </Button>
                 </div>
               ) : (
                 <div className="mt-5 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" /> Todas las diferencias dentro de tolerancia (±{TOLERANCIA_PCT}%) — no se requiere LOP.
+                  <CheckCircle2 className="h-4 w-4" /> Todas las diferencias dentro de tolerancia (±{TOLERANCIA_PCT}% ISO) — no se requiere LOP.
                 </div>
               )}
             </CardContent>

@@ -10,6 +10,7 @@ import {
   Calculator,
   Scale,
   FileCheck2,
+  Fuel,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,7 @@ export function AppSidebar() {
     { to: `/trabajo/${jobId}/calculo`, label: 'Cálculo + Trace', icon: Calculator },
     { to: `/trabajo/${jobId}/comparacion`, label: 'Comparación', icon: Scale },
     { to: `/trabajo/${jobId}/reporte`, label: 'Reporte', icon: FileCheck2 },
+    { to: `/trabajo/${jobId}/rob`, label: 'Reporte ROB', icon: Fuel },
   ]
 
   return (

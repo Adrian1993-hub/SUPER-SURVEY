@@ -10,6 +10,7 @@ import { Medicion } from './pages/Medicion'
 import { CalculoTrace } from './pages/CalculoTrace'
 import { Comparacion } from './pages/Comparacion'
 import { Reporte } from './pages/Reporte'
+import { RobReport } from './pages/RobReport'
 
 function AppShell() {
   const location = useLocation()
@@ -26,6 +27,7 @@ function AppShell() {
         <Route path="/trabajo/:id/calculo" element={<CalculoTrace />} />
         <Route path="/trabajo/:id/comparacion" element={<Comparacion />} />
         <Route path="/trabajo/:id/reporte" element={<Reporte />} />
+        <Route path="/trabajo/:id/rob" element={<RobReport />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

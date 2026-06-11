@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { getJob } from '../data/demoJobs'
 import { vmrData, comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, type VmrTank } from '../data/vmr'
+import { commonGrades, densityOutOfRange } from '../data/grades'
 import { calcBqsRow, kernelVersion } from '../lib/kernel'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu } from 'lucide-react'
 
@@ -165,6 +166,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
               {tanks.map((t, i) => {
                 const p = prev?.[i]
                 const c = calc[i]
+                const oor = densityOutOfRange(t.grade, t.densidad15)
                 return (
                   <tr key={i}>
                     <td className="border border-border p-0">
@@ -174,7 +176,13 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                       <input type="checkbox" checked={t.nominado} onChange={(e) => onUpdate(i, { nominado: e.target.checked })} className="h-3.5 w-3.5 accent-slate-700" />
                     </td>
                     <td className="border border-border p-0">
-                      <input value={t.grade} onChange={(e) => onUpdate(i, { grade: e.target.value })} className="w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                      <input
+                        list="fuel-grades"
+                        value={t.grade}
+                        onChange={(e) => onUpdate(i, { grade: e.target.value })}
+                        title={oor ? `Densidad ${t.densidad15} kg/L fuera del rango típico de ${t.grade}` : undefined}
+                        className={`w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring ${oor ? 'text-amber-600 ring-1 ring-amber-400/60' : ''}`}
+                      />
                     </td>
                     <NumCell value={t.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} />
                     <NumCell value={t.tablesRefHeight} onChange={(n) => onUpdate(i, { tablesRefHeight: n })} />
@@ -288,6 +296,14 @@ export function Medicion() {
       <TopBar title="Medición" activeJob={job} />
 
       <main className="flex-1 overflow-auto p-6">
+        {/* Sugerencias de grado (comunes); el campo sigue siendo texto libre */}
+        <datalist id="fuel-grades">
+          {commonGrades.map((g) => (
+            <option key={g.code} value={g.code}>
+              {g.name}
+            </option>
+          ))}
+        </datalist>
         <div className="mx-auto max-w-[1600px] space-y-5">
           {/* Encabezado de la hoja */}
           <Card>

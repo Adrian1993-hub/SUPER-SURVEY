@@ -29,6 +29,11 @@
 //!   roundings; equation results can differ by 1 unit in the 4th decimal for some
 //!   entries. QA tests assert exact equality where the worksheet agrees and
 //!   ±0.0001 elsewhere.
+//! - Observed temperature: used AS-IS (`dt = t - 15`). Many field spreadsheets
+//!   first snap the observed temperature to the nearest 0.25 °C (`INT(t*4+0.5)/4`)
+//!   to emulate a printed-table lookup; that shifts VCF by ~1 in the 4th decimal on
+//!   off-quarter temps. DECISION (2026-06): keep the equation on the raw temperature
+//!   — it is more precise; we do NOT replicate the quarter-degree snap.
 //! - D1250-04 / API 11.1 (2004) revision: planned as a separate, selectable
 //!   version (Decision Log: all table versions selectable by the surveyor).
 

@@ -11,6 +11,7 @@ import { CalculoTrace } from './pages/CalculoTrace'
 import { Comparacion } from './pages/Comparacion'
 import { Reporte } from './pages/Reporte'
 import { RobReport } from './pages/RobReport'
+import { MedicionMultigrado } from './pages/MedicionMultigrado'
 import { Utilidades } from './pages/Utilidades'
 
 function AppShell() {
@@ -30,6 +31,7 @@ function AppShell() {
         <Route path="/trabajo/:id/comparacion" element={<Comparacion />} />
         <Route path="/trabajo/:id/reporte" element={<Reporte />} />
         <Route path="/trabajo/:id/rob" element={<RobReport />} />
+        <Route path="/trabajo/:id/multigrado" element={<MedicionMultigrado />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

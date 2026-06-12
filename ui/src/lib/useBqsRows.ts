@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import type { VmrTank } from '../data/vmr'
-import { calcBqsRow, type BqsRowInput } from './kernel'
+import { calcBqsRow, calcImperialRow, type BqsRowInput, type ImperialRowInput } from './kernel'
 
 const numOf = (s?: string) => (s == null ? NaN : Number(s))
 
@@ -80,6 +80,52 @@ export function sectionTotals(tanks: VmrTank[], calc: (CalcFields | null)[]) {
     densidad: gov > 0 ? dW / gov : 0,
     temp: gov > 0 ? tW / gov : 0,
   }
+}
+
+/** Campos calculados por el kernel para una fila imperial (60 °F). */
+export interface ImperialCalcFields {
+  vcf: number
+  productGroup?: string
+  govBbl: number
+  gsvBbl: number
+  wcf13: number
+  mtAir: number
+  mtVacuum: number
+}
+
+/** Recalcula cada fila imperial (API/°C/m³) vía kernel cuando cambia un input. */
+export function useImperialRows(rows: ImperialRowInput[]): (ImperialCalcFields | null)[] {
+  const [calc, setCalc] = useState<(ImperialCalcFields | null)[]>([])
+  const key = JSON.stringify(rows.map((r) => [r.api, r.temperature, r.volume, r.freeWater, r.table]))
+  useEffect(() => {
+    let cancelled = false
+    Promise.all(
+      rows.map((r) =>
+        calcImperialRow(r)
+          .then((x): ImperialCalcFields | null =>
+            x.success
+              ? {
+                  vcf: numOf(x.vcf),
+                  productGroup: x.productGroup,
+                  govBbl: numOf(x.govBbl),
+                  gsvBbl: numOf(x.gsvBbl),
+                  wcf13: numOf(x.wcf13),
+                  mtAir: numOf(x.mtAir),
+                  mtVacuum: numOf(x.mtVacuum),
+                }
+              : null,
+          )
+          .catch(() => null),
+      ),
+    ).then((res) => {
+      if (!cancelled) setCalc(res)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return calc
 }
 
 export interface TransferredFigures {

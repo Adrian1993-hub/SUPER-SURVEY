@@ -48,6 +48,9 @@ ui/src/lib/ipc.ts               puente UI→Tauri (guardar en SQLite) — solo e
 ui/src/data/grades.ts           catálogo de grados de combustible (ISO 8217 + comerciales)
 ui/src/pages/Utilidades.tsx     utilidades de densidad (API↔ρ15, lab @T, mezcla) — kernel
 ui/src/data/rob.ts              datos demo ROB (inventario por grado + ER Log)
+ui/src/data/multigrade.ts       datos demo BQS imperial multigrado (API/°C/m³)
+rust-kernel/.../astm60.rs       familia 60 °F: Tablas 6A/6B (VCF) + 13 (WCF), API
+rust-kernel/.../bqs60.rs        orquestador de fila imperial (DTO string-in/out)
 ui/src/pages/Reporte.tsx        reporte BQS imprimible (PDF/print + JSON); RobReport.tsx = ROB
 ui/src-tauri/                   shell Tauri v2 (persistencia → SQLite) — compila (local + CI)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
@@ -87,9 +90,13 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 ## En qué fase estamos
 
 **F1 (kernel BQS validado) cerrada → F2 (persistencia + UI en vivo) — bucle BQS cerrado de punta a punta.**
-~60 % del MVP. El kernel valida vs hoja real, persiste, **compila en Tauri (CI)** y **calcula en vivo
+~65 % del MVP. El kernel valida vs hoja real, persiste, **compila en Tauri (CI)** y **calcula en vivo
 en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **Reporte BQS imprimible (PDF)**
-+ **Reporte ROB** (inventario vs ER Log). Falta: utilidades de densidad, firma digital, y el **pase de
++ **Reporte ROB** + **Utilidades de densidad** + **edición D1250-80/04 seleccionable**.
+**Generalización a formato SGS imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
++ 13 WCF, API gravity, ITS-68) **validada celda a celda** contra un worksheet real (`astm60_imperial_tests`,
+`bqs60_tests`), con orquestador imperial + WASM, y ✅ **hoja Multigrado** en la UI (una sección por grado).
+Falta: reporte imperial + apertura/cierre (*loaded*) + audit multigrado; firma digital; y el **pase de
 diseño (reactbits) al final**.
 
 ## Próximos pasos inmediatos

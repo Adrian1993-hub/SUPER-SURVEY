@@ -315,7 +315,7 @@ fn temperature_to_celsius(temperature: &TemperatureValue) -> Decimal {
 /// Terms are accumulated until below 1e-22, well inside `Decimal`'s 28-digit
 /// precision; for |x| <= 0.35 convergence takes < 25 terms. Deterministic and
 /// dependency-free by design (official numbers must not depend on float libm).
-fn exp_taylor(x: Decimal) -> Decimal {
+pub(crate) fn exp_taylor(x: Decimal) -> Decimal {
     let epsilon = dec!(0.0000000000000000000001); // 1e-22
     let mut sum = dec!(1);
     let mut term = dec!(1);

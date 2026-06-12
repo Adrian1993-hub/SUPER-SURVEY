@@ -3,9 +3,12 @@
 
 import { useEffect, useState } from 'react'
 import type { VmrTank } from '../data/vmr'
-import { calcBqsRow } from './kernel'
+import { calcBqsRow, type BqsRowInput } from './kernel'
 
 const numOf = (s?: string) => (s == null ? NaN : Number(s))
+
+/** Edición de tablas seleccionable (D1250-80 por defecto). */
+export type TableVersion = NonNullable<BqsRowInput['tableVersion']>
 
 /** Campos calculados por el kernel para una fila (lo que el surveyor NO teclea). */
 export interface CalcFields {
@@ -18,14 +21,14 @@ export interface CalcFields {
 }
 
 /** Recalcula cada fila vía kernel cuando cambia un input relevante. */
-export function useComputedRows(tanks: VmrTank[]): (CalcFields | null)[] {
+export function useComputedRows(tanks: VmrTank[], version: TableVersion = 'D1250_80'): (CalcFields | null)[] {
   const [calc, setCalc] = useState<(CalcFields | null)[]>([])
   const key = JSON.stringify(tanks.map((t) => [t.densidad15, t.temp, t.tov, t.freeWaterVol]))
   useEffect(() => {
     let cancelled = false
     Promise.all(
       tanks.map((t) =>
-        calcBqsRow({ density15: t.densidad15, temperature: t.temp, tov: t.tov, freeWater: t.freeWaterVol })
+        calcBqsRow({ density15: t.densidad15, temperature: t.temp, tov: t.tov, freeWater: t.freeWaterVol, tableVersion: version })
           .then((r): CalcFields | null =>
             r.success
               ? { gov: numOf(r.gov), vcf: numOf(r.vcf), gsv: numOf(r.gsv), wcf56: numOf(r.wcfAir), mt: numOf(r.mtAir), mtVac: numOf(r.mtVacuum) }
@@ -40,7 +43,7 @@ export function useComputedRows(tanks: VmrTank[]): (CalcFields | null)[] {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
+  }, [key, version])
   return calc
 }
 
@@ -94,7 +97,11 @@ export interface TransferredFigures {
  * dt=0 → VCF=1 → GSV=TOV=|ΔGSV|, y el kernel aplica ρ y Tabla 56 con el
  * redondeo oficial (3 dp half-up) — idéntico a la hoja firmada.
  */
-export function useTransferred(deltaGsv: number, supplierDensity: number): TransferredFigures | null {
+export function useTransferred(
+  deltaGsv: number,
+  supplierDensity: number,
+  version: TableVersion = 'D1250_80',
+): TransferredFigures | null {
   const [out, setOut] = useState<TransferredFigures | null>(null)
   useEffect(() => {
     let cancelled = false
@@ -104,7 +111,7 @@ export function useTransferred(deltaGsv: number, supplierDensity: number): Trans
       setOut(null)
       return
     }
-    calcBqsRow({ density15: supplierDensity, temperature: 15, tov: magnitude })
+    calcBqsRow({ density15: supplierDensity, temperature: 15, tov: magnitude, tableVersion: version })
       .then((r) => {
         if (cancelled) return
         if (!r.success) {
@@ -124,6 +131,6 @@ export function useTransferred(deltaGsv: number, supplierDensity: number): Trans
     return () => {
       cancelled = true
     }
-  }, [deltaGsv, supplierDensity])
+  }, [deltaGsv, supplierDensity, version])
   return out
 }

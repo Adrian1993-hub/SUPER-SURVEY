@@ -15,7 +15,7 @@
 
 use crate::astm::{
     table_54a_vcf, table_54b_vcf, table_56_wcf, Table54Computation, Table54bProductGroup,
-    DEFAULT_VCF_DECIMALS, DEFAULT_WCF_DECIMALS,
+    TableVersion, DEFAULT_WCF_DECIMALS,
 };
 use crate::conversions::convert_volume;
 use crate::decimal::DecimalValue;
@@ -67,6 +67,9 @@ pub struct BqsTankInput {
     pub tov: VolumeValue,
     pub free_water: VolumeValue,
     pub table: AstmTable,
+    /// Petroleum-table edition (D1250-80 default, D1250-04 = 5 dp VCF).
+    #[serde(default)]
+    pub table_version: TableVersion,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,6 +77,8 @@ pub struct BqsTankResult {
     #[serde(with = "rust_decimal::serde::str")]
     pub vcf: Decimal,
     pub product_group: Option<Table54bProductGroup>,
+    #[serde(default)]
+    pub table_version: Option<TableVersion>,
     pub gov: VolumeValue,
     pub gsv: VolumeValue,
     /// Table 56 weight-in-air factor (t/m³).
@@ -94,20 +99,19 @@ pub struct BqsSectionResult {
 }
 
 fn vcf_for(input: &BqsTankInput, rounding: SystemRoundingRule) -> KernelResult<Table54Computation> {
-    match input.table {
-        AstmTable::Table54A => table_54a_vcf(
-            &input.density15,
-            &input.temperature,
-            DEFAULT_VCF_DECIMALS,
-            rounding,
-        ),
-        AstmTable::Table54B => table_54b_vcf(
-            &input.density15,
-            &input.temperature,
-            DEFAULT_VCF_DECIMALS,
-            rounding,
-        ),
-    }
+    // The edition sets the VCF output resolution (1980: 4 dp, 2004: 5 dp); the
+    // underlying equation is shared at atmospheric pressure (see astm::TableVersion).
+    let vcf_decimals = input.table_version.default_vcf_decimals();
+    let mut computation = match input.table {
+        AstmTable::Table54A => {
+            table_54a_vcf(&input.density15, &input.temperature, vcf_decimals, rounding)?
+        }
+        AstmTable::Table54B => {
+            table_54b_vcf(&input.density15, &input.temperature, vcf_decimals, rounding)?
+        }
+    };
+    computation.table_version = Some(input.table_version);
+    Ok(computation)
 }
 
 /// Compute one BQS tank row from the surveyor's inputs.
@@ -196,6 +200,7 @@ pub fn compute_bqs_tank_row(
     let result = BqsTankResult {
         vcf: vcf_comp.vcf,
         product_group: vcf_comp.product_group,
+        table_version: vcf_comp.table_version,
         gov: UnitValue::new(gov_rounded, input.tov.unit),
         gsv: UnitValue::new(gsv_rounded, input.tov.unit),
         wcf_air: wcf_comp.wcf,
@@ -214,6 +219,7 @@ pub fn compute_bqs_tank_row(
                     "tov": input.tov,
                     "free_water": input.free_water,
                     "table": input.table,
+                    "table_version": input.table_version.label(),
                     "intermediate_rounding": precision.intermediate_rounding,
                 }),
                 json!({
@@ -316,6 +322,9 @@ pub struct BqsRowRequestDTO {
     pub free_water_value: String,
     pub free_water_unit: String,
     pub astm_table: String,
+    /// Petroleum-table edition: "D1250_80" (default) or "D1250_04".
+    #[serde(default)]
+    pub table_version: String,
     pub rounding_rule: String,
     pub intermediate_rounding: bool,
     pub observed_volume_decimals: u32,
@@ -328,6 +337,7 @@ pub struct BqsRowResponseDTO {
     pub success: bool,
     pub vcf: Option<String>,
     pub product_group: Option<String>,
+    pub table_version: Option<String>,
     pub gov_value: Option<String>,
     pub gsv_value: Option<String>,
     pub volume_unit: Option<String>,
@@ -351,6 +361,7 @@ impl BqsRowRequestDTO {
         let tov_unit = VolumeUnit::from_str(&self.tov_unit)?;
         let fw_unit = VolumeUnit::from_str(&self.free_water_unit)?;
         let table = AstmTable::from_str(&self.astm_table)?;
+        let table_version = TableVersion::from_str(&self.table_version)?;
         let rounding_rule = SystemRoundingRule::from_str(&self.rounding_rule)?;
 
         let input = BqsTankInput {
@@ -359,6 +370,7 @@ impl BqsRowRequestDTO {
             tov: UnitValue::new(tov, tov_unit),
             free_water: UnitValue::new(fw, fw_unit),
             table,
+            table_version,
         };
         let precision = PrecisionConfiguration {
             intermediate_rounding: self.intermediate_rounding,
@@ -383,6 +395,7 @@ impl BqsRowRequestDTO {
                     .product_group
                     .and_then(|g| serde_json::to_value(g).ok())
                     .and_then(|v| v.as_str().map(str::to_string)),
+                table_version: row.table_version.map(|v| v.label().to_string()),
                 gov_value: Some(row.gov.value.normalize().to_string()),
                 gsv_value: Some(row.gsv.value.normalize().to_string()),
                 volume_unit: Some(format!("{:?}", row.gsv.unit).to_ascii_uppercase()),
@@ -396,6 +409,7 @@ impl BqsRowRequestDTO {
                 success: false,
                 vcf: None,
                 product_group: None,
+                table_version: None,
                 gov_value: None,
                 gsv_value: None,
                 volume_unit: None,

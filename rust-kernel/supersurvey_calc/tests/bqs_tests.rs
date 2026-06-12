@@ -30,6 +30,7 @@ fn tank(
         tov: VolumeValue::new(tov, VolumeUnit::CubicMeters),
         free_water: VolumeValue::new(fw, VolumeUnit::CubicMeters),
         table,
+        table_version: Default::default(),
     }
 }
 
@@ -185,6 +186,7 @@ fn dto_calculates_row_from_string_inputs() {
         free_water_value: "0".to_string(),
         free_water_unit: "CUBIC_METERS".to_string(),
         astm_table: "54B".to_string(),
+        table_version: "D1250_80".to_string(),
         rounding_rule: "HALF_UP".to_string(),
         intermediate_rounding: true,
         observed_volume_decimals: 3,
@@ -214,6 +216,7 @@ fn dto_reports_errors_without_panicking() {
         free_water_value: "0".to_string(),
         free_water_unit: "CUBIC_METERS".to_string(),
         astm_table: "NOPE".to_string(),
+        table_version: String::new(),
         rounding_rule: "HALF_UP".to_string(),
         intermediate_rounding: true,
         observed_volume_decimals: 3,

@@ -8,7 +8,7 @@ import { vmrData, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, typ
 import { commonGrades, densityOutOfRange } from '../data/grades'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { isDesktop, saveMeasurement } from '../lib/ipc'
-import { sectionTotals, useComputedRows, useTransferred, type CalcFields } from '../lib/useBqsRows'
+import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save } from 'lucide-react'
 
 const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
@@ -198,8 +198,9 @@ export function Medicion() {
   const h = vmrData.header
   const [before, setBefore] = useState<VmrTank[]>(clone(vmrData.before.tanques))
   const [after, setAfter] = useState<VmrTank[]>(clone(vmrData.after.tanques))
-  const beforeCalc = useComputedRows(before)
-  const afterCalc = useComputedRows(after)
+  const [edition, setEdition] = useState<TableVersion>('D1250_80')
+  const beforeCalc = useComputedRows(before, edition)
+  const afterCalc = useComputedRows(after, edition)
 
   const [kver, setKver] = useState('')
   useEffect(() => {
@@ -216,7 +217,7 @@ export function Medicion() {
   // Quantity Transferred EN VIVO: ΔGSV (after − before, totales del kernel) ×
   // densidad del suplidor, calculado por el kernel (una llamada a 15 °C).
   const deltaGsv = sectionTotals(after, afterCalc).gsv - sectionTotals(before, beforeCalc).gsv
-  const transferred = useTransferred(deltaGsv, h.suppliersDensity)
+  const transferred = useTransferred(deltaGsv, h.suppliersDensity, edition)
   // Forma única para la UI; seed demo como fallback hasta que el kernel responda.
   const tr = {
     suppliersDensity: h.suppliersDensity,
@@ -264,6 +265,7 @@ export function Medicion() {
         tov: t.tov,
         freeWater: t.freeWaterVol,
         table: (t.grade.trim().toUpperCase() === 'CRUDE' ? '54A' : '54B') as '54A' | '54B',
+        tableVersion: edition,
       }))
       const res = await saveMeasurement({
         jobRef: h.referencia,
@@ -297,6 +299,17 @@ export function Medicion() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Hoja de medición</h2>
             <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title="Edición de las tablas de medición de petróleo">
+                Tablas
+                <select
+                  value={edition}
+                  onChange={(e) => setEdition(e.target.value as TableVersion)}
+                  className="rounded-md border border-input bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="D1250_80">D1250-80 (VCF 4 dp)</option>
+                  <option value="D1250_04">D1250-04 · API MPMS 11.1 (5 dp)</option>
+                </select>
+              </label>
               {saveMsg && <span className="text-sm text-muted-foreground">{saveMsg}</span>}
               <Button
                 onClick={onSave}
@@ -342,7 +355,7 @@ export function Medicion() {
               cambios de volumen y temperatura vs. apertura (solo referencia del inspector, no salen en el reporte).
             </p>
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
-              <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · WASM
+              <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · {edition === 'D1250_04' ? 'D1250-04' : 'D1250-80'} · WASM
             </span>
           </div>
 

@@ -23,6 +23,8 @@ export interface BqsRowInput {
   tov: number // m³ (table volume, trim/list already applied)
   freeWater?: number // m³
   table?: '54A' | '54B'
+  /** Edición de tablas: D1250-80 (def., VCF 4 dp) o D1250-04 (API MPMS 11.1, 5 dp). */
+  tableVersion?: 'D1250_80' | 'D1250_04'
   scope?: 'LIVE' | 'TRACE_VIEW' | 'SAVE'
   intermediateRounding?: boolean
   observedVolumeDecimals?: number
@@ -36,6 +38,7 @@ export interface BqsRowResult {
   success: boolean
   vcf?: string
   productGroup?: string
+  tableVersion?: string
   gov?: string
   gsv?: string
   volumeUnit?: string
@@ -59,6 +62,7 @@ export function bqsRowRequest(i: BqsRowInput) {
     free_water_value: String(i.freeWater ?? 0),
     free_water_unit: 'CUBIC_METERS',
     astm_table: i.table ?? '54B',
+    table_version: i.tableVersion ?? 'D1250_80',
     rounding_rule: i.roundingRule ?? 'HALF_UP',
     intermediate_rounding: i.intermediateRounding ?? true,
     observed_volume_decimals: i.observedVolumeDecimals ?? 3,
@@ -71,6 +75,7 @@ interface RawResponse {
   success: boolean
   vcf?: string
   product_group?: string
+  table_version?: string
   gov_value?: string
   gsv_value?: string
   volume_unit?: string
@@ -90,6 +95,7 @@ export async function calcBqsRow(input: BqsRowInput): Promise<BqsRowResult> {
     success: r.success,
     vcf: r.vcf,
     productGroup: r.product_group,
+    tableVersion: r.table_version,
     gov: r.gov_value,
     gsv: r.gsv_value,
     volumeUnit: r.volume_unit,

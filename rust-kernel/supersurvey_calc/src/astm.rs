@@ -62,6 +62,71 @@ pub enum Table54bProductGroup {
     FuelOils,
 }
 
+/// Which edition of the petroleum measurement tables / implementation procedure
+/// the surveyor selected (Decision Log: all table versions selectable).
+///
+/// At ATMOSPHERIC pressure — i.e. tank gauging for bunkers — the 2004 revision
+/// (API MPMS 11.1) reproduces the 1980 CTL/VCF for the generalized product
+/// groups: the thermal-expansion correlation is shared and the 2004 pressure
+/// correction (CTPL) is unity. The edition therefore changes, in our
+/// implementation: (a) the VCF output resolution — 1980 prints 4 dp, the 2004
+/// procedure specifies 5 — and (b) the recorded provenance. Both editions here
+/// run the SAME no-intermediate-rounding equation the 2004 procedure mandates;
+/// neither emulates printed-table granularity. The enum also future-proofs for
+/// CTPL and edition-specific commodity correlations.
+///
+/// See docs/research/d1250-80-vs-2004.md.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TableVersion {
+    /// ASTM D1250-80 (1980 Petroleum Measurement Tables) — default.
+    #[default]
+    D1250_1980,
+    /// ASTM D1250-04 / API MPMS Ch. 11.1 (2004) — 5 dp CTL, atmospheric.
+    D1250_2004,
+}
+
+impl TableVersion {
+    /// VCF/CTL output decimals per the edition's convention (1980: 4, 2004: 5).
+    pub fn default_vcf_decimals(self) -> u32 {
+        match self {
+            TableVersion::D1250_1980 => 4,
+            TableVersion::D1250_2004 => 5,
+        }
+    }
+
+    /// Stable label for traces, reports and the IPC boundary.
+    pub fn label(self) -> &'static str {
+        match self {
+            TableVersion::D1250_1980 => "D1250_1980",
+            TableVersion::D1250_2004 => "D1250_2004",
+        }
+    }
+}
+
+impl std::str::FromStr for TableVersion {
+    type Err = KernelError;
+    fn from_str(input: &str) -> KernelResult<Self> {
+        match input
+            .trim()
+            .to_ascii_uppercase()
+            .replace(['-', ' ', '.'], "_")
+            .as_str()
+        {
+            "" | "D1250_1980" | "D1250_80" | "1980" | "80" | "ASTM_D1250_80" => {
+                Ok(TableVersion::D1250_1980)
+            }
+            "D1250_2004" | "D1250_04" | "2004" | "04" | "API_MPMS_11_1" | "MPMS_11_1"
+            | "ASTM_D1250_04" => Ok(TableVersion::D1250_2004),
+            _ => Err(KernelError::with_field(
+                KernelErrorCode::InvalidUnit,
+                format!("Unsupported petroleum-table edition: {input}"),
+                "table_version",
+            )),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Table54Computation {
     /// Final VCF, rounded to the requested decimals.
@@ -81,6 +146,10 @@ pub struct Table54Computation {
     pub density15_kg_m3: Decimal,
     /// Product group selected by density (54B) — `None` for 54A (crude).
     pub product_group: Option<Table54bProductGroup>,
+    /// Petroleum-table edition applied (provenance). `None` until set by the
+    /// orchestrator; the bare table functions are edition-agnostic at 1 atm.
+    #[serde(default)]
+    pub table_version: Option<TableVersion>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -183,6 +252,7 @@ fn vcf_from_alpha(
         delta_t,
         density15_kg_m3: rho,
         product_group: None,
+        table_version: None,
     })
 }
 

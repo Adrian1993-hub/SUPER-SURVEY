@@ -5,7 +5,7 @@ import { TopBar } from '../components/TopBar'
 import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, toleranceLayers, type VmrSectionData } from '../data/vmr'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
-import { sectionTotals, useComputedRows, useTransferred, type CalcFields } from '../lib/useBqsRows'
+import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { Ship, FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte BQS imprimible: TODA cifra sale del kernel WASM (misma matemática
@@ -89,11 +89,13 @@ export function Reporte() {
   const job = getJob(id || '1')
   const h = vmrData.header
 
-  const beforeCalc = useComputedRows(vmrData.before.tanques)
-  const afterCalc = useComputedRows(vmrData.after.tanques)
+  const [edition, setEdition] = useState<TableVersion>('D1250_80')
+  const beforeCalc = useComputedRows(vmrData.before.tanques, edition)
+  const afterCalc = useComputedRows(vmrData.after.tanques, edition)
   const totBefore = sectionTotals(vmrData.before.tanques, beforeCalc)
   const totAfter = sectionTotals(vmrData.after.tanques, afterCalc)
-  const transferred = useTransferred(totAfter.gsv - totBefore.gsv, h.suppliersDensity)
+  const transferred = useTransferred(totAfter.gsv - totBefore.gsv, h.suppliersDensity, edition)
+  const editionLabel = edition === 'D1250_04' ? 'D1250-04 · API MPMS 11.1' : 'D1250-80'
   const mtAir = transferred?.mtAir ?? vmrData.transferred.mtAir
 
   const [cmp, setCmp] = useState<ComparisonResult | null>(null)
@@ -128,6 +130,7 @@ export function Reporte() {
       demo_data: true, // datos ficticios de demostración
       generated_at: new Date().toISOString(),
       kernel_version: kver || null,
+      table_version: edition,
       header: h,
       sections: {
         before: { tanks: vmrData.before.tanques, calc: beforeCalc, totals: totBefore },
@@ -155,7 +158,18 @@ export function Reporte() {
           {/* Acciones (no se imprimen) */}
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
             <h2 className="text-lg font-semibold">Reporte BQS — vista de impresión</h2>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title="Edición de las tablas de medición de petróleo">
+                Tablas
+                <select
+                  value={edition}
+                  onChange={(e) => setEdition(e.target.value as TableVersion)}
+                  className="rounded-md border border-input bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="D1250_80">D1250-80 (4 dp)</option>
+                  <option value="D1250_04">D1250-04 (5 dp)</option>
+                </select>
+              </label>
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
                 <FileText className="h-4 w-4" /> PDF / Imprimir
               </Button>
@@ -300,7 +314,7 @@ export function Reporte() {
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                Calculado por SuperSurvey · kernel ASTM D1250-80 {kver ? `v${kver}` : ''} (sin redondeos intermedios no
+                Calculado por SuperSurvey · kernel ASTM {editionLabel} {kver ? `v${kver}` : ''} (sin redondeos intermedios no
                 documentados) · documento de demostración con datos ficticios
               </footer>
             </div>

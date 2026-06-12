@@ -32,6 +32,7 @@ fn bqs_request() -> BqsRowRequestDTO {
         free_water_value: "0".into(),
         free_water_unit: "CUBIC_METERS".into(),
         astm_table: "54B".into(),
+        table_version: "D1250_80".into(),
         rounding_rule: "HALF_UP".into(),
         intermediate_rounding: true,
         observed_volume_decimals: 3,

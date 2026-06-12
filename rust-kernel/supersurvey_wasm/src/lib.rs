@@ -5,6 +5,7 @@
 //! persists results via Tauri + SQLite; this module only *computes*.
 
 use supersurvey_calc::bqs::BqsRowRequestDTO;
+use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
 use supersurvey_calc::density::DensityToolRequestDTO;
 use wasm_bindgen::prelude::*;
@@ -34,6 +35,19 @@ pub fn bqs_calculate_row(request_json: &str) -> String {
 pub fn compare_sources(request_json: &str) -> String {
     match serde_json::from_str::<ComparisonRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.compare())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Compute one IMPERIAL BQS tank row (US-customary, 60 °F base): API gravity +
+/// observed temperature + volume → VCF (Table 6A/6B) / WCF (Table 13) / barrels
+/// / metric tons. `request_json` is a JSON `ImperialRowRequestDTO`; returns a
+/// JSON `ImperialRowResponseDTO`. Same error convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn bqs_calculate_row_imperial(request_json: &str) -> String {
+    match serde_json::from_str::<ImperialRowRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
     }

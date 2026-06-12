@@ -27,6 +27,29 @@ export function bqs_calculate_row(request_json) {
 }
 
 /**
+ * Compute one IMPERIAL BQS tank row (US-customary, 60 °F base): API gravity +
+ * observed temperature + volume → VCF (Table 6A/6B) / WCF (Table 13) / barrels
+ * / metric tons. `request_json` is a JSON `ImperialRowRequestDTO`; returns a
+ * JSON `ImperialRowResponseDTO`. Same error convention as `bqs_calculate_row`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function bqs_calculate_row_imperial(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.bqs_calculate_row_imperial(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Compare custody figures (e.g. Vessel vs Barge vs BDN) against layered
  * tolerances and recommend a document (NONE / ISSUE_NOAD / ISSUE_LOP).
  *

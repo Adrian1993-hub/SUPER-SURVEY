@@ -13,6 +13,14 @@
 export function bqs_calculate_row(request_json: string): string;
 
 /**
+ * Compute one IMPERIAL BQS tank row (US-customary, 60 °F base): API gravity +
+ * observed temperature + volume → VCF (Table 6A/6B) / WCF (Table 13) / barrels
+ * / metric tons. `request_json` is a JSON `ImperialRowRequestDTO`; returns a
+ * JSON `ImperialRowResponseDTO`. Same error convention as `bqs_calculate_row`.
+ */
+export function bqs_calculate_row_imperial(request_json: string): string;
+
+/**
  * Compare custody figures (e.g. Vessel vs Barge vs BDN) against layered
  * tolerances and recommend a document (NONE / ISSUE_NOAD / ISSUE_LOP).
  *
@@ -39,6 +47,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly bqs_calculate_row: (a: number, b: number) => [number, number];
+    readonly bqs_calculate_row_imperial: (a: number, b: number) => [number, number];
     readonly compare_sources: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];

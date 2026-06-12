@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, compare_sources, density_tool, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -102,6 +102,84 @@ export async function calcBqsRow(input: BqsRowInput): Promise<BqsRowResult> {
     wcfAir: r.wcf_air,
     mtAir: r.mt_air_value,
     mtVacuum: r.mt_vacuum_value,
+    trace: r.trace_json,
+    errors: r.errors,
+  }
+}
+
+// ---- Imperial BQS row (US-customary 60 °F: API + barrels + Tables 6A/6B/13) ----
+
+/** Friendly inputs for one imperial tank row. */
+export interface ImperialRowInput {
+  api: number // API gravity @ 60 °F
+  temperature: number
+  temperatureUnit?: 'CELSIUS' | 'FAHRENHEIT' // default CELSIUS
+  volume: number
+  volumeUnit?: 'CUBIC_METERS' | 'US_BARRELS' // default CUBIC_METERS
+  freeWater?: number
+  table?: '6A' | '6B'
+  scope?: 'LIVE' | 'TRACE_VIEW' | 'SAVE'
+}
+
+export interface ImperialRowResult {
+  success: boolean
+  vcf?: string
+  productGroup?: string
+  temp68F?: string
+  density60?: string
+  govBbl?: string
+  gsvBbl?: string
+  wcf13?: string
+  mtAir?: string
+  mtVacuum?: string
+  trace?: unknown
+  errors?: { code?: string; message?: string }[]
+}
+
+interface RawImperialResponse {
+  success: boolean
+  vcf?: string
+  product_group?: string
+  temp68_f?: string
+  density60_kg_m3?: string
+  gov_bbl?: string
+  gsv_bbl?: string
+  wcf13?: string
+  mt_air?: string
+  mt_vacuum?: string
+  trace_json?: unknown
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Compute one imperial (60 °F) BQS tank row with the WASM kernel. */
+export async function calcImperialRow(input: ImperialRowInput): Promise<ImperialRowResult> {
+  await ensureReady()
+  const req = {
+    calculation_scope: input.scope ?? 'LIVE',
+    api_value: String(input.api),
+    temperature_value: String(input.temperature),
+    temperature_unit: input.temperatureUnit ?? 'CELSIUS',
+    volume_value: String(input.volume),
+    volume_unit: input.volumeUnit ?? 'CUBIC_METERS',
+    free_water_value: String(input.freeWater ?? 0),
+    free_water_unit: input.volumeUnit ?? 'CUBIC_METERS',
+    astm_table: input.table ?? '6B',
+    rounding_rule: 'HALF_UP',
+    gsv_decimals: 2,
+    weight_decimals: 3,
+  }
+  const r = JSON.parse(bqs_calculate_row_imperial(JSON.stringify(req))) as RawImperialResponse
+  return {
+    success: r.success,
+    vcf: r.vcf,
+    productGroup: r.product_group,
+    temp68F: r.temp68_f,
+    density60: r.density60_kg_m3,
+    govBbl: r.gov_bbl,
+    gsvBbl: r.gsv_bbl,
+    wcf13: r.wcf13,
+    mtAir: r.mt_air,
+    mtVacuum: r.mt_vacuum,
     trace: r.trace_json,
     errors: r.errors,
   }

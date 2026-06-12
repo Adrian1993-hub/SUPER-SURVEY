@@ -97,7 +97,9 @@ diseño (reactbits) al final**.
 1. **Recibir el caso BQS de referencia** (Excel lleno + PDF del reporte firmado) — caso ancla de BQS.
 2. ✅ Doctrina BQS v0.1 escrita (`docs/operations/01-BQS.md`) — falta validar/corregir con el caso real.
 3. ✅ **VCF/WCF reales** (54B/54A/56, D1250-80) y ✅ **comparison engine** (tolerancia en capas +
-   NOAD/LOP), ambos validados vs hoja real / números de la UI. Falta: versión **D1250-04 seleccionable**.
+   NOAD/LOP), ambos validados vs hoja real / números de la UI. ✅ **Edición seleccionable**
+   (`TableVersion`: D1250-80 / D1250-04 = API MPMS 11.1; a 1 atm comparten correlación → la 2004
+   aporta VCF a 5 dp + procedencia; ver `docs/research/d1250-80-vs-2004.md`).
 4. **F2 — cablear captura real:** ✅ DTOs (fila BQS + comparación), ✅ **repos SQLite**, ✅ **shell
    Tauri compila (CI)**, ✅ **kernel WASM**, ✅ **Medición en vivo** (fila + totales + *Quantity
    Transferred* con None/NOAD/LOP), ✅ **Comparación en vivo** y ✅ **Guardado** (`save_measurement`
@@ -107,8 +109,9 @@ diseño (reactbits) al final**.
    cargar/guardar el estado editado por trabajo; extender el cálculo en vivo al resto de pantallas.
 5. ✅ **Utilidades de densidad** (`density.rs` + página Utilidades): API↔ρ15 (vía SG60/60 y agua@60°F
    999.016), ρ_obs@T↔ρ15 (inversión de la 54B por punto fijo — cubre lab @20 °C), mezcla ponderada
-   por volumen. 14 tests QA. Falta: **versión D1250-04 seleccionable**; luego el **pase de diseño
-   (reactbits)** — al final, por ser la capa de interacción (decisión del usuario).
+   por volumen. 14 tests QA. ✅ **D1250-04 seleccionable** (kernel + UI). **Próximo: pase de diseño
+   (reactbits)** — al final, por ser la capa de interacción (decisión del usuario). Pendientes de
+   producto: cargar/guardar estado por trabajo, firma digital, XLSX, SQLCipher, build empacado.
 6. Aplicar los **6 fixes de hardening** (Ultraplan §9). Hecho: **toolchain pin ✓**, **WCF→MT (Tabla 56) ✓**. Faltan 4.
 
 ## Cómo compilar / probar

@@ -52,7 +52,10 @@ ui/src/data/multigrade.ts       datos demo BQS imperial multigrado (API/°C/m³)
 rust-kernel/.../astm60.rs       familia 60 °F: Tablas 6A/6B (VCF) + 13 (WCF), API
 rust-kernel/.../bqs60.rs        orquestador de fila imperial (DTO string-in/out)
 rust-kernel/.../vef.rs          Vessel Experience Factor (API MPMS 17.9 / HM49)
+rust-kernel/.../custody.rs      S&W (sediment&water) + pro-rata (reparto por B/L)
 ui/src/components/VefPanel.tsx  panel VEF (historial de viajes + aplicación)
+ui/src/data/reportTemplates.ts  descriptores de plantillas inteligentes (off-hire/STS/barge)
+ui/src/pages/SmartReport.tsx    renderer único guiado por descriptor (secciones reutilizables)
 ui/src/pages/Reporte.tsx        reporte BQS imprimible (PDF/print + JSON); RobReport.tsx = ROB
 ui/src-tauri/                   shell Tauri v2 (persistencia → SQLite) — compila (local + CI)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
@@ -94,7 +97,9 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 **F1 (kernel BQS validado) cerrada → F2 (persistencia + UI en vivo) — bucle BQS cerrado de punta a punta.**
 ~65 % del MVP. El kernel valida vs hoja real, persiste, **compila en Tauri (CI)** y **calcula en vivo
 en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **Reporte BQS imprimible (PDF)**
-+ **Reporte ROB** + **Utilidades de densidad** + **edición D1250-80/04 seleccionable**.
++ **Reporte ROB** + **Utilidades de densidad** + **edición D1250-80/04 seleccionable**
++ **plantillas inteligentes** (`SmartReport` guiado por descriptor: off-hire/STS/barge desde un
+  solo renderer, con S&W + pro-rata + VEF del kernel).
 **Generalización a formato SGS imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
 + 13 WCF, API gravity, ITS-68) **validada celda a celda** contra un worksheet real (`astm60_imperial_tests`,
 `bqs60_tests`), con orquestador imperial + WASM, ✅ **Multigrado** completo (apertura/cierre → *loaded*,

@@ -7,6 +7,7 @@ export const compare_sources: (a: number, b: number) => [number, number];
 export const density_tool: (a: number, b: number) => [number, number];
 export const kernel_version: () => [number, number];
 export const pro_rata: (a: number, b: number) => [number, number];
+export const sampling_levels: (a: number, b: number) => [number, number];
 export const sw_deduction: (a: number, b: number) => [number, number];
 export const vef_calculate: (a: number, b: number) => [number, number];
 export const __wbindgen_exn_store: (a: number) => void;

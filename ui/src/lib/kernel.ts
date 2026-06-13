@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -377,6 +377,68 @@ export async function proRata(total: number, parcels: { label: string; weight: n
     errors?: { code?: string; message?: string }[]
   }
   return { success: r.success, total: r.total, parcels: r.parcels, errors: r.errors }
+}
+
+// ---- Tank sampling levels (upper / middle / lower) ----------------------
+
+export interface SamplingTankInput {
+  tank: string
+  referenceHeight: number
+  ullage: number
+}
+export interface SamplingTankResult {
+  tank: string
+  referenceHeight: string
+  ullage: string
+  innage?: string
+  upper?: string
+  middle?: string
+  lower?: string
+  upperHeight?: string
+  middleHeight?: string
+  lowerHeight?: string
+  error?: string
+}
+export interface SamplingResult {
+  success: boolean
+  tanks?: SamplingTankResult[]
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Upper/middle/lower sampling dip levels for a set of tanks (kernel). */
+export async function samplingLevels(tanks: SamplingTankInput[], decimals = 3): Promise<SamplingResult> {
+  await ensureReady()
+  const req = {
+    tanks: tanks.map((t) => ({ tank: t.tank, reference_height: String(t.referenceHeight), ullage: String(t.ullage) })),
+    decimals,
+    rounding_rule: 'HALF_UP',
+  }
+  const r = JSON.parse(sampling_levels(JSON.stringify(req))) as {
+    success: boolean
+    tanks?: {
+      tank: string; reference_height: string; ullage: string
+      innage?: string; upper?: string; middle?: string; lower?: string
+      upper_height?: string; middle_height?: string; lower_height?: string; error?: string
+    }[]
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    tanks: r.tanks?.map((t) => ({
+      tank: t.tank,
+      referenceHeight: t.reference_height,
+      ullage: t.ullage,
+      innage: t.innage,
+      upper: t.upper,
+      middle: t.middle,
+      lower: t.lower,
+      upperHeight: t.upper_height,
+      middleHeight: t.middle_height,
+      lowerHeight: t.lower_height,
+      error: t.error,
+    })),
+    errors: r.errors,
+  }
 }
 
 let cachedVersion: string | null = null

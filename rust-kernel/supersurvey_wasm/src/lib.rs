@@ -9,6 +9,7 @@ use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
 use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
+use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
 use wasm_bindgen::prelude::*;
 
@@ -96,6 +97,17 @@ pub fn sw_deduction(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn pro_rata(request_json: &str) -> String {
     match serde_json::from_str::<ProRataRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Tank sampling levels (upper/middle/lower) from ullage + reference height.
+/// JSON `SamplingRequestDTO` → `SamplingResponseDTO`.
+#[wasm_bindgen]
+pub fn sampling_levels(request_json: &str) -> String {
+    match serde_json::from_str::<SamplingRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

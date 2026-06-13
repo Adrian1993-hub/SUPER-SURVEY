@@ -3,6 +3,7 @@ import { useParams, Navigate, Link } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { VefPanel } from '../components/VefPanel'
+import { SamplingPanel } from '../components/SamplingPanel'
 import { operationTemplates, type OperationTemplate, type TemplateGrade, type TemplateTank } from '../data/reportTemplates'
 import { toleranceLayers, type VmrTank } from '../data/vmr'
 import { compareSources, swDeduction, proRata, kernelVersion, type ComparisonResult, type ImperialRowInput, type SwResult, type ProRataResult } from '../lib/kernel'
@@ -449,6 +450,12 @@ export function SmartReport() {
                           </div>
                         </div>
                       </Section>
+                    )
+                  case 'sampling':
+                    return (
+                      <div key="samp">
+                        <SamplingPanel />
+                      </div>
                     )
                   case 'custodySummary':
                     return <CustodySummary key="cust" tpl={tpl} mtByGrade={mtByGrade} />

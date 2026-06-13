@@ -49,6 +49,12 @@ export function kernel_version(): string;
 export function pro_rata(request_json: string): string;
 
 /**
+ * Tank sampling levels (upper/middle/lower) from ullage + reference height.
+ * JSON `SamplingRequestDTO` → `SamplingResponseDTO`.
+ */
+export function sampling_levels(request_json: string): string;
+
+/**
  * S&W (Sediment & Water) deduction: gross → (S&W, net). `request_json` is a JSON
  * `SwRequestDTO`; returns a JSON `SwResponseDTO`.
  */
@@ -71,6 +77,7 @@ export interface InitOutput {
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
+    readonly sampling_levels: (a: number, b: number) => [number, number];
     readonly sw_deduction: (a: number, b: number) => [number, number];
     readonly vef_calculate: (a: number, b: number) => [number, number];
     readonly __wbindgen_exn_store: (a: number) => void;

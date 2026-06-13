@@ -11,6 +11,7 @@ export type UnitSystem = 'metric' | 'imperial'
 export type SectionKind =
   | 'meta' // cabecera buque/puerto/fecha
   | 'gradeInventory' // tabla de tanques por grado (cálculo en vivo)
+  | 'sampling' // niveles de muestreo Upper/Middle/Lower + gráfico
   | 'custodySummary' // comparación de dos cifras (Received vs referencia) + Δ/%
   | 'swDeduction' // Gross → S&W → Net (crudo)
   | 'proRata' // reparto entre B/L
@@ -150,7 +151,7 @@ const stsDischarge: OperationTemplate = {
   title: 'STS Mother — Discharge Report',
   subtitle: 'Mother vessel → shuttle (crude oil)',
   unitSystem: 'imperial',
-  sections: ['meta', 'gradeInventory', 'swDeduction', 'custodySummary', 'proRata', 'vef', 'signatures', 'notes'],
+  sections: ['meta', 'gradeInventory', 'sampling', 'swDeduction', 'custodySummary', 'proRata', 'vef', 'signatures', 'notes'],
   header: {
     referencia: 'STS DEMO-0754',
     buque: 'MT DEMO-MOTHER',

@@ -37,6 +37,7 @@ pub mod error;
 pub mod movement;
 pub mod precision;
 pub mod quantity_chain;
+pub mod sampling;
 pub mod trace;
 pub mod units;
 pub mod value;
@@ -57,6 +58,7 @@ pub mod prelude {
     pub use crate::movement::*;
     pub use crate::precision::*;
     pub use crate::quantity_chain::*;
+    pub use crate::sampling::*;
     pub use crate::trace::*;
     pub use crate::units::*;
     pub use crate::value::*;

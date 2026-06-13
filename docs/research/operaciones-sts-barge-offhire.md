@@ -120,3 +120,33 @@ Surveyor/Master/Chief Eng). **= nuestro Reporte ROB + un certificado.**
 **Recomendación:** implementar ya los dos cálculos puros y validables (**S&W** y **Pro‑Rata**) en el
 kernel — son la pieza distintiva que falta y los tengo anclados a números reales. Luego, las
 plantillas de reporte (STS/Barge/Off‑Hire) sobre el motor existente, y por último pipeline/shore.
+
+---
+
+## 6. Refuerzo: Master Summary, multi-unidad y otra empresa (Intertek) + ISO 13739
+
+Más referencias (2ª tanda) — **AXIOS STAR** aparece en SGS *y* Intertek (misma nave, distinta
+empresa): el layout es **universal**.
+
+### 6.1 Master Summary (rollup ejecutivo) — `AXIOS_STAR_MASTER_SUMMARY`
+Una página que reconcilia TODO el viaje, multigrado (columnas por grado + TOTAL):
+1. **Vessel-to-Shore (load port):** B/L figures vs Vessel loaded → Diff/%, y **Vessel loaded W/VEF**
+   → Diff/% (VEF aplicado).
+2. **Load port vs Discharge port → IN-TRANSIT VARIANCE** (pérdida en tránsito) + %.
+3. **Remaining On Board.**
+→ Sección "smart" de alto valor: resume todo apoyándose en cifras ya calculadas (custody + VEF).
+
+### 6.2 Tabla de cantidades multi-unidad + TCV/GSV/NSV — `PAN…Intertek`
+Cada cifra en **7 unidades** (bbl, gal@60, m³@60, L@60, m³@15, L@15) y en triplete
+**TCV / GSV / NSV** (`NSV = GSV − S&W`). Es el backbone compartido de todos los reportes; el kernel
+ya tiene conversiones y S&W → falta un **ensamblador "una cifra → 7 unidades × TCV/GSV/NSV"**.
+
+### 6.3 ISO 13739:2020 (norma) — doctrina, no cálculo
+Procedimientos de transferencia de búnker (pre/entrega/post + documentación); referencia ISO 8217
+(specs de combustible) e ISO 4268 (temperatura). Sustenta la doctrina BQS y los criterios de
+LOP/NOAD. (El PDF es la *preview* iTeh, 15 págs.)
+
+### 6.4 Próximas refinaciones de plantilla (orden sugerido)
+1. **Master Summary** como sección del motor (multigrado: B/L→loaded±VEF→in-transit→discharge→ROB).
+2. **Tabla multi-unidad (7) × TCV/GSV/NSV** — requiere ensamblador de unidades en el kernel.
+3. Exportadores: además de PDF/print, **XLSX** y JSON técnico ya existe.

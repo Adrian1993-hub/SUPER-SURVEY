@@ -51,6 +51,8 @@ ui/src/data/rob.ts              datos demo ROB (inventario por grado + ER Log)
 ui/src/data/multigrade.ts       datos demo BQS imperial multigrado (API/°C/m³)
 rust-kernel/.../astm60.rs       familia 60 °F: Tablas 6A/6B (VCF) + 13 (WCF), API
 rust-kernel/.../bqs60.rs        orquestador de fila imperial (DTO string-in/out)
+rust-kernel/.../vef.rs          Vessel Experience Factor (API MPMS 17.9 / HM49)
+ui/src/components/VefPanel.tsx  panel VEF (historial de viajes + aplicación)
 ui/src/pages/Reporte.tsx        reporte BQS imprimible (PDF/print + JSON); RobReport.tsx = ROB
 ui/src-tauri/                   shell Tauri v2 (persistencia → SQLite) — compila (local + CI)
 reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO referencia)
@@ -95,9 +97,10 @@ en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **R
 + **Reporte ROB** + **Utilidades de densidad** + **edición D1250-80/04 seleccionable**.
 **Generalización a formato SGS imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
 + 13 WCF, API gravity, ITS-68) **validada celda a celda** contra un worksheet real (`astm60_imperial_tests`,
-`bqs60_tests`), con orquestador imperial + WASM, y ✅ **hoja Multigrado** en la UI (una sección por grado).
-Falta: reporte imperial + apertura/cierre (*loaded*) + audit multigrado; firma digital; y el **pase de
-diseño (reactbits) al final**.
+`bqs60_tests`), con orquestador imperial + WASM, ✅ **Multigrado** completo (apertura/cierre → *loaded*,
+audit por grado Received-vs-BDN, impresión), y ✅ **VEF** (API MPMS 17.9 / HM49 — `vef.rs`, validado a 0.9993,
+panel en Multigrado). **87 tests** en el kernel. Falta: guardado de filas imperiales; cargo/terminal
+(conciliación buque↔tierra, pipeline, slops); firma digital; y el **pase de diseño (reactbits) al final**.
 
 ## Próximos pasos inmediatos
 

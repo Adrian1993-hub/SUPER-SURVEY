@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
-import { multigradeDemo, type ImpGrade } from '../data/multigrade'
-import { kernelVersion, type ImperialRowInput } from '../lib/kernel'
+import { toleranceLayers } from '../data/vmr'
+import { multigradeDemo, type ImpGrade, type ImpTank } from '../data/multigrade'
+import { compareSources, kernelVersion, type ComparisonResult, type ImperialRowInput } from '../lib/kernel'
 import { useImperialRows, type ImperialCalcFields } from '../lib/useBqsRows'
-import { Cpu, Layers, Droplets } from 'lucide-react'
+import { Cpu, Layers, Droplets, AlertTriangle, CheckCircle2, FileText, Braces } from 'lucide-react'
 
-// BQS IMPERIAL MULTIGRADO: una sección de medición por GRADO, en unidades US
-// (API @60 °F, barriles, Tablas 6A/6B + 13). TODO lo calcula el kernel WASM
-// (mismo Rust validado contra el worksheet SGS de referencia) — nada en TS.
+// BQS IMPERIAL MULTIGRADO completo (estilo SGS): por GRADO, apertura + cierre
+// (Loaded = cierre − apertura) y AUDIT (Received vs BDN, veredicto del kernel;
+// Nominado como referencia). Unidades US: API @60 °F, barriles, Tablas 6B/13.
+// TODO cálculo por fila y todo veredicto sale del kernel WASM — nada en TS,
+// que solo suma/resta totales para display (igual que la hoja).
 
 const f2 = (n: number) => n.toFixed(2)
 const f3 = (n: number) => n.toFixed(3)
@@ -20,8 +24,22 @@ const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] ta
 const tdL = 'border border-border px-1.5 py-1 text-left text-[11px]'
 const tdGrey = `${td} bg-muted/50`
 
-function gradeRows(g: ImpGrade): ImperialRowInput[] {
-  return g.tanks.map((t) => ({
+function NumCell({ value, onChange, step = 0.01 }: { value: number; onChange: (n: number) => void; step?: number }) {
+  return (
+    <td className="border border-border p-0">
+      <input
+        type="number"
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        className="w-full bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
+      />
+    </td>
+  )
+}
+
+function toRows(tanks: ImpTank[]): ImperialRowInput[] {
+  return tanks.map((t) => ({
     api: t.api,
     temperature: t.tempC,
     temperatureUnit: 'CELSIUS',
@@ -32,128 +50,374 @@ function gradeRows(g: ImpGrade): ImperialRowInput[] {
   }))
 }
 
-function GradeSection({ g, onTotal }: { g: ImpGrade; onTotal: (grade: string, mt: number) => void }) {
-  const calc = useImperialRows(gradeRows(g))
+interface SectionTotals {
+  gsvBbl: number
+  mtAir: number
+  mtVac: number
+}
+
+function totalsOf(calc: (ImperialCalcFields | null)[]): SectionTotals {
   const sum = (pick: (c: ImperialCalcFields) => number) => calc.reduce((a, c) => a + (c ? pick(c) : 0), 0)
-  const totGsv = sum((c) => c.gsvBbl)
-  const totMt = sum((c) => c.mtAir)
-  const totMtVac = sum((c) => c.mtVacuum)
+  return { gsvBbl: sum((c) => c.gsvBbl), mtAir: sum((c) => c.mtAir), mtVac: sum((c) => c.mtVacuum) }
+}
+
+function SectionTable({
+  title,
+  tanks,
+  calc,
+  onUpdate,
+}: {
+  title: string
+  tanks: ImpTank[]
+  calc: (ImperialCalcFields | null)[]
+  onUpdate: (i: number, patch: Partial<ImpTank>) => void
+}) {
+  const tot = totalsOf(calc)
+  return (
+    <div>
+      <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</h4>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className={thL}>Tanque</th>
+            <th className={th}>API@60</th>
+            <th className={th}>Temp °C</th>
+            <th className={th}>TOV m³</th>
+            <th className={th}>GOV bbl</th>
+            <th className={th}>VCF 6B</th>
+            <th className={th}>GSV bbl</th>
+            <th className={th}>WCF 13</th>
+            <th className={th}>MT (aire)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tanks.map((t, i) => {
+            const c = calc[i]
+            return (
+              <tr key={t.tank + i}>
+                <td className={tdL}>{t.tank}</td>
+                <NumCell value={t.api} onChange={(n) => onUpdate(i, { api: n })} />
+                <NumCell value={t.tempC} onChange={(n) => onUpdate(i, { tempC: n })} step={0.1} />
+                <NumCell value={t.volumeM3} onChange={(n) => onUpdate(i, { volumeM3: n })} step={0.001} />
+                <td className={tdGrey}>{c ? f3(c.govBbl) : '—'}</td>
+                <td className={tdGrey}>{c ? f5(c.vcf) : '—'}</td>
+                <td className={tdGrey}>{c ? f2(c.gsvBbl) : '—'}</td>
+                <td className={tdGrey}>{c ? f5(c.wcf13) : '—'}</td>
+                <td className={`${tdGrey} font-semibold`}>{c ? f3(c.mtAir) : '—'}</td>
+              </tr>
+            )
+          })}
+          <tr className="bg-muted font-semibold">
+            <td className={tdL} colSpan={6}>
+              Total
+            </td>
+            <td className={td}>{f2(tot.gsvBbl)}</td>
+            <td className={td}></td>
+            <td className={td}>{f3(tot.mtAir)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+interface GradeAudit {
+  loadedMt: number
+  action: ComparisonResult['recommendedAction']
+  deltaBdn?: string
+  deltaBdnPct?: string
+  deltaNom?: string
+  deltaNomPct?: string
+}
+
+function verdict(action: ComparisonResult['recommendedAction']) {
+  if (action === 'ISSUE_LOP') return { cls: 'text-red-600', chip: 'border-red-500/40 bg-red-500/10 text-red-600', label: 'LOP' }
+  if (action === 'ISSUE_NOAD') return { cls: 'text-amber-600', chip: 'border-amber-500/40 bg-amber-500/10 text-amber-600', label: 'NOAD' }
+  return { cls: 'text-emerald-600', chip: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600', label: 'Conforme' }
+}
+
+function GradeSection({
+  g,
+  onUpdate,
+  onAudit,
+}: {
+  g: ImpGrade
+  onUpdate: (section: 'opening' | 'closing', i: number, patch: Partial<ImpTank>) => void
+  onAudit: (grade: string, a: GradeAudit) => void
+}) {
+  const openCalc = useImperialRows(toRows(g.opening))
+  const closeCalc = useImperialRows(toRows(g.closing))
+  const openTot = totalsOf(openCalc)
+  const closeTot = totalsOf(closeCalc)
+  // Loaded = cierre − apertura (resta de totales, como la hoja SGS).
+  const loaded = {
+    gsvBbl: closeTot.gsvBbl - openTot.gsvBbl,
+    mtAir: closeTot.mtAir - openTot.mtAir,
+    mtVac: closeTot.mtVac - openTot.mtVac,
+  }
+
+  // Veredicto de custodia: Received vs BDN (motor del kernel, capas ISO).
+  const [cmpBdn, setCmpBdn] = useState<ComparisonResult | null>(null)
+  // Referencia comercial: Received vs Nominado (solo display, sin veredicto).
+  const [cmpNom, setCmpNom] = useState<ComparisonResult | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    compareSources({
+      sources: [
+        { name: 'Vessel Received', quantity: loaded.mtAir },
+        { name: 'BDN', quantity: g.bdnMt },
+      ],
+      layers: toleranceLayers,
+      scope: 'LIVE',
+    })
+      .then((r) => !cancelled && setCmpBdn(r))
+      .catch(() => !cancelled && setCmpBdn(null))
+    compareSources({
+      sources: [
+        { name: 'Vessel Received', quantity: loaded.mtAir },
+        { name: 'Nominated', quantity: g.nominatedMt },
+      ],
+      layers: toleranceLayers,
+      scope: 'LIVE',
+    })
+      .then((r) => !cancelled && setCmpNom(r))
+      .catch(() => !cancelled && setCmpNom(null))
+    return () => {
+      cancelled = true
+    }
+  }, [loaded.mtAir, g.bdnMt, g.nominatedMt])
+
+  const action = cmpBdn?.recommendedAction ?? 'NONE'
+  const pairBdn = cmpBdn?.pairs?.[0]
+  const pairNom = cmpNom?.pairs?.[0]
+  const v = verdict(action)
 
   useEffect(() => {
-    onTotal(g.grade, totMt)
-  }, [g.grade, totMt, onTotal])
+    onAudit(g.grade, {
+      loadedMt: loaded.mtAir,
+      action,
+      deltaBdn: pairBdn?.delta,
+      deltaBdnPct: pairBdn?.deltaPct,
+      deltaNom: pairNom?.delta,
+      deltaNomPct: pairNom?.deltaPct,
+    })
+  }, [g.grade, loaded.mtAir, action, pairBdn?.delta, pairBdn?.deltaPct, pairNom?.delta, pairNom?.deltaPct, onAudit])
 
   return (
-    <Card>
+    <Card className="print:break-inside-avoid print:rounded-none print:border-0 print:shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Droplets className="h-4 w-4 text-brand" /> {g.label}
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Droplets className="h-4 w-4 text-brand" /> {g.label}
+          </span>
+          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${v.chip}`}>{v.label}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className={thL}>Tanque</th>
-              <th className={th}>API@60</th>
-              <th className={th}>Temp °C</th>
-              <th className={th}>TOV m³</th>
-              <th className={th}>GOV bbl</th>
-              <th className={th}>VCF 6B</th>
-              <th className={th}>GSV bbl</th>
-              <th className={th}>WCF 13</th>
-              <th className={th}>MT (aire)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {g.tanks.map((t, i) => {
-              const c = calc[i]
-              return (
-                <tr key={t.tank + i}>
-                  <td className={tdL}>{t.tank}</td>
-                  <td className={td}>{f2(t.api)}</td>
-                  <td className={td}>{f2(t.tempC)}</td>
-                  <td className={td}>{f3(t.volumeM3)}</td>
-                  <td className={tdGrey}>{c ? f3(c.govBbl) : '—'}</td>
-                  <td className={tdGrey}>{c ? f5(c.vcf) : '—'}</td>
-                  <td className={tdGrey}>{c ? f2(c.gsvBbl) : '—'}</td>
-                  <td className={tdGrey}>{c ? f5(c.wcf13) : '—'}</td>
-                  <td className={`${tdGrey} font-semibold`}>{c ? f3(c.mtAir) : '—'}</td>
-                </tr>
-              )
-            })}
-            <tr className="bg-muted font-semibold">
-              <td className={tdL} colSpan={6}>
-                Total {g.grade}
-              </td>
-              <td className={td}>{f2(totGsv)}</td>
-              <td className={td}></td>
-              <td className={td}>{f3(totMt)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          Peso en vacío (Tabla 56): <span className="font-mono tabular-nums">{f3(totMtVac)}</span> MT · grupo por banda de API.
-        </p>
+      <CardContent className="space-y-4 overflow-x-auto">
+        <SectionTable title="Opening (antes de recibir)" tanks={g.opening} calc={openCalc} onUpdate={(i, p) => onUpdate('opening', i, p)} />
+        <SectionTable title="Closing (después de recibir)" tanks={g.closing} calc={closeCalc} onUpdate={(i, p) => onUpdate('closing', i, p)} />
+
+        {/* Loaded + audit del grado */}
+        <div className="rounded-lg border bg-muted/40 p-3 print:bg-transparent">
+          <div className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <div className="text-xs text-muted-foreground">Loaded — GSV bbl @60 °F</div>
+              <div className="font-mono font-bold tabular-nums">{f2(loaded.gsvBbl)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Loaded — MT (aire)</div>
+              <div className="font-mono text-lg font-bold tabular-nums text-brand">{f3(loaded.mtAir)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">BDN / BDR</div>
+              <div className="font-mono tabular-nums">{f3(g.bdnMt)} MT</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Nominado</div>
+              <div className="font-mono tabular-nums">{f3(g.nominatedMt)} MT</div>
+            </div>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+            <span className={v.cls}>
+              <span className="text-muted-foreground">Δ vs BDN: </span>
+              <span className="font-mono font-semibold tabular-nums">
+                {pairBdn ? `${Number(pairBdn.delta) > 0 ? '+' : ''}${pairBdn.delta} MT (${Number(pairBdn.deltaPct) > 0 ? '+' : ''}${pairBdn.deltaPct}%)` : '—'}
+              </span>
+            </span>
+            <span>
+              <span className="text-muted-foreground">Δ vs nominado: </span>
+              <span className="font-mono tabular-nums">
+                {pairNom ? `${Number(pairNom.delta) > 0 ? '+' : ''}${pairNom.delta} MT (${Number(pairNom.deltaPct) > 0 ? '+' : ''}${pairNom.deltaPct}%)` : '—'}
+              </span>
+            </span>
+            <span className={`flex items-center gap-1 font-medium ${v.cls}`}>
+              {action === 'NONE' ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+              {action === 'NONE' ? 'Dentro de tolerancia' : action === 'ISSUE_LOP' ? 'Fuera de tolerancia — emitir LOP' : 'Discrepancia aparente — NOAD'}
+            </span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
 }
 
+const clone = (d: typeof multigradeDemo) => ({
+  ...d,
+  grades: d.grades.map((g) => ({
+    ...g,
+    opening: g.opening.map((t) => ({ ...t })),
+    closing: g.closing.map((t) => ({ ...t })),
+  })),
+})
+
 export function MedicionMultigrado() {
-  const h = multigradeDemo.header
-  const [totals, setTotals] = useState<Record<string, number>>({})
-  const onTotal = (grade: string, mt: number) => setTotals((s) => (s[grade] === mt ? s : { ...s, [grade]: mt }))
-  const grand = Object.values(totals).reduce((a, b) => a + b, 0)
+  const [data, setData] = useState(() => clone(multigradeDemo))
+  const h = data.header
+
+  const updateTank = (gi: number) => (section: 'opening' | 'closing', i: number, patch: Partial<ImpTank>) =>
+    setData((d) => ({
+      ...d,
+      grades: d.grades.map((g, idx) =>
+        idx === gi ? { ...g, [section]: g[section].map((t, ti) => (ti === i ? { ...t, ...patch } : t)) } : g,
+      ),
+    }))
+
+  const [audits, setAudits] = useState<Record<string, GradeAudit>>({})
+  const onAudit = useCallback((grade: string, a: GradeAudit) => {
+    setAudits((s) => {
+      const prev = s[grade]
+      if (prev && prev.loadedMt === a.loadedMt && prev.action === a.action && prev.deltaBdn === a.deltaBdn) return s
+      return { ...s, [grade]: a }
+    })
+  }, [])
+
+  const grandLoaded = data.grades.reduce((a, g) => a + (audits[g.grade]?.loadedMt ?? 0), 0)
+  const grandBdn = data.grades.reduce((a, g) => a + g.bdnMt, 0)
+  const worst = data.grades.some((g) => audits[g.grade]?.action === 'ISSUE_LOP')
+    ? 'ISSUE_LOP'
+    : data.grades.some((g) => audits[g.grade]?.action === 'ISSUE_NOAD')
+      ? 'ISSUE_NOAD'
+      : 'NONE'
+  const gv = verdict(worst as ComparisonResult['recommendedAction'])
 
   const [kver, setKver] = useState('')
   useEffect(() => {
     kernelVersion().then(setKver).catch(() => setKver(''))
   }, [])
 
+  function exportJson() {
+    const payload = {
+      report_type: 'BQS_IMPERIAL_MULTIGRADE',
+      demo_data: true,
+      generated_at: new Date().toISOString(),
+      kernel_version: kver || null,
+      method: h.metodo,
+      header: h,
+      tolerance_layers: toleranceLayers,
+      grades: data.grades.map((g) => ({
+        grade: g.grade,
+        nominated_mt: g.nominatedMt,
+        bdn_mt: g.bdnMt,
+        loaded_mt: audits[g.grade]?.loadedMt ?? null,
+        delta_bdn_mt: audits[g.grade]?.deltaBdn ?? null,
+        delta_bdn_pct: audits[g.grade]?.deltaBdnPct ?? null,
+        verdict: audits[g.grade]?.action ?? null,
+        opening: g.opening,
+        closing: g.closing,
+      })),
+      totals: { loaded_mt: grandLoaded, bdn_mt: grandBdn },
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${h.referencia.replace(/\s+/g, '_')}_tecnico.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col print:block print:h-auto">
       <TopBar title="Multigrado (imperial)" />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-[1400px] space-y-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+      <main className="flex-1 overflow-auto p-6 print:overflow-visible print:p-0">
+        <div className="mx-auto max-w-[1400px] space-y-5 print:max-w-none">
+          <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-semibold">
-                <Layers className="h-5 w-5 text-brand" /> BQS imperial · una hoja por grado
+                <Layers className="h-5 w-5 text-brand" /> BQS imperial · apertura/cierre por grado
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {h.buque} · {h.barcaza} · {h.puerto} · {h.fecha} · ref. {h.referencia}
+                {h.buque} · {h.barcaza} · {h.puerto} · {h.fecha} · ref. {h.referencia} · {h.metodo}
               </p>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
-              <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · 60 °F · Tablas 6A/6B/13 · WASM
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+                <FileText className="h-4 w-4" /> PDF / Imprimir
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={exportJson}>
+                <Braces className="h-4 w-4" /> JSON técnico
+              </Button>
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · 60 °F · 6B/13 · WASM
+              </span>
+            </div>
           </div>
 
-          {/* Resumen por grado */}
-          <Card>
-            <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-2 py-4">
-              {multigradeDemo.grades.map((g) => (
-                <div key={g.grade}>
-                  <div className="text-xs text-muted-foreground">{g.grade} — MT (aire)</div>
-                  <div className="font-mono text-lg font-bold tabular-nums text-brand">{f3(totals[g.grade] ?? 0)}</div>
-                </div>
-              ))}
-              <div className="ml-auto">
-                <div className="text-xs text-muted-foreground">Total general</div>
-                <div className="font-mono text-lg font-bold tabular-nums">{f3(grand)} MT</div>
-              </div>
+          {/* Audit resumen (estilo Bunker Audit) */}
+          <Card className="print:rounded-none print:border-0 print:shadow-none">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base uppercase tracking-wide">Bunker audit — por grado</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className={thL}>Grado</th>
+                    <th className={th}>Nominado MT</th>
+                    <th className={th}>BDN MT</th>
+                    <th className={th}>Received MT</th>
+                    <th className={th}>Δ vs BDN</th>
+                    <th className={th}>Δ% vs BDN</th>
+                    <th className={thL}>Veredicto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.grades.map((g) => {
+                    const a = audits[g.grade]
+                    const av = verdict(a?.action ?? 'NONE')
+                    return (
+                      <tr key={g.grade}>
+                        <td className={tdL}>{g.grade}</td>
+                        <td className={td}>{f3(g.nominatedMt)}</td>
+                        <td className={td}>{f3(g.bdnMt)}</td>
+                        <td className={`${td} font-semibold`}>{a ? f3(a.loadedMt) : '—'}</td>
+                        <td className={td}>{a?.deltaBdn ?? '—'}</td>
+                        <td className={td}>{a?.deltaBdnPct ? `${a.deltaBdnPct}%` : '—'}</td>
+                        <td className={`${tdL} font-medium ${av.cls}`}>{av.label}</td>
+                      </tr>
+                    )
+                  })}
+                  <tr className="bg-muted font-semibold">
+                    <td className={tdL}>TOTAL</td>
+                    <td className={td}>{f3(data.grades.reduce((a, g) => a + g.nominatedMt, 0))}</td>
+                    <td className={td}>{f3(grandBdn)}</td>
+                    <td className={td}>{f3(grandLoaded)}</td>
+                    <td className={td} colSpan={2}></td>
+                    <td className={`${tdL} font-medium ${gv.cls}`}>{gv.label}</td>
+                  </tr>
+                </tbody>
+              </table>
             </CardContent>
           </Card>
 
-          {multigradeDemo.grades.map((g) => (
-            <GradeSection key={g.grade} g={g} onTotal={onTotal} />
+          {data.grades.map((g, gi) => (
+            <GradeSection key={g.grade} g={g} onUpdate={updateTank(gi)} onAudit={onAudit} />
           ))}
 
-          <p className="text-xs text-muted-foreground">
-            Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas por el kernel imperial (API→densidad@60,
-            corrección ITS-68, VCF Tabla 6B por banda de API, WCF Tabla 13 → MT/barril). Validado contra el worksheet SGS de
-            referencia. Datos de demostración ficticios.
+          <p className="text-xs text-muted-foreground print:hidden">
+            Celdas blancas = entrada del surveyor (API@60, °C, m³). Celdas <span className="rounded bg-muted/50 px-1">grises</span> ={' '}
+            kernel imperial (API→ρ60, ITS-68, VCF 6B por banda de API, WCF Tabla 13). Loaded = cierre − apertura. El veredicto por
+            grado (Received vs BDN) usa las capas de tolerancia del kernel. VLSFO replica el caso de validación de la hoja SGS.
           </p>
         </div>
       </main>

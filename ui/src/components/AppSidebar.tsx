@@ -13,6 +13,7 @@ import {
   Fuel,
   FlaskConical,
   Layers,
+  FileStack,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -39,6 +40,7 @@ export function AppSidebar() {
     { to: `/trabajo/${jobId}/calculo`, label: 'Cálculo + Trace', icon: Calculator },
     { to: `/trabajo/${jobId}/comparacion`, label: 'Comparación', icon: Scale },
     { to: `/trabajo/${jobId}/reporte`, label: 'Reporte', icon: FileCheck2 },
+    { to: `/trabajo/${jobId}/reporte/off-hire`, label: 'Plantillas', icon: FileStack },
     { to: `/trabajo/${jobId}/rob`, label: 'Reporte ROB', icon: Fuel },
   ]
 

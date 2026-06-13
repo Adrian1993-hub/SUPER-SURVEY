@@ -112,6 +112,28 @@ export function kernel_version() {
         wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
 }
+
+/**
+ * Vessel Experience Factor (API MPMS 17.9 / HM49): historic voyages → VEF, and
+ * apply it to the present voyage. `request_json` is a JSON `VefRequestDTO`;
+ * returns a JSON `VefResponseDTO`. Same error convention as `bqs_calculate_row`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function vef_calculate(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.vef_calculate(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,

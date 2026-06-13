@@ -39,6 +39,7 @@ pub mod quantity_chain;
 pub mod trace;
 pub mod units;
 pub mod value;
+pub mod vef;
 
 pub mod prelude {
     pub use crate::astm::*;
@@ -57,5 +58,6 @@ pub mod prelude {
     pub use crate::trace::*;
     pub use crate::units::*;
     pub use crate::value::*;
+    pub use crate::vef::*;
     pub use rust_decimal::Decimal;
 }

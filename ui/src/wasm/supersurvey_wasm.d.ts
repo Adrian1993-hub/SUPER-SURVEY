@@ -42,6 +42,13 @@ export function density_tool(request_json: string): string;
  */
 export function kernel_version(): string;
 
+/**
+ * Vessel Experience Factor (API MPMS 17.9 / HM49): historic voyages → VEF, and
+ * apply it to the present voyage. `request_json` is a JSON `VefRequestDTO`;
+ * returns a JSON `VefResponseDTO`. Same error convention as `bqs_calculate_row`.
+ */
+export function vef_calculate(request_json: string): string;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
@@ -51,6 +58,7 @@ export interface InitOutput {
     readonly compare_sources: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
+    readonly vef_calculate: (a: number, b: number) => [number, number];
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;

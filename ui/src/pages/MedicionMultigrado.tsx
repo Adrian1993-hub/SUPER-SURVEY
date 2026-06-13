@@ -6,6 +6,7 @@ import { toleranceLayers } from '../data/vmr'
 import { multigradeDemo, type ImpGrade, type ImpTank } from '../data/multigrade'
 import { compareSources, kernelVersion, type ComparisonResult, type ImperialRowInput } from '../lib/kernel'
 import { useImperialRows, type ImperialCalcFields } from '../lib/useBqsRows'
+import { VefPanel } from '../components/VefPanel'
 import { Cpu, Layers, Droplets, AlertTriangle, CheckCircle2, FileText, Braces } from 'lucide-react'
 
 // BQS IMPERIAL MULTIGRADO completo (estilo SGS): por GRADO, apertura + cierre
@@ -413,6 +414,8 @@ export function MedicionMultigrado() {
           {data.grades.map((g, gi) => (
             <GradeSection key={g.grade} g={g} onUpdate={updateTank(gi)} onAudit={onAudit} />
           ))}
+
+          <VefPanel />
 
           <p className="text-xs text-muted-foreground print:hidden">
             Celdas blancas = entrada del surveyor (API@60, °C, m³). Celdas <span className="rounded bg-muted/50 px-1">grises</span> ={' '}

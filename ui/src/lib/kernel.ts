@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -180,6 +180,150 @@ export async function calcImperialRow(input: ImperialRowInput): Promise<Imperial
     wcf13: r.wcf13,
     mtAir: r.mt_air,
     mtVacuum: r.mt_vacuum,
+    trace: r.trace_json,
+    errors: r.errors,
+  }
+}
+
+// ---- Vessel Experience Factor (API MPMS 17.9 / HM49) --------------------
+
+export interface VefVoyageInput {
+  label: string
+  sailingTcv: number
+  obq?: number
+  shoreTcv: number
+  rejected?: boolean
+  rejectionReason?: string
+}
+export interface VefApplicationInput {
+  name: string
+  role: 'LOAD' | 'DISCHARGE'
+  vesselQty: number
+  shoreQty: number
+}
+export interface VefInput {
+  voyages: VefVoyageInput[]
+  applications?: VefApplicationInput[]
+  qualifyingBandPct?: number // default 0.30
+  scope?: 'LIVE' | 'TRACE_VIEW' | 'SAVE'
+}
+
+export interface VefVoyageResult {
+  label: string
+  vesselTcv: string
+  shoreTcv: string
+  ratio?: string
+  rejected: boolean
+  qualifying: boolean
+  note?: string
+}
+export interface VefApplicationResult {
+  name: string
+  role: string
+  vesselQty: string
+  shoreQty: string
+  vefApplied: string
+  difference: string
+  differencePct: string
+}
+export interface VefResult {
+  success: boolean
+  voyageCount?: number
+  qualifyingCount?: number
+  firstAverage?: string
+  bandLow?: string
+  bandHigh?: string
+  secondAverage?: string
+  vef?: string
+  voyages?: VefVoyageResult[]
+  applications?: VefApplicationResult[]
+  warnings?: string[]
+  trace?: unknown
+  errors?: { code?: string; message?: string }[]
+}
+
+interface RawVefResponse {
+  success: boolean
+  voyage_count?: number
+  qualifying_count?: number
+  first_average?: string
+  band_low?: string
+  band_high?: string
+  second_average?: string
+  vef?: string
+  voyages?: {
+    label: string
+    vessel_tcv: string
+    shore_tcv: string
+    ratio?: string
+    rejected: boolean
+    qualifying: boolean
+    note?: string
+  }[]
+  applications?: {
+    name: string
+    role: string
+    vessel_qty: string
+    shore_qty: string
+    vef_applied: string
+    difference: string
+    difference_pct: string
+  }[]
+  warnings?: string[]
+  trace_json?: unknown
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Compute a Vessel Experience Factor (and apply it) with the WASM kernel. */
+export async function calcVef(input: VefInput): Promise<VefResult> {
+  await ensureReady()
+  const req = {
+    voyages: input.voyages.map((v) => ({
+      label: v.label,
+      sailing_tcv: String(v.sailingTcv),
+      obq: v.obq !== undefined ? String(v.obq) : undefined,
+      shore_tcv: String(v.shoreTcv),
+      rejected: v.rejected ?? false,
+      rejection_reason: v.rejectionReason,
+    })),
+    applications: (input.applications ?? []).map((a) => ({
+      name: a.name,
+      role: a.role,
+      vessel_qty: String(a.vesselQty),
+      shore_qty: String(a.shoreQty),
+    })),
+    qualifying_band_pct: String(input.qualifyingBandPct ?? 0.3),
+    calculation_scope: input.scope ?? 'LIVE',
+  }
+  const r = JSON.parse(vef_calculate(JSON.stringify(req))) as RawVefResponse
+  return {
+    success: r.success,
+    voyageCount: r.voyage_count,
+    qualifyingCount: r.qualifying_count,
+    firstAverage: r.first_average,
+    bandLow: r.band_low,
+    bandHigh: r.band_high,
+    secondAverage: r.second_average,
+    vef: r.vef,
+    voyages: r.voyages?.map((v) => ({
+      label: v.label,
+      vesselTcv: v.vessel_tcv,
+      shoreTcv: v.shore_tcv,
+      ratio: v.ratio,
+      rejected: v.rejected,
+      qualifying: v.qualifying,
+      note: v.note,
+    })),
+    applications: r.applications?.map((a) => ({
+      name: a.name,
+      role: a.role,
+      vesselQty: a.vessel_qty,
+      shoreQty: a.shore_qty,
+      vefApplied: a.vef_applied,
+      difference: a.difference,
+      differencePct: a.difference_pct,
+    })),
+    warnings: r.warnings,
     trace: r.trace_json,
     errors: r.errors,
   }

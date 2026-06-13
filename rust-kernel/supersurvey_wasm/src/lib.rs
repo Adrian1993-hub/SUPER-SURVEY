@@ -8,6 +8,7 @@ use supersurvey_calc::bqs::BqsRowRequestDTO;
 use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
 use supersurvey_calc::density::DensityToolRequestDTO;
+use supersurvey_calc::vef::VefRequestDTO;
 use wasm_bindgen::prelude::*;
 
 /// Compute one BQS tank row.
@@ -60,6 +61,18 @@ pub fn bqs_calculate_row_imperial(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn density_tool(request_json: &str) -> String {
     match serde_json::from_str::<DensityToolRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Vessel Experience Factor (API MPMS 17.9 / HM49): historic voyages → VEF, and
+/// apply it to the present voyage. `request_json` is a JSON `VefRequestDTO`;
+/// returns a JSON `VefResponseDTO`. Same error convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn vef_calculate(request_json: &str) -> String {
+    match serde_json::from_str::<VefRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

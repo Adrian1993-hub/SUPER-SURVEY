@@ -7,6 +7,7 @@
 use supersurvey_calc::bqs::BqsRowRequestDTO;
 use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
+use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
 use wasm_bindgen::prelude::*;
@@ -73,6 +74,28 @@ pub fn density_tool(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn vef_calculate(request_json: &str) -> String {
     match serde_json::from_str::<VefRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// S&W (Sediment & Water) deduction: gross → (S&W, net). `request_json` is a JSON
+/// `SwRequestDTO`; returns a JSON `SwResponseDTO`.
+#[wasm_bindgen]
+pub fn sw_deduction(request_json: &str) -> String {
+    match serde_json::from_str::<SwRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
+/// exact rounding reconciliation. JSON `ProRataRequestDTO` → `ProRataResponseDTO`.
+#[wasm_bindgen]
+pub fn pro_rata(request_json: &str) -> String {
+    match serde_json::from_str::<ProRataRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

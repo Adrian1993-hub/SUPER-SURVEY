@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -327,6 +327,56 @@ export async function calcVef(input: VefInput): Promise<VefResult> {
     trace: r.trace_json,
     errors: r.errors,
   }
+}
+
+// ---- Custody helpers: S&W deduction + pro-rata --------------------------
+
+export interface SwResult {
+  success: boolean
+  gross?: string
+  sw?: string
+  net?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+/** S&W deduction (crude): gross → S&W + net via the kernel. */
+export async function swDeduction(grossValue: number, swPct: number, decimals = 3): Promise<SwResult> {
+  await ensureReady()
+  const req = { gross_value: String(grossValue), sw_pct: String(swPct), decimals, rounding_rule: 'HALF_UP', calculation_scope: 'LIVE' }
+  const r = JSON.parse(sw_deduction(JSON.stringify(req))) as { success: boolean; gross?: string; sw?: string; net?: string; errors?: { code?: string; message?: string }[] }
+  return { success: r.success, gross: r.gross, sw: r.sw, net: r.net, errors: r.errors }
+}
+
+export interface ProRataParcelResult {
+  label: string
+  weight: string
+  share: string
+  pct: string
+}
+export interface ProRataResult {
+  success: boolean
+  total?: string
+  parcels?: ProRataParcelResult[]
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Pro-rata split of a total across labelled parcels (sums exactly to total). */
+export async function proRata(total: number, parcels: { label: string; weight: number }[], decimals = 3): Promise<ProRataResult> {
+  await ensureReady()
+  const req = {
+    total_value: String(total),
+    parcels: parcels.map((p) => ({ label: p.label, weight: String(p.weight) })),
+    decimals,
+    rounding_rule: 'HALF_UP',
+    calculation_scope: 'LIVE',
+  }
+  const r = JSON.parse(pro_rata(JSON.stringify(req))) as {
+    success: boolean
+    total?: string
+    parcels?: ProRataParcelResult[]
+    errors?: { code?: string; message?: string }[]
+  }
+  return { success: r.success, total: r.total, parcels: r.parcels, errors: r.errors }
 }
 
 let cachedVersion: string | null = null

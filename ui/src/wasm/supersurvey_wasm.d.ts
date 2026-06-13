@@ -43,6 +43,18 @@ export function density_tool(request_json: string): string;
 export function kernel_version(): string;
 
 /**
+ * Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
+ * exact rounding reconciliation. JSON `ProRataRequestDTO` → `ProRataResponseDTO`.
+ */
+export function pro_rata(request_json: string): string;
+
+/**
+ * S&W (Sediment & Water) deduction: gross → (S&W, net). `request_json` is a JSON
+ * `SwRequestDTO`; returns a JSON `SwResponseDTO`.
+ */
+export function sw_deduction(request_json: string): string;
+
+/**
  * Vessel Experience Factor (API MPMS 17.9 / HM49): historic voyages → VEF, and
  * apply it to the present voyage. `request_json` is a JSON `VefRequestDTO`;
  * returns a JSON `VefResponseDTO`. Same error convention as `bqs_calculate_row`.
@@ -58,6 +70,8 @@ export interface InitOutput {
     readonly compare_sources: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
+    readonly pro_rata: (a: number, b: number) => [number, number];
+    readonly sw_deduction: (a: number, b: number) => [number, number];
     readonly vef_calculate: (a: number, b: number) => [number, number];
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;

@@ -114,6 +114,48 @@ export function kernel_version() {
 }
 
 /**
+ * Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
+ * exact rounding reconciliation. JSON `ProRataRequestDTO` → `ProRataResponseDTO`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function pro_rata(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.pro_rata(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * S&W (Sediment & Water) deduction: gross → (S&W, net). `request_json` is a JSON
+ * `SwRequestDTO`; returns a JSON `SwResponseDTO`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function sw_deduction(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.sw_deduction(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Vessel Experience Factor (API MPMS 17.9 / HM49): historic voyages → VEF, and
  * apply it to the present voyage. `request_json` is a JSON `VefRequestDTO`;
  * returns a JSON `VefResponseDTO`. Same error convention as `bqs_calculate_row`.

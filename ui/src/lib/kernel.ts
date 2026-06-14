@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -558,6 +558,36 @@ export async function draftSurvey(initial: DraftConditionInput, final: DraftCond
     success: boolean; initial?: RawDraftCond; final?: RawDraftCond; cargo?: string; errors?: { code?: string; message?: string }[]
   }
   return { success: r.success, initial: fromDraftCond(r.initial), final: fromDraftCond(r.final), cargo: r.cargo, errors: r.errors }
+}
+
+export interface HydrostaticRowInput {
+  draft: number
+  displacement: number
+  tpc: number
+  lcf: number
+  mtcPerMetre: number
+}
+export interface HydrostaticInterpolation {
+  success: boolean
+  displacement?: string
+  tpc?: string
+  lcf?: string
+  mtcPerMetre?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Interpolate a vessel's hydrostatic table at a draft (kernel). */
+export async function hydrostaticInterpolate(rows: HydrostaticRowInput[], draft: number): Promise<HydrostaticInterpolation> {
+  await ensureReady()
+  const req = {
+    rows: rows.map((r) => ({ draft: String(r.draft), displacement: String(r.displacement), tpc: String(r.tpc), lcf: String(r.lcf), mtc_per_metre: String(r.mtcPerMetre) })),
+    draft: String(draft),
+    decimals: 3,
+  }
+  const r = JSON.parse(hydrostatic_interpolate(JSON.stringify(req))) as {
+    success: boolean; displacement?: string; tpc?: string; lcf?: string; mtc_per_metre?: string; errors?: { code?: string; message?: string }[]
+  }
+  return { success: r.success, displacement: r.displacement, tpc: r.tpc, lcf: r.lcf, mtcPerMetre: r.mtc_per_metre, errors: r.errors }
 }
 
 let cachedVersion: string | null = null

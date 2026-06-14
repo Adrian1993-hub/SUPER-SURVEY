@@ -140,6 +140,27 @@ export function draft_survey(request_json) {
 }
 
 /**
+ * Interpolate a vessel's hydrostatic table (displacement/TPC/LCF/MTC) at a
+ * draft. JSON `HydrostaticInterpolateRequestDTO` → `…ResponseDTO`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function hydrostatic_interpolate(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.hydrostatic_interpolate(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Kernel version string (for the UI to show which math built a number).
  * @returns {string}
  */

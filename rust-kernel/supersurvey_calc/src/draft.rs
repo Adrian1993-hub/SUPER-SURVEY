@@ -33,6 +33,61 @@ pub struct Hydrostatics {
     pub mtc_per_metre: Decimal,
 }
 
+/// One row of a vessel's hydrostatic table / deadweight scale.
+#[derive(Debug, Clone, Copy)]
+pub struct HydrostaticRow {
+    pub draft: Decimal,
+    pub displacement: Decimal,
+    pub tpc: Decimal,
+    pub lcf: Decimal,
+    pub mtc_per_metre: Decimal,
+}
+
+/// Linear interpolation of the hydrostatic particulars at `draft` from the
+/// vessel's table (≥2 rows; `draft` must lie within the tabulated range).
+pub fn interpolate_hydrostatics(
+    rows: &[HydrostaticRow],
+    draft: Decimal,
+) -> KernelResult<Hydrostatics> {
+    if rows.len() < 2 {
+        return Err(KernelError::with_field(
+            KernelErrorCode::ComparisonInputInvalid,
+            "Hydrostatic table needs at least two rows.",
+            "hydrostatic_table",
+        ));
+    }
+    let mut sorted = rows.to_vec();
+    sorted.sort_by(|a, b| a.draft.cmp(&b.draft));
+    let lo = sorted[0].draft;
+    let hi = sorted[sorted.len() - 1].draft;
+    if draft < lo || draft > hi {
+        return Err(KernelError::with_field(
+            KernelErrorCode::OutOfTableRange,
+            format!("Draft {draft} m outside the hydrostatic table range {lo}–{hi} m."),
+            "draft",
+        ));
+    }
+    for w in sorted.windows(2) {
+        let (a, b) = (w[0], w[1]);
+        if draft >= a.draft && draft <= b.draft {
+            let span = b.draft - a.draft;
+            let frac = if span == dec!(0) {
+                dec!(0)
+            } else {
+                (draft - a.draft) / span
+            };
+            let lerp = |x: Decimal, y: Decimal| x + (y - x) * frac;
+            return Ok(Hydrostatics {
+                displacement_at_quarter_mean: lerp(a.displacement, b.displacement),
+                tpc: lerp(a.tpc, b.tpc),
+                lcf: lerp(a.lcf, b.lcf),
+                mtc_per_metre: lerp(a.mtc_per_metre, b.mtc_per_metre),
+            });
+        }
+    }
+    unreachable!("draft is within [lo, hi] so a bracketing pair exists")
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct DraftCondition {
     pub forward_corrected: Decimal,
@@ -101,6 +156,82 @@ pub fn calculate_condition(c: &DraftCondition) -> KernelResult<DraftConditionRes
 /// Cargo by difference. `from − to`: discharge → (initial − final); load → (final − initial).
 pub fn cargo_by_difference(net_from: Decimal, net_to: Decimal) -> Decimal {
     net_from - net_to
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HydrostaticRowDTO {
+    pub draft: String,
+    pub displacement: String,
+    pub tpc: String,
+    pub lcf: String,
+    pub mtc_per_metre: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HydrostaticInterpolateRequestDTO {
+    pub rows: Vec<HydrostaticRowDTO>,
+    pub draft: String,
+    #[serde(default = "default_decimals")]
+    pub decimals: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HydrostaticInterpolateResponseDTO {
+    pub success: bool,
+    pub displacement: Option<String>,
+    pub tpc: Option<String>,
+    pub lcf: Option<String>,
+    pub mtc_per_metre: Option<String>,
+    pub errors: Option<Vec<KernelError>>,
+}
+
+impl HydrostaticInterpolateRequestDTO {
+    pub fn calculate(&self) -> HydrostaticInterpolateResponseDTO {
+        match self.inner() {
+            Ok(h) => {
+                let f = |v: Decimal| {
+                    round_decimal(v, self.decimals, SystemRoundingRule::HalfUp)
+                        .normalize()
+                        .to_string()
+                };
+                HydrostaticInterpolateResponseDTO {
+                    success: true,
+                    displacement: Some(f(h.displacement_at_quarter_mean)),
+                    tpc: Some(f(h.tpc)),
+                    lcf: Some(f(h.lcf)),
+                    mtc_per_metre: Some(f(h.mtc_per_metre)),
+                    errors: None,
+                }
+            }
+            Err(e) => HydrostaticInterpolateResponseDTO {
+                success: false,
+                displacement: None,
+                tpc: None,
+                lcf: None,
+                mtc_per_metre: None,
+                errors: Some(vec![e]),
+            },
+        }
+    }
+
+    fn inner(&self) -> KernelResult<Hydrostatics> {
+        let p = |s: &str, f: &'static str| DecimalValue::parse(s, f).map(|d| d.value);
+        let draft = p(&self.draft, "draft")?;
+        let rows = self
+            .rows
+            .iter()
+            .map(|r| {
+                Ok(HydrostaticRow {
+                    draft: p(&r.draft, "draft")?,
+                    displacement: p(&r.displacement, "displacement")?,
+                    tpc: p(&r.tpc, "tpc")?,
+                    lcf: p(&r.lcf, "lcf")?,
+                    mtc_per_metre: p(&r.mtc_per_metre, "mtc_per_metre")?,
+                })
+            })
+            .collect::<KernelResult<Vec<_>>>()?;
+        interpolate_hydrostatics(&rows, draft)
+    }
 }
 
 // ---------------------------------------------------------------------------

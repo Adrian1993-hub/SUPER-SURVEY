@@ -138,6 +138,77 @@ fn dto_two_conditions_and_cargo() {
     assert!(r.initial.is_some() && r.r#final.is_some());
 }
 
+// ----- Hydrostatic table interpolation -----
+fn table() -> Vec<HydrostaticRow> {
+    vec![
+        HydrostaticRow {
+            draft: dec!(5.0),
+            displacement: dec!(20000),
+            tpc: dec!(45),
+            lcf: dec!(-5),
+            mtc_per_metre: dec!(28),
+        },
+        HydrostaticRow {
+            draft: dec!(6.0),
+            displacement: dec!(24600),
+            tpc: dec!(46),
+            lcf: dec!(-5.5),
+            mtc_per_metre: dec!(28.5),
+        },
+    ]
+}
+
+#[test]
+fn interpolation_midpoint_and_endpoint() {
+    let h = interpolate_hydrostatics(&table(), dec!(5.5)).unwrap();
+    assert_eq!(h.displacement_at_quarter_mean, dec!(22300)); // midpoint
+    assert_eq!(h.tpc, dec!(45.5));
+    assert_eq!(h.lcf, dec!(-5.25));
+    assert_eq!(h.mtc_per_metre, dec!(28.25));
+    // endpoint is exact
+    assert_eq!(
+        interpolate_hydrostatics(&table(), dec!(5.0))
+            .unwrap()
+            .displacement_at_quarter_mean,
+        dec!(20000)
+    );
+}
+
+#[test]
+fn interpolation_rejects_out_of_range_and_short_table() {
+    assert!(interpolate_hydrostatics(&table(), dec!(4.0)).is_err()); // below range
+    assert!(interpolate_hydrostatics(&table(), dec!(9.0)).is_err()); // above range
+    assert!(interpolate_hydrostatics(&table()[..1], dec!(5.0)).is_err()); // <2 rows
+}
+
+#[test]
+fn dto_hydrostatic_interpolate() {
+    let req = HydrostaticInterpolateRequestDTO {
+        rows: vec![
+            HydrostaticRowDTO {
+                draft: "5.0".into(),
+                displacement: "20000".into(),
+                tpc: "45".into(),
+                lcf: "-5".into(),
+                mtc_per_metre: "28".into(),
+            },
+            HydrostaticRowDTO {
+                draft: "6.0".into(),
+                displacement: "24600".into(),
+                tpc: "46".into(),
+                lcf: "-5.5".into(),
+                mtc_per_metre: "28.5".into(),
+            },
+        ],
+        draft: "5.5".into(),
+        decimals: 3,
+    };
+    let r = req.calculate();
+    assert!(r.success, "errors: {:?}", r.errors);
+    assert_eq!(r.displacement.as_deref(), Some("22300"));
+    assert_eq!(r.lcf.as_deref(), Some("-5.25"));
+}
+
 #[test]
 fn dto_rejects_bad_operation() {
     let cond = DraftConditionDTO {

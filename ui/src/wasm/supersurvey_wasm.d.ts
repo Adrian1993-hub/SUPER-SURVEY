@@ -51,6 +51,12 @@ export function density_tool(request_json: string): string;
 export function draft_survey(request_json: string): string;
 
 /**
+ * Interpolate a vessel's hydrostatic table (displacement/TPC/LCF/MTC) at a
+ * draft. JSON `HydrostaticInterpolateRequestDTO` → `…ResponseDTO`.
+ */
+export function hydrostatic_interpolate(request_json: string): string;
+
+/**
  * Kernel version string (for the UI to show which math built a number).
  */
 export function kernel_version(): string;
@@ -90,6 +96,7 @@ export interface InitOutput {
     readonly custody_figure: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly draft_survey: (a: number, b: number) => [number, number];
+    readonly hydrostatic_interpolate: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
     readonly sampling_levels: (a: number, b: number) => [number, number];

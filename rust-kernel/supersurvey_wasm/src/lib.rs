@@ -9,7 +9,7 @@ use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
 use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
-use supersurvey_calc::draft::DraftSurveyRequestDTO;
+use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateRequestDTO};
 use supersurvey_calc::figures::CustodyFigureRequestDTO;
 use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
@@ -133,6 +133,17 @@ pub fn custody_figure(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn draft_survey(request_json: &str) -> String {
     match serde_json::from_str::<DraftSurveyRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Interpolate a vessel's hydrostatic table (displacement/TPC/LCF/MTC) at a
+/// draft. JSON `HydrostaticInterpolateRequestDTO` → `…ResponseDTO`.
+#[wasm_bindgen]
+pub fn hydrostatic_interpolate(request_json: &str) -> String {
+    match serde_json::from_str::<HydrostaticInterpolateRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

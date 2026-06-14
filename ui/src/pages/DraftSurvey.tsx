@@ -2,8 +2,19 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
-import { draftSurvey, kernelVersion, type DraftConditionInput, type DraftSurveyResult } from '../lib/kernel'
-import { Cpu, Anchor, FileText, Ship } from 'lucide-react'
+import { draftSurvey, hydrostaticInterpolate, kernelVersion, type DraftConditionInput, type DraftSurveyResult, type HydrostaticRowInput } from '../lib/kernel'
+import { Cpu, Anchor, FileText, Ship, TableProperties } from 'lucide-react'
+
+// Parse CSV "draft,displacement,tpc,lcf,mtc" (una fila por línea).
+function parseHydroTable(csv: string): HydrostaticRowInput[] {
+  return csv
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !/^draft/i.test(l))
+    .map((l) => l.split(/[,;\t]+/).map((x) => parseFloat(x.trim())))
+    .filter((p) => p.length >= 5 && p.every((n) => isFinite(n)))
+    .map((p) => ({ draft: p[0], displacement: p[1], tpc: p[2], lcf: p[3], mtcPerMetre: p[4] }))
+}
 
 // Draft survey (granel) por desplazamiento — todo lo calcula el kernel WASM
 // (port del cálculo .NET validado, UNECE). Dos condiciones (inicial/final) →
@@ -85,6 +96,26 @@ export function DraftSurvey() {
   const [shoreScale, setShoreScale] = useState(4064.16)
   const [res, setRes] = useState<DraftSurveyResult | null>(null)
   const [kver, setKver] = useState('')
+  const [csv, setCsv] = useState({ initial: '', final: '' })
+  const [hint, setHint] = useState('')
+
+  async function interpolateInto(which: 'initial' | 'final') {
+    const qm = which === 'initial' ? res?.initial?.quarterMean : res?.final?.quarterMean
+    const rows = parseHydroTable(csv[which])
+    if (!qm || rows.length < 2) {
+      setHint('Pega ≥2 filas (draft,desplazam.,TPC,LCF,MTC) y asegúrate de tener calados válidos.')
+      return
+    }
+    const r = await hydrostaticInterpolate(rows, Number(qm))
+    if (!r.success) {
+      setHint(r.errors?.[0]?.message ?? 'No se pudo interpolar (¿calado fuera de rango?).')
+      return
+    }
+    const patch = { displacementQM: Number(r.displacement), tpc: Number(r.tpc), lcf: Number(r.lcf), mtcPerMetre: Number(r.mtcPerMetre) }
+    if (which === 'initial') setInitial((c) => ({ ...c, ...patch }))
+    else setFinal((c) => ({ ...c, ...patch }))
+    setHint(`Interpolado @cuarto-medio ${qm} m → desplazamiento ${r.displacement} MT.`)
+  }
 
   useEffect(() => {
     kernelVersion().then(setKver).catch(() => setKver(''))
@@ -132,6 +163,33 @@ export function DraftSurvey() {
             <ConditionForm title="Condición inicial" c={initial} onChange={setInitial} />
             <ConditionForm title="Condición final" c={final} onChange={setFinal} />
           </div>
+
+          {/* Tabla hidrostática opcional: pega la del buque y el kernel interpola */}
+          <Card className="print:hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
+                <TableProperties className="h-4 w-4 text-brand" /> Tabla hidrostática (opcional) — interpola al cuarto-medio
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 lg:grid-cols-2">
+              {(['initial', 'final'] as const).map((which) => (
+                <div key={which} className="flex flex-col gap-1">
+                  <span className={lbl}>{which === 'initial' ? 'Inicial' : 'Final'} — CSV: draft,desplazam.,TPC,LCF,MTC</span>
+                  <textarea
+                    rows={3}
+                    value={csv[which]}
+                    onChange={(e) => setCsv((s) => ({ ...s, [which]: e.target.value }))}
+                    placeholder={'5.0,20000,45,-5,28\n6.0,24600,46,-5.5,28.5'}
+                    className="w-full rounded-md border border-input bg-transparent px-2 py-1 font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <Button variant="outline" size="sm" className="self-start" onClick={() => void interpolateInto(which)}>
+                    Interpolar {which === 'initial' ? 'inicial' : 'final'} @cuarto-medio
+                  </Button>
+                </div>
+              ))}
+              {hint && <p className="text-[11px] text-muted-foreground lg:col-span-2">{hint}</p>}
+            </CardContent>
+          </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>

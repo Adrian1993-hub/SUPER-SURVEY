@@ -8,7 +8,8 @@ import { operationTemplates, type OperationTemplate, type TemplateGrade, type Te
 import { toleranceLayers, type VmrTank } from '../data/vmr'
 import { compareSources, swDeduction, proRata, custodyFigure, kernelVersion, type ComparisonResult, type ImperialRowInput, type SwResult, type ProRataResult, type CustodyFigureResult, type UnitSet } from '../lib/kernel'
 import { useComputedRows, useImperialRows, type CalcFields, type ImperialCalcFields } from '../lib/useBqsRows'
-import { Ship, FileText, Braces, Layers } from 'lucide-react'
+import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
+import { Ship, FileText, Braces, Layers, FileSpreadsheet } from 'lucide-react'
 
 // Renderer ÚNICO de plantillas inteligentes: lee el descriptor de la operación
 // (data/reportTemplates), arma las secciones declaradas y deja que el kernel WASM
@@ -546,6 +547,60 @@ export function SmartReport() {
 
   if (!tpl) return <Navigate to="/" replace />
 
+  async function exportXlsx() {
+    const t = tpl!
+    const sheets: SheetSpec[] = []
+    // Hoja 1 — datos generales + cifras por grado
+    const meta: (string | number | null)[][] = [
+      ['SuperSurvey', t.title],
+      ['Referencia', t.header.referencia],
+      ['Buque', t.header.buque],
+      ['Contraparte', t.header.contraparte],
+      ['Puerto', t.header.puerto],
+      ['Fecha', t.header.fecha],
+      ['Método', t.header.metodo],
+      [],
+    ]
+    if (t.grades.length) {
+      meta.push(['Grado', 'Survey MT', 'Referencia MT'])
+      for (const g of t.grades) meta.push([g.grade, mtByGrade[g.grade] ?? '', g.referenceMt ?? ''])
+      meta.push(['TOTAL', grandMt])
+    }
+    sheets.push({ name: 'Resumen', rows: meta })
+
+    // Hoja 2 — tabla multi-unidad (si aplica): TCV/GSV/NSV por grado
+    if (t.summaryFigures?.length) {
+      const rows: (string | number | null)[][] = [['Grado', 'Nivel', ...UNIT_COLS.map(([h]) => h)]]
+      for (const f of t.summaryFigures) {
+        const r = await custodyFigure({ gsv: f.gsv, gsvUnit: f.gsvUnit, density15: f.density15, density15Unit: f.density15Unit, swPct: f.swPct }).catch(() => null)
+        const levels: [string, UnitSet | undefined][] = [
+          ['TCV', r?.tcv],
+          ['GSV', r?.gsv],
+          ['NSV', r?.nsv],
+        ]
+        for (const [name, set] of levels) rows.push([f.label, name, ...UNIT_COLS.map(([, k]) => (set ? set[k] : ''))])
+      }
+      sheets.push({ name: 'Cantidades', rows })
+    }
+
+    // Hoja 3 — Master Summary (si aplica)
+    if (t.voyage) {
+      const g = t.voyage.grades
+      const rows: (string | number | null)[][] = [
+        [`Master Summary (${t.voyage.unit})`],
+        ['Grado', ...g.map((x) => x.grade), 'TOTAL'],
+        ['Bill of Lading', ...g.map((x) => x.bl), g.reduce((a, x) => a + x.bl, 0)],
+        ['Vessel loaded', ...g.map((x) => x.loaded), g.reduce((a, x) => a + x.loaded, 0)],
+        ['Loaded w/ VEF', ...g.map((x) => x.loadedVef ?? ''), g.reduce((a, x) => a + (x.loadedVef ?? 0), 0)],
+        ['At discharge', ...g.map((x) => x.atDischarge ?? ''), g.reduce((a, x) => a + (x.atDischarge ?? 0), 0)],
+        ['ROB', ...g.map((x) => x.rob ?? ''), g.reduce((a, x) => a + (x.rob ?? 0), 0)],
+      ]
+      sheets.push({ name: 'Master Summary', rows })
+    }
+
+    await downloadWorkbook(`${t.header.referencia.replace(/\s+/g, '_')}.xlsx`, sheets)
+  }
+
   function exportJson() {
     const t = tpl!
     const payload = {
@@ -592,6 +647,9 @@ export function SmartReport() {
               </Button>
               <Button variant="outline" className="gap-2" onClick={exportJson}>
                 <Braces className="h-4 w-4" /> JSON
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={() => void exportXlsx()}>
+                <FileSpreadsheet className="h-4 w-4" /> XLSX
               </Button>
             </div>
           </div>

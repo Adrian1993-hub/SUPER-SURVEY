@@ -57,6 +57,7 @@ rust-kernel/.../sampling.rs     niveles de muestreo Upper/Middle/Lower (ISO 3170
 rust-kernel/.../figures.rs      ensamblador multi-unidad (TCV/GSV/NSV × bbl/m³/MT/LT…)
 rust-kernel/.../draft.rs        draft survey (desplazamiento, UNECE) — port .NET validado
 rust-kernel/.../reconcile.rs    conciliación buque↔tierra (pipeline + shore by diff → vessel/B-L, NOAD/LOP)
+rust-kernel/.../lpg.rs          custodia LPG/NGL (multi-unidad, LT desde vacío) — validado vs certificado real
 ui/src/lib/jobStore.tsx         estado de medición compartido por trabajo (Medición→Reporte)
 ui/src/lib/xlsx.ts              export XLSX (SheetJS, carga diferida)
 ui/src/pages/DraftSurvey.tsx    página draft survey (2 condiciones + báscula tierra)
@@ -110,8 +111,9 @@ en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **R
 + **plantillas inteligentes** (`SmartReport` guiado por descriptor: **4 operaciones** off-hire/barge/
   STS/cargo-voyage desde un solo renderer, con secciones reutilizables: inventario, **muestreo +
   gráfico** (`sampling.rs`), **tabla multi-unidad TCV/GSV/NSV** (`figures.rs`), **Master Summary**
-  (rollup de viaje), S&W + pro-rata (`custody.rs`) + VEF del kernel). **128 tests** en el kernel.
-  ✅ **Estado por trabajo** (Medición→Reporte comparten medición) · ✅ **export XLSX** ·
+  (rollup de viaje), S&W + pro-rata (`custody.rs`) + VEF del kernel). **133 tests** en el kernel.
+  ✅ **Estado por trabajo** (Medición→Reporte comparten medición) · ✅ **export XLSX** (SmartReport
+  **+ Reporte BQS + Reporte ROB**, carga diferida) ·
   ✅ **Draft survey** (granel por desplazamiento, `draft.rs`, port .NET validado, anclado a YUNNAN
   4 080.787 + worksheet .NET) con reconciliación contra báscula de tierra ·
   ✅ **Conciliación buque↔tierra** (`reconcile.rs` + página *Buque ↔ Tierra*): medición de tierra por
@@ -123,7 +125,13 @@ en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **R
 audit por grado Received-vs-BDN, impresión), y ✅ **VEF** (API MPMS 17.9 / HM49 — `vef.rs`, validado a 0.9993,
 panel en Multigrado). Falta: guardado de filas imperiales; **firma digital**; y el **pase de diseño
 (reactbits) al final** (dirigido por el usuario, ventana a ventana). ✅ cargo/terminal (conciliación
-buque↔tierra + pipeline) ya implementada (`reconcile.rs`). Pendiente fino: LPG (familia de tablas aparte).
+buque↔tierra + pipeline) ya implementada (`reconcile.rs`).
+**LPG / NGL** (familia de hidrocarburos ligeros) — 🟢 **en progreso** (`lpg.rs`): ensamblador de
+custodia multi-unidad (m³/L@15 · MT vac/aire · **LT desde vacío** · bbl/gal@60, Table 1) **validado
+celda a celda** vs certificado real (propano EPIC MADEIRA: 588.203/586.847 MT, 578.913 LT, 7396.57 bbl).
+**Próximo LPG:** CTL/VCF por **COSTALD (API 11.2.4)** + catálogo de componentes (constantes extraídas;
+ancla CTL=0.95873237) y corrección de vapor (presurizados). Veredicto de versión y método completo en
+`docs/research/lpg.md` (motor térmico = 11.2.4 vigente; conversiones de peso = ASTM-IP 58/21 heredadas).
 
 ## Próximos pasos inmediatos
 

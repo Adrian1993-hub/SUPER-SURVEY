@@ -62,6 +62,14 @@ export function hydrostatic_interpolate(request_json: string): string;
 export function kernel_version(): string;
 
 /**
+ * LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
+ * every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
+ * gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
+ * 11.2.4 COSTALD is a separate, upcoming export.)
+ */
+export function lpg_custody(request_json: string): string;
+
+/**
  * Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
  * exact rounding reconciliation. JSON `ProRataRequestDTO` → `ProRataResponseDTO`.
  */
@@ -105,6 +113,7 @@ export interface InitOutput {
     readonly draft_survey: (a: number, b: number) => [number, number];
     readonly hydrostatic_interpolate: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
+    readonly lpg_custody: (a: number, b: number) => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
     readonly reconcile_terminal: (a: number, b: number) => [number, number];
     readonly sampling_levels: (a: number, b: number) => [number, number];

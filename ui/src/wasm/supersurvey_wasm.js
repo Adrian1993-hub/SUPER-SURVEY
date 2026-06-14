@@ -178,6 +178,29 @@ export function kernel_version() {
 }
 
 /**
+ * LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
+ * every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
+ * gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
+ * 11.2.4 COSTALD is a separate, upcoming export.)
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function lpg_custody(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.lpg_custody(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
  * exact rounding reconciliation. JSON `ProRataRequestDTO` → `ProRataResponseDTO`.
  * @param {string} request_json

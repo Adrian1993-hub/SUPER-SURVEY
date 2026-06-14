@@ -11,6 +11,7 @@ use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
 use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateRequestDTO};
 use supersurvey_calc::figures::CustodyFigureRequestDTO;
+use supersurvey_calc::lpg::LpgCustodyRequestDTO;
 use supersurvey_calc::reconcile::ReconciliationRequestDTO;
 use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
@@ -157,6 +158,19 @@ pub fn hydrostatic_interpolate(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn reconcile_terminal(request_json: &str) -> String {
     match serde_json::from_str::<ReconciliationRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
+/// every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
+/// gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
+/// 11.2.4 COSTALD is a separate, upcoming export.)
+#[wasm_bindgen]
+pub fn lpg_custody(request_json: &str) -> String {
+    match serde_json::from_str::<LpgCustodyRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

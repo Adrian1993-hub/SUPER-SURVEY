@@ -9,6 +9,7 @@ export const density_tool: (a: number, b: number) => [number, number];
 export const draft_survey: (a: number, b: number) => [number, number];
 export const hydrostatic_interpolate: (a: number, b: number) => [number, number];
 export const kernel_version: () => [number, number];
+export const lpg_custody: (a: number, b: number) => [number, number];
 export const pro_rata: (a: number, b: number) => [number, number];
 export const reconcile_terminal: (a: number, b: number) => [number, number];
 export const sampling_levels: (a: number, b: number) => [number, number];

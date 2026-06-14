@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -486,6 +486,64 @@ export async function custodyFigure(input: CustodyFigureInput): Promise<CustodyF
   }
   const r = JSON.parse(custody_figure(JSON.stringify(req))) as CustodyFigureResult
   return r
+}
+
+// ---- LPG / NGL custody (light hydrocarbons: API 11.2.4 family) -----------
+
+export interface LpgCustodyInput {
+  /** Liquid volume reduced to 15 °C (m³). */
+  m3_15: number
+  /** Density @ 15 °C (kg/L), vacuum basis. */
+  density15: number
+  /** Same parcel as US barrels @ 60 °F. */
+  bbl60: number
+  /** Table 56 (LPG) weight factor (air per vacuum, e.g. 0.99769). */
+  wcfAirPerVac: number
+  decimals?: number
+}
+export interface LpgCustodyResult {
+  success: boolean
+  litres15?: string
+  m3_15?: string
+  mtVacuum?: string
+  mtAir?: string
+  longTons?: string
+  bbl60?: string
+  gal60?: string
+  m3_60?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Assemble an LPG/NGL custody figure into all reported units (kernel; LT from vacuum). */
+export async function lpgCustody(input: LpgCustodyInput): Promise<LpgCustodyResult> {
+  await ensureReady()
+  const req = {
+    m3_15: String(input.m3_15),
+    density15_kg_l: String(input.density15),
+    bbl_60: String(input.bbl60),
+    wcf_air_per_vac: String(input.wcfAirPerVac),
+    decimals: input.decimals ?? 3,
+    rounding_rule: 'HALF_UP',
+    calculation_scope: 'LIVE',
+  }
+  const r = JSON.parse(lpg_custody(JSON.stringify(req))) as {
+    success: boolean
+    litres_15?: string; m3_15?: string; mt_vacuum?: string; mt_air?: string
+    long_tons?: string; bbl_60?: string; gal_60?: string; m3_60?: string
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    litres15: r.litres_15,
+    m3_15: r.m3_15,
+    mtVacuum: r.mt_vacuum,
+    mtAir: r.mt_air,
+    longTons: r.long_tons,
+    bbl60: r.bbl_60,
+    gal60: r.gal_60,
+    m3_60: r.m3_60,
+    errors: r.errors,
+  }
 }
 
 // ---- Draft survey (bulk cargo by displacement) --------------------------

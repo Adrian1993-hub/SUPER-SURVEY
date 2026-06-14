@@ -53,7 +53,10 @@ rust-kernel/.../astm60.rs       familia 60 °F: Tablas 6A/6B (VCF) + 13 (WCF), A
 rust-kernel/.../bqs60.rs        orquestador de fila imperial (DTO string-in/out)
 rust-kernel/.../vef.rs          Vessel Experience Factor (API MPMS 17.9 / HM49)
 rust-kernel/.../custody.rs      S&W (sediment&water) + pro-rata (reparto por B/L)
+rust-kernel/.../sampling.rs     niveles de muestreo Upper/Middle/Lower (ISO 3170)
+rust-kernel/.../figures.rs      ensamblador multi-unidad (TCV/GSV/NSV × bbl/m³/MT/LT…)
 ui/src/components/VefPanel.tsx  panel VEF (historial de viajes + aplicación)
+ui/src/components/SamplingPanel.tsx  muestreo + gráfico SVG del tanque
 ui/src/data/reportTemplates.ts  descriptores de plantillas inteligentes (off-hire/STS/barge)
 ui/src/pages/SmartReport.tsx    renderer único guiado por descriptor (secciones reutilizables)
 ui/src/pages/Reporte.tsx        reporte BQS imprimible (PDF/print + JSON); RobReport.tsx = ROB
@@ -98,8 +101,10 @@ reference/dotnet-wpf-prototype/ prototipo .NET/WPF + Draft calc validado (SOLO r
 ~65 % del MVP. El kernel valida vs hoja real, persiste, **compila en Tauri (CI)** y **calcula en vivo
 en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **Reporte BQS imprimible (PDF)**
 + **Reporte ROB** + **Utilidades de densidad** + **edición D1250-80/04 seleccionable**
-+ **plantillas inteligentes** (`SmartReport` guiado por descriptor: off-hire/STS/barge desde un
-  solo renderer, con S&W + pro-rata + VEF del kernel).
++ **plantillas inteligentes** (`SmartReport` guiado por descriptor: **4 operaciones** off-hire/barge/
+  STS/cargo-voyage desde un solo renderer, con secciones reutilizables: inventario, **muestreo +
+  gráfico** (`sampling.rs`), **tabla multi-unidad TCV/GSV/NSV** (`figures.rs`), **Master Summary**
+  (rollup de viaje), S&W + pro-rata (`custody.rs`) + VEF del kernel). **107 tests** en el kernel.
 **Generalización a formato SGS imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
 + 13 WCF, API gravity, ITS-68) **validada celda a celda** contra un worksheet real (`astm60_imperial_tests`,
 `bqs60_tests`), con orquestador imperial + WASM, ✅ **Multigrado** completo (apertura/cierre → *loaded*,

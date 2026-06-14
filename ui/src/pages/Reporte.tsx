@@ -7,6 +7,7 @@ import { vmrData, BARGE_FACTOR, BDN_FACTOR, toleranceLayers, type VmrSectionData
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { useJobMeasurement } from '../lib/jobStore'
+import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
 import { Ship, FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte BQS imprimible: TODA cifra sale del kernel WASM (misma matemática
@@ -154,6 +155,50 @@ export function Reporte() {
     URL.revokeObjectURL(url)
   }
 
+  async function exportXlsx() {
+    const sectionRows = (tanks: typeof before, calc: (CalcFields | null)[]): (string | number | null)[][] => {
+      const head = ['Tanque', 'Grado', 'Dens@15', 'Temp °C', 'TOV m³', 'GOV m³', 'VCF 54B', 'GSV@15 m³', 'WCF 56', 'MT (aire)']
+      const body = tanks.map((t, i) => {
+        const c = calc[i]
+        return [t.tanque, t.grade, t.densidad15, t.temp, t.tov, c ? c.gov : t.gov, c ? c.vcf : t.vcf, c ? c.gsv : t.gsv, c ? c.wcf56 : t.wcf56, c ? c.mt : t.mt]
+      })
+      const tot = sectionTotals(tanks, calc)
+      body.push(['Totales', '', '', '', tot.tov, tot.gov, tot.vcf, tot.gsv, tot.wcf, tot.mt])
+      return [head, ...body]
+    }
+    const sheets: SheetSpec[] = [
+      {
+        name: 'Meta',
+        rows: [
+          ['SuperSurvey', 'Bunker Quantity Survey'],
+          ['Referencia', h.referencia], ['Buque', h.buque], ['Surveyor', h.surveyor], ['Barcaza', h.barcaza],
+          ['Tipo de survey', h.surveyType], ['Puerto', h.puerto], ['Fecha', h.fecha], ['Estado del mar', h.seaCondition],
+          ['Densidad suplidor @15 °C (kg/L)', h.suppliersDensity], ['Edición tablas', editionLabel], ['Kernel', kver || ''],
+          ['Datos', 'demostración (ficticios)'],
+        ],
+      },
+      { name: 'Before receiving', rows: sectionRows(before, beforeCalc) },
+      { name: 'After receiving', rows: sectionRows(after, afterCalc) },
+      {
+        name: 'Quantity transferred',
+        rows: [
+          ['GSV @15 °C (Δ after − before) m³', 'Densidad suplidor kg/L', 'WCF 56', 'MT (vacío)', 'MT (aire)'],
+          [transferred ? transferred.gsv : '', h.suppliersDensity, transferred ? transferred.wcf : '', transferred ? transferred.mtVac : '', transferred ? transferred.mtAir : ''],
+        ],
+      },
+      {
+        name: 'Comparacion',
+        rows: [
+          ['Par', 'A', 'B', 'Δ MT', 'Δ%', 'Resultado'],
+          ...(cmp?.pairs ?? []).map((p) => [`${p.sourceA} vs ${p.sourceB}`, p.valueA, p.valueB, p.delta, `${p.deltaPct}%`, p.withinAll ? 'Dentro de tolerancia' : 'Fuera de tolerancia']),
+          [],
+          ['Recomendación', action, 'Peor |Δ%|', cmp?.worstDeltaPct ?? ''],
+        ],
+      },
+    ]
+    await downloadWorkbook(`${h.referencia.replace(/\s+/g, '_')}.xlsx`, sheets)
+  }
+
   return (
     <div className="flex h-full flex-col print:block print:h-auto">
       <TopBar title="Reporte" activeJob={job} />
@@ -181,7 +226,7 @@ export function Reporte() {
               <Button variant="outline" className="gap-2" onClick={exportJson}>
                 <Braces className="h-4 w-4" /> JSON técnico
               </Button>
-              <Button variant="outline" className="gap-2" disabled title="Próximamente">
+              <Button variant="outline" className="gap-2" onClick={exportXlsx}>
                 <FileSpreadsheet className="h-4 w-4" /> XLSX
               </Button>
               <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110" disabled title="La firma digital llega con la fase de firma">

@@ -7,7 +7,8 @@ import { toleranceLayers } from '../data/vmr'
 import { robData, type RobGrade } from '../data/rob'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { sectionTotals, useComputedRows } from '../lib/useBqsRows'
-import { Ship, FileText, Braces, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
+import { Ship, FileText, FileSpreadsheet, Braces, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte ROB (Remaining On Board): inventario de búnker por grado calculado por
 // el kernel (misma matemática que BQS) y comparado, grado a grado, contra el ROB
@@ -198,6 +199,35 @@ export function RobReport() {
     URL.revokeObjectURL(url)
   }
 
+  async function exportXlsx() {
+    const lbl = (a?: ComparisonResult['recommendedAction']) => (a ? verdictStyle(a).label : '')
+    const summary: (string | number | null)[][] = [
+      ['Grado', 'Survey ROB (MT)', 'ER Log (MT)', 'Δ (MT)', 'Δ%', 'Veredicto'],
+      ...robData.grades.map((g) => {
+        const r = results[g.grade]
+        return [g.label, r?.surveyMt ?? '', g.logbookMt, r?.delta ?? '', r?.deltaPct ? `${r.deltaPct}%` : '', lbl(r?.action)]
+      }),
+      [],
+      ['TOTAL', grandSurvey, grandLog, '', `${grandDeltaPct.toFixed(3)}%`, lbl(worstAction as ComparisonResult['recommendedAction'])],
+    ]
+    const sheets: SheetSpec[] = [
+      {
+        name: 'Meta',
+        rows: [
+          ['SuperSurvey', 'Remaining On Board (ROB) Survey'],
+          ['Referencia', h.referencia], ['Buque', h.buque], ['Surveyor', h.surveyor], ['Puerto', h.puerto],
+          ['Tipo de survey', h.surveyType], ['Fecha', h.fecha], ['Kernel', kver || ''], ['Datos', 'demostración (ficticios)'],
+        ],
+      },
+      { name: 'Resumen ROB', rows: summary },
+      ...robData.grades.map((g) => ({
+        name: `Tanques ${g.grade}`,
+        rows: [['Tanque', 'Dens@15', 'Temp °C', 'TOV m³'], ...g.tanks.map((t) => [t.tanque, t.densidad15, t.temp, t.tov] as (string | number | null)[])],
+      })),
+    ]
+    await downloadWorkbook(`${h.referencia.replace(/\s+/g, '_')}_ROB.xlsx`, sheets)
+  }
+
   const gv = verdictStyle(worstAction as ComparisonResult['recommendedAction'])
 
   return (
@@ -215,6 +245,9 @@ export function RobReport() {
               </Button>
               <Button variant="outline" className="gap-2" onClick={exportJson}>
                 <Braces className="h-4 w-4" /> JSON técnico
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={exportXlsx}>
+                <FileSpreadsheet className="h-4 w-4" /> XLSX
               </Button>
             </div>
           </div>

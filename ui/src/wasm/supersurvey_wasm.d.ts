@@ -45,6 +45,12 @@ export function custody_figure(request_json: string): string;
 export function density_tool(request_json: string): string;
 
 /**
+ * Draft (draught) survey — bulk cargo by displacement (two conditions → cargo
+ * by difference). JSON `DraftSurveyRequestDTO` → `DraftSurveyResponseDTO`.
+ */
+export function draft_survey(request_json: string): string;
+
+/**
  * Kernel version string (for the UI to show which math built a number).
  */
 export function kernel_version(): string;
@@ -83,6 +89,7 @@ export interface InitOutput {
     readonly compare_sources: (a: number, b: number) => [number, number];
     readonly custody_figure: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
+    readonly draft_survey: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
     readonly sampling_levels: (a: number, b: number) => [number, number];

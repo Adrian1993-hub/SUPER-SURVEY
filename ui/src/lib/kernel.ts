@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -486,6 +486,78 @@ export async function custodyFigure(input: CustodyFigureInput): Promise<CustodyF
   }
   const r = JSON.parse(custody_figure(JSON.stringify(req))) as CustodyFigureResult
   return r
+}
+
+// ---- Draft survey (bulk cargo by displacement) --------------------------
+
+export interface DraftConditionInput {
+  forward: number
+  aft: number
+  midship: number
+  lbp: number
+  density: number
+  displacementQM: number
+  tpc: number
+  lcf: number
+  mtcPerMetre: number
+  deductibles?: number
+}
+export interface DraftConditionResult {
+  quarterMean: string
+  trim: string
+  firstTrimCorrection: string
+  secondTrimCorrection: string
+  displacementCorrectedForTrim: string
+  densityCorrection: string
+  displacementCorrectedForDensity: string
+  netDisplacement: string
+}
+export interface DraftSurveyResult {
+  success: boolean
+  initial?: DraftConditionResult
+  final?: DraftConditionResult
+  cargo?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+const draftDto = (c: DraftConditionInput) => ({
+  forward_corrected: String(c.forward),
+  aft_corrected: String(c.aft),
+  midship_corrected: String(c.midship),
+  lbp: String(c.lbp),
+  sea_water_density: String(c.density),
+  displacement_at_quarter_mean: String(c.displacementQM),
+  tpc: String(c.tpc),
+  lcf: String(c.lcf),
+  mtc_per_metre: String(c.mtcPerMetre),
+  total_deductibles: String(c.deductibles ?? 0),
+})
+
+interface RawDraftCond {
+  quarter_mean: string; trim: string; first_trim_correction: string; second_trim_correction: string
+  displacement_corrected_for_trim: string; density_correction: string
+  displacement_corrected_for_density: string; net_displacement: string
+}
+const fromDraftCond = (r?: RawDraftCond): DraftConditionResult | undefined =>
+  r && {
+    quarterMean: r.quarter_mean,
+    trim: r.trim,
+    firstTrimCorrection: r.first_trim_correction,
+    secondTrimCorrection: r.second_trim_correction,
+    displacementCorrectedForTrim: r.displacement_corrected_for_trim,
+    densityCorrection: r.density_correction,
+    displacementCorrectedForDensity: r.displacement_corrected_for_density,
+    netDisplacement: r.net_displacement,
+  }
+
+/** Draft survey: two conditions → per-condition results + cargo by difference. */
+export async function draftSurvey(initial: DraftConditionInput, final: DraftConditionInput, operation: 'LOAD' | 'DISCHARGE'): Promise<DraftSurveyResult> {
+  await ensureReady()
+  const req = { initial: draftDto(initial), final: draftDto(final), operation, decimals: 3 }
+  const r = JSON.parse(draft_survey(JSON.stringify(req))) as {
+    success: boolean; initial?: RawDraftCond; final?: RawDraftCond; cargo?: string; errors?: { code?: string; message?: string }[]
+  }
+  return { success: r.success, initial: fromDraftCond(r.initial), final: fromDraftCond(r.final), cargo: r.cargo, errors: r.errors }
 }
 
 let cachedVersion: string | null = null

@@ -32,6 +32,7 @@ pub mod conversions;
 pub mod custody;
 pub mod decimal;
 pub mod density;
+pub mod draft;
 pub mod dto;
 pub mod error;
 pub mod figures;
@@ -54,6 +55,7 @@ pub mod prelude {
     pub use crate::custody::*;
     pub use crate::decimal::*;
     pub use crate::density::*;
+    pub use crate::draft::*;
     pub use crate::dto::*;
     pub use crate::error::*;
     pub use crate::figures::*;

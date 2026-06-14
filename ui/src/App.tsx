@@ -14,6 +14,7 @@ import { Reporte } from './pages/Reporte'
 import { RobReport } from './pages/RobReport'
 import { MedicionMultigrado } from './pages/MedicionMultigrado'
 import { SmartReport } from './pages/SmartReport'
+import { DraftSurvey } from './pages/DraftSurvey'
 import { Utilidades } from './pages/Utilidades'
 
 function AppShell() {
@@ -35,6 +36,7 @@ function AppShell() {
         <Route path="/trabajo/:id/reporte/:op" element={<SmartReport />} />
         <Route path="/trabajo/:id/rob" element={<RobReport />} />
         <Route path="/trabajo/:id/multigrado" element={<MedicionMultigrado />} />
+        <Route path="/trabajo/:id/draft" element={<DraftSurvey />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

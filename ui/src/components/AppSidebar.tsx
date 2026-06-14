@@ -14,6 +14,7 @@ import {
   FlaskConical,
   Layers,
   FileStack,
+  Anchor,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +38,7 @@ export function AppSidebar() {
     { to: `/trabajo/${jobId}/key-meeting`, label: 'Key Meeting', icon: Users },
     { to: `/trabajo/${jobId}/medicion`, label: 'Medición', icon: Gauge },
     { to: `/trabajo/${jobId}/multigrado`, label: 'Multigrado (imp.)', icon: Layers },
+    { to: `/trabajo/${jobId}/draft`, label: 'Draft Survey', icon: Anchor },
     { to: `/trabajo/${jobId}/calculo`, label: 'Cálculo + Trace', icon: Calculator },
     { to: `/trabajo/${jobId}/comparacion`, label: 'Comparación', icon: Scale },
     { to: `/trabajo/${jobId}/reporte`, label: 'Reporte', icon: FileCheck2 },

@@ -119,6 +119,27 @@ export function density_tool(request_json) {
 }
 
 /**
+ * Draft (draught) survey — bulk cargo by displacement (two conditions → cargo
+ * by difference). JSON `DraftSurveyRequestDTO` → `DraftSurveyResponseDTO`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function draft_survey(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.draft_survey(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Kernel version string (for the UI to show which math built a number).
  * @returns {string}
  */

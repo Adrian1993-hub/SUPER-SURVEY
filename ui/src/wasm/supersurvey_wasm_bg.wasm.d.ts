@@ -10,6 +10,7 @@ export const draft_survey: (a: number, b: number) => [number, number];
 export const hydrostatic_interpolate: (a: number, b: number) => [number, number];
 export const kernel_version: () => [number, number];
 export const pro_rata: (a: number, b: number) => [number, number];
+export const reconcile_terminal: (a: number, b: number) => [number, number];
 export const sampling_levels: (a: number, b: number) => [number, number];
 export const sw_deduction: (a: number, b: number) => [number, number];
 export const vef_calculate: (a: number, b: number) => [number, number];

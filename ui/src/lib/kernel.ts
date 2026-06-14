@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -676,6 +676,121 @@ interface RawCompareResponse {
   pairs?: RawComparePair[]
   trace_json?: unknown
   errors?: { code?: string; message?: string }[]
+}
+
+// ---- Terminal / ship-shore reconciliation (shore by difference ± line) ----
+
+export type TerminalOperation = 'LOAD' | 'DISCHARGE'
+
+export interface ReconciliationInput {
+  operation: TerminalOperation
+  /** Display label only: 'MT' | 'BBL' | 'M3'. */
+  unit?: string
+  /** Vessel / barge custody figure (loaded or discharged). */
+  vesselFigure: number
+  /** Shore tank gauging by difference — provide both… */
+  shoreOpening?: number
+  shoreClosing?: number
+  /** …or a ready shore figure (bypasses opening/closing). */
+  shoreFigure?: number
+  /** Pipeline line content before/after (kernel derives the signed adjustment)… */
+  lineBefore?: number
+  lineAfter?: number
+  /** …or an explicit signed line adjustment. */
+  lineAdjustment?: number
+  blFigure?: number
+  layers: ToleranceLayerInput[]
+  decimals?: number
+  scope?: 'LIVE' | 'TRACE_VIEW'
+  roundingRule?: 'HALF_UP' | 'HALF_EVEN'
+}
+
+export interface VarianceLineResult {
+  label: string
+  figure: string
+  reference: string
+  delta: string
+  deltaPct: string
+  withinAll: boolean
+  layers: ComparisonLayerResult[]
+}
+
+export interface ReconciliationResult {
+  success: boolean
+  unit?: string
+  shoreMovement?: string
+  lineAdjustment?: string
+  shoreQuantity?: string
+  vesselFigure?: string
+  blFigure?: string
+  variances?: VarianceLineResult[]
+  worstDeltaPct?: string
+  exceeded?: boolean
+  recommendedAction?: RecommendedAction
+  errors?: { code?: string; message?: string }[]
+}
+
+const numStrOpt = (v?: number) => (v !== undefined && !Number.isNaN(v) ? String(v) : undefined)
+
+/** Terminal ship/shore reconciliation: shore by difference ± pipeline line content
+ *  → Shore Quantity, reconciled against the Vessel and B/L figures (kernel). */
+export async function reconcileTerminal(input: ReconciliationInput): Promise<ReconciliationResult> {
+  await ensureReady()
+  const req = {
+    operation: input.operation,
+    unit: input.unit ?? '',
+    vessel_figure: String(input.vesselFigure),
+    shore_opening: numStrOpt(input.shoreOpening),
+    shore_closing: numStrOpt(input.shoreClosing),
+    shore_figure: numStrOpt(input.shoreFigure),
+    line_before: numStrOpt(input.lineBefore),
+    line_after: numStrOpt(input.lineAfter),
+    line_adjustment: numStrOpt(input.lineAdjustment),
+    bl_figure: numStrOpt(input.blFigure),
+    layers: input.layers.map((l) => ({ name: l.name, basis: l.basis ?? '', limit_pct: String(l.limitPct) })),
+    decimals: input.decimals ?? 3,
+    rounding_rule: input.roundingRule ?? 'HALF_UP',
+    calculation_scope: input.scope ?? 'LIVE',
+  }
+  const r = JSON.parse(reconcile_terminal(JSON.stringify(req))) as {
+    success: boolean
+    unit?: string
+    shore_movement?: string
+    line_adjustment?: string
+    shore_quantity?: string
+    vessel_figure?: string
+    bl_figure?: string
+    variances?: {
+      label: string; figure: string; reference: string; delta: string
+      delta_pct: string; within_all: boolean; layers: RawCompareLayer[]
+    }[]
+    worst_delta_pct?: string
+    exceeded?: boolean
+    recommended_action?: RecommendedAction
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    unit: r.unit,
+    shoreMovement: r.shore_movement,
+    lineAdjustment: r.line_adjustment,
+    shoreQuantity: r.shore_quantity,
+    vesselFigure: r.vessel_figure,
+    blFigure: r.bl_figure,
+    variances: r.variances?.map((v) => ({
+      label: v.label,
+      figure: v.figure,
+      reference: v.reference,
+      delta: v.delta,
+      deltaPct: v.delta_pct,
+      withinAll: v.within_all,
+      layers: v.layers.map((l) => ({ name: l.name, basis: l.basis, limitPct: l.limit_pct, within: l.within, marginPct: l.margin_pct })),
+    })),
+    worstDeltaPct: r.worst_delta_pct,
+    exceeded: r.exceeded,
+    recommendedAction: r.recommended_action,
+    errors: r.errors,
+  }
 }
 
 // ---- Density utilities (API <-> rho15, observed rho@t <-> rho15, blend) ----

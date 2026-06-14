@@ -56,9 +56,11 @@ rust-kernel/.../custody.rs      S&W (sediment&water) + pro-rata (reparto por B/L
 rust-kernel/.../sampling.rs     niveles de muestreo Upper/Middle/Lower (ISO 3170)
 rust-kernel/.../figures.rs      ensamblador multi-unidad (TCV/GSV/NSV × bbl/m³/MT/LT…)
 rust-kernel/.../draft.rs        draft survey (desplazamiento, UNECE) — port .NET validado
+rust-kernel/.../reconcile.rs    conciliación buque↔tierra (pipeline + shore by diff → vessel/B-L, NOAD/LOP)
 ui/src/lib/jobStore.tsx         estado de medición compartido por trabajo (Medición→Reporte)
 ui/src/lib/xlsx.ts              export XLSX (SheetJS, carga diferida)
 ui/src/pages/DraftSurvey.tsx    página draft survey (2 condiciones + báscula tierra)
+ui/src/pages/ShipShore.tsx      conciliación buque↔tierra (pipeline reconciliation + shore quantity)
 ui/src/components/VefPanel.tsx  panel VEF (historial de viajes + aplicación)
 ui/src/components/SamplingPanel.tsx  muestreo + gráfico SVG del tanque
 ui/src/data/reportTemplates.ts  descriptores de plantillas inteligentes (off-hire/STS/barge)
@@ -108,16 +110,20 @@ en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **R
 + **plantillas inteligentes** (`SmartReport` guiado por descriptor: **4 operaciones** off-hire/barge/
   STS/cargo-voyage desde un solo renderer, con secciones reutilizables: inventario, **muestreo +
   gráfico** (`sampling.rs`), **tabla multi-unidad TCV/GSV/NSV** (`figures.rs`), **Master Summary**
-  (rollup de viaje), S&W + pro-rata (`custody.rs`) + VEF del kernel). **114 tests** en el kernel.
+  (rollup de viaje), S&W + pro-rata (`custody.rs`) + VEF del kernel). **128 tests** en el kernel.
   ✅ **Estado por trabajo** (Medición→Reporte comparten medición) · ✅ **export XLSX** ·
   ✅ **Draft survey** (granel por desplazamiento, `draft.rs`, port .NET validado, anclado a YUNNAN
-  4 080.787 + worksheet .NET) con reconciliación contra báscula de tierra.
+  4 080.787 + worksheet .NET) con reconciliación contra báscula de tierra ·
+  ✅ **Conciliación buque↔tierra** (`reconcile.rs` + página *Buque ↔ Tierra*): medición de tierra por
+  diferencia ± **pipeline reconciliation** (contenido de línea) → *Shore Quantity*, conciliada contra la
+  cifra del buque y el B/L (Δ, Δ%, None/NOAD/LOP), anclada al barge CENTENARIO TRADER (Loaded vs B/L −0.411 %).
 **Generalización a formato SGS imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
 + 13 WCF, API gravity, ITS-68) **validada celda a celda** contra un worksheet real (`astm60_imperial_tests`,
 `bqs60_tests`), con orquestador imperial + WASM, ✅ **Multigrado** completo (apertura/cierre → *loaded*,
 audit por grado Received-vs-BDN, impresión), y ✅ **VEF** (API MPMS 17.9 / HM49 — `vef.rs`, validado a 0.9993,
-panel en Multigrado). **87 tests** en el kernel. Falta: guardado de filas imperiales; cargo/terminal
-(conciliación buque↔tierra, pipeline, slops); firma digital; y el **pase de diseño (reactbits) al final**.
+panel en Multigrado). Falta: guardado de filas imperiales; **firma digital**; y el **pase de diseño
+(reactbits) al final** (dirigido por el usuario, ventana a ventana). ✅ cargo/terminal (conciliación
+buque↔tierra + pipeline) ya implementada (`reconcile.rs`). Pendiente fino: LPG (familia de tablas aparte).
 
 ## Próximos pasos inmediatos
 

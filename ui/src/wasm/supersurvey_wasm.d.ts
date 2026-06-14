@@ -68,6 +68,13 @@ export function kernel_version(): string;
 export function pro_rata(request_json: string): string;
 
 /**
+ * Terminal / ship-to-shore reconciliation — shore tank by difference ± pipeline
+ * line content → Shore Quantity, reconciled against the Vessel and B/L figures
+ * (Δ, Δ%, None/NOAD/LOP). JSON `ReconciliationRequestDTO` → `…ResponseDTO`.
+ */
+export function reconcile_terminal(request_json: string): string;
+
+/**
  * Tank sampling levels (upper/middle/lower) from ullage + reference height.
  * JSON `SamplingRequestDTO` → `SamplingResponseDTO`.
  */
@@ -99,6 +106,7 @@ export interface InitOutput {
     readonly hydrostatic_interpolate: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
+    readonly reconcile_terminal: (a: number, b: number) => [number, number];
     readonly sampling_levels: (a: number, b: number) => [number, number];
     readonly sw_deduction: (a: number, b: number) => [number, number];
     readonly vef_calculate: (a: number, b: number) => [number, number];

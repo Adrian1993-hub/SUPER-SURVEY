@@ -115,7 +115,7 @@ Surveyor/Master/Chief Eng). **= nuestro Reporte ROB + un certificado.**
 | **OBQ/ROB como cifra de apertura** | 🟡 estructura lista, falta etiqueta/registro |
 | **Cifra de custodia multi‑unidad (7 unidades)** | 🟡 conversiones listas, falta ensamblador |
 | Plantillas de reporte STS / Barge / Off‑Hire | ⛔ NUEVO — UI |
-| Pipeline reconciliation / Shore measurement | ⛔ NUEVO — fase carga/terminal |
+| Pipeline reconciliation / Shore measurement | ✅ `reconcile` (shore by diff ± línea → vessel/B-L, NOAD/LOP) |
 
 **Recomendación:** implementar ya los dos cálculos puros y validables (**S&W** y **Pro‑Rata**) en el
 kernel — son la pieza distintiva que falta y los tengo anclados a números reales. Luego, las

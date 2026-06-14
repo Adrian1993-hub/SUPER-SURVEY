@@ -11,6 +11,7 @@ use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
 use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateRequestDTO};
 use supersurvey_calc::figures::CustodyFigureRequestDTO;
+use supersurvey_calc::reconcile::ReconciliationRequestDTO;
 use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
 use wasm_bindgen::prelude::*;
@@ -144,6 +145,18 @@ pub fn draft_survey(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn hydrostatic_interpolate(request_json: &str) -> String {
     match serde_json::from_str::<HydrostaticInterpolateRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Terminal / ship-to-shore reconciliation — shore tank by difference ± pipeline
+/// line content → Shore Quantity, reconciled against the Vessel and B/L figures
+/// (Δ, Δ%, None/NOAD/LOP). JSON `ReconciliationRequestDTO` → `…ResponseDTO`.
+#[wasm_bindgen]
+pub fn reconcile_terminal(request_json: &str) -> String {
+    match serde_json::from_str::<ReconciliationRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

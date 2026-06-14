@@ -74,6 +74,28 @@ export function compare_sources(request_json) {
 }
 
 /**
+ * Multi-unit custody figure: one standard volume + density → all units
+ * (bbl/gal/m³/L @60 and @15, MT air/vac, LT) at TCV/GSV/NSV. JSON
+ * `CustodyFigureRequestDTO` → `CustodyFigureResponseDTO`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function custody_figure(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.custody_figure(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Density utilities: API ↔ ρ15, observed ρ@t ↔ ρ15, parcel blending.
  *
  * `request_json` is a JSON-encoded `DensityToolRequestDTO`; returns a JSON

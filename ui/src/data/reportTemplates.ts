@@ -13,6 +13,8 @@ export type SectionKind =
   | 'gradeInventory' // tabla de tanques por grado (cálculo en vivo)
   | 'sampling' // niveles de muestreo Upper/Middle/Lower + gráfico
   | 'custodySummary' // comparación de dos cifras (Received vs referencia) + Δ/%
+  | 'quantityTable' // tabla multi-unidad por grado (TCV/GSV/NSV × 7 unidades)
+  | 'masterSummary' // rollup ejecutivo B/L→loaded(±VEF)→in-transit→ROB
   | 'swDeduction' // Gross → S&W → Net (crudo)
   | 'proRata' // reparto entre B/L
   | 'vef' // Vessel Experience Factor
@@ -64,6 +66,21 @@ export interface OperationTemplate {
   swPct?: number
   /** Reparto pro-rata (varios B/L). */
   proRata?: { label: string; parcels: { label: string; weight: number }[] }
+  /** Cifras por grado para la tabla multi-unidad (Summary of Quantities). */
+  summaryFigures?: {
+    grade: string
+    label: string
+    gsv: number
+    gsvUnit?: 'M3_15' | 'BBL_60'
+    density15: number
+    density15Unit?: 'KG_L' | 'KG_M3'
+    swPct?: number
+  }[]
+  /** Rollup de viaje por grado (Master Summary). */
+  voyage?: {
+    unit: string // p.ej. 'bbl @60°F'
+    grades: { grade: string; bl: number; loaded: number; loadedVef?: number; atDischarge?: number; rob?: number }[]
+  }
   certificate?: { kind: 'OFF_HIRE' | 'QUANTITY'; consignee: string; subject: string }
 }
 
@@ -185,10 +202,42 @@ const stsDischarge: OperationTemplate = {
   certificate: { kind: 'QUANTITY', consignee: 'UNIPEC Demo', subject: 'Outturn Quantity' },
 }
 
+const cargoVoyage: OperationTemplate = {
+  id: 'cargo-voyage',
+  title: 'Cargo Voyage — Master Summary',
+  subtitle: 'Load → discharge custody (multigrado)',
+  unitSystem: 'imperial',
+  sections: ['meta', 'masterSummary', 'quantityTable', 'signatures', 'notes'],
+  header: {
+    referencia: 'VOYAGE DEMO-12652',
+    buque: 'MT DEMO-STAR',
+    contraparte: 'Shore (load) / Shore (discharge)',
+    puerto: 'VOPAK Demo → Demo Discharge',
+    surveyor: 'Surveyor Demo',
+    fecha: '05–07 mar 2026',
+    metodo: 'ASTM D1250 (6B/13) — multi-unidad',
+    cliente: 'Cliente Demo',
+  },
+  grades: [],
+  summaryFigures: [
+    { grade: 'ULSD', label: 'ULSD', gsv: 130105.02, gsvUnit: 'BBL_60', density15: 0.845, swPct: 0 },
+    { grade: 'JET A', label: 'JET A', gsv: 58034.42, gsvUnit: 'BBL_60', density15: 0.8, swPct: 0 },
+  ],
+  voyage: {
+    unit: 'bbl @60°F',
+    grades: [
+      { grade: 'ULSD', bl: 130157.08, loaded: 130105.02, loadedVef: 130144.06, atDischarge: 130087.02, rob: 0 },
+      { grade: 'JET A', bl: 58057.64, loaded: 58034.42, loadedVef: 58051.84, atDischarge: 58008.82, rob: 0 },
+    ],
+  },
+  certificate: { kind: 'QUANTITY', consignee: 'Cliente Demo', subject: 'Outturn' },
+}
+
 export const operationTemplates: Record<string, OperationTemplate> = {
   'off-hire': offHire,
   'barge-tow': bargeTow,
   'sts-discharge': stsDischarge,
+  'cargo-voyage': cargoVoyage,
 }
 
 export const templateList = Object.values(operationTemplates)

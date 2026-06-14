@@ -9,6 +9,7 @@ use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
 use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
+use supersurvey_calc::figures::CustodyFigureRequestDTO;
 use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
 use wasm_bindgen::prelude::*;
@@ -108,6 +109,18 @@ pub fn pro_rata(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn sampling_levels(request_json: &str) -> String {
     match serde_json::from_str::<SamplingRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Multi-unit custody figure: one standard volume + density → all units
+/// (bbl/gal/m³/L @60 and @15, MT air/vac, LT) at TCV/GSV/NSV. JSON
+/// `CustodyFigureRequestDTO` → `CustodyFigureResponseDTO`.
+#[wasm_bindgen]
+pub fn custody_figure(request_json: &str) -> String {
+    match serde_json::from_str::<CustodyFigureRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

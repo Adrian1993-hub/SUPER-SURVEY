@@ -6,7 +6,7 @@ import { VefPanel } from '../components/VefPanel'
 import { SamplingPanel } from '../components/SamplingPanel'
 import { operationTemplates, type OperationTemplate, type TemplateGrade, type TemplateTank } from '../data/reportTemplates'
 import { toleranceLayers, type VmrTank } from '../data/vmr'
-import { compareSources, swDeduction, proRata, kernelVersion, type ComparisonResult, type ImperialRowInput, type SwResult, type ProRataResult } from '../lib/kernel'
+import { compareSources, swDeduction, proRata, custodyFigure, kernelVersion, type ComparisonResult, type ImperialRowInput, type SwResult, type ProRataResult, type CustodyFigureResult, type UnitSet } from '../lib/kernel'
 import { useComputedRows, useImperialRows, type CalcFields, type ImperialCalcFields } from '../lib/useBqsRows'
 import { Ship, FileText, Braces, Layers } from 'lucide-react'
 
@@ -306,6 +306,205 @@ function Certificate({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade: Re
   )
 }
 
+// ---- Quantity table (multi-unit × TCV/GSV/NSV) --------------------------
+
+const UNIT_COLS: [string, keyof UnitSet][] = [
+  ['bbl @60', 'bbl60'],
+  ['gal @60', 'gal60'],
+  ['m³ @60', 'm3_60'],
+  ['L @60', 'l_60'],
+  ['m³ @15', 'm3_15'],
+  ['L @15', 'l_15'],
+  ['MT aire', 'mt_air'],
+  ['MT vac', 'mt_vac'],
+  ['LT aire', 'lt_air'],
+]
+
+function QuantityTable({ tpl }: { tpl: OperationTemplate }) {
+  const figs = useMemo(() => tpl.summaryFigures ?? [], [tpl])
+  const [res, setRes] = useState<Record<string, CustodyFigureResult>>({})
+  useEffect(() => {
+    let cancelled = false
+    Promise.all(
+      figs.map(async (f) => {
+        const r = await custodyFigure({
+          gsv: f.gsv,
+          gsvUnit: f.gsvUnit,
+          density15: f.density15,
+          density15Unit: f.density15Unit,
+          swPct: f.swPct,
+        }).catch(() => null)
+        return [f.grade, r] as const
+      }),
+    ).then((e) => {
+      if (!cancelled) setRes(Object.fromEntries(e.filter((x): x is [string, CustodyFigureResult] => !!x[1])))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [figs])
+
+  return (
+    <Section title="Resumen de cantidades (multi-unidad)">
+      <div className="space-y-4">
+        {figs.map((f) => {
+          const r = res[f.grade]
+          const levels: [string, UnitSet | undefined][] = [
+            ['TCV', r?.tcv],
+            ['GSV', r?.gsv],
+            ['NSV', r?.nsv],
+          ]
+          return (
+            <div key={f.grade} className="print:break-inside-avoid">
+              <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{f.label}</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className={thL}></th>
+                      {UNIT_COLS.map(([h]) => (
+                        <th key={h} className={th}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {levels.map(([name, set]) => (
+                      <tr key={name} className={name === 'GSV' ? 'bg-muted/40 font-semibold' : ''}>
+                        <td className={tdL}>{name}</td>
+                        {UNIT_COLS.map(([, key]) => (
+                          <td key={key} className={td}>
+                            {set ? set[key] : '—'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Una sola cifra estándar expandida a todas las unidades por el kernel (masa invariante; el cruce 15 °C↔60 °F usa el VCF del
+        producto). NSV = GSV − S&W; TCV = GSV + agua libre.
+      </p>
+    </Section>
+  )
+}
+
+// ---- Master Summary (voyage rollup) -------------------------------------
+
+interface Pair {
+  delta?: string
+  deltaPct?: string
+}
+
+function MasterSummary({ tpl }: { tpl: OperationTemplate }) {
+  const v = tpl.voyage
+  const cols = useMemo(() => {
+    if (!v) return []
+    const sum = (pick: (g: NonNullable<OperationTemplate['voyage']>['grades'][number]) => number | undefined) =>
+      v.grades.reduce((a, g) => a + (pick(g) ?? 0), 0)
+    const total = {
+      grade: 'TOTAL',
+      bl: sum((g) => g.bl),
+      loaded: sum((g) => g.loaded),
+      loadedVef: sum((g) => g.loadedVef),
+      atDischarge: sum((g) => g.atDischarge),
+      rob: sum((g) => g.rob),
+    }
+    return [...v.grades, total]
+  }, [v])
+
+  const [pairs, setPairs] = useState<Record<string, Pair>>({})
+  useEffect(() => {
+    if (!v) return
+    let cancelled = false
+    const cmp = async (a: number, b: number) => {
+      const r = await compareSources({
+        sources: [
+          { name: 'A', quantity: a },
+          { name: 'B', quantity: b },
+        ],
+        layers: toleranceLayers,
+        scope: 'LIVE',
+      }).catch(() => null)
+      const p = r?.pairs?.[0]
+      return { delta: p?.delta, deltaPct: p?.deltaPct } as Pair
+    }
+    Promise.all(
+      cols.flatMap((g) => [
+        cmp(g.loaded, g.bl).then((p) => [`${g.grade}:load`, p] as const),
+        g.loadedVef != null ? cmp(g.loadedVef, g.bl).then((p) => [`${g.grade}:vef`, p] as const) : Promise.resolve([`${g.grade}:vef`, {} as Pair] as const),
+        g.atDischarge != null ? cmp(g.atDischarge, g.loaded).then((p) => [`${g.grade}:transit`, p] as const) : Promise.resolve([`${g.grade}:transit`, {} as Pair] as const),
+      ]),
+    ).then((e) => {
+      if (!cancelled) setPairs(Object.fromEntries(e))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [v, cols])
+
+  if (!v) return null
+  const f3v = (n?: number) => (n == null ? '—' : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+  const cell = (key: string, field: keyof Pair) => pairs[key]?.[field] ?? '—'
+
+  return (
+    <Section title={`Master Summary — reconciliación de viaje (${v.unit})`}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className={thL}>Concepto</th>
+              {cols.map((g) => (
+                <th key={g.grade} className={`${th} ${g.grade === 'TOTAL' ? 'bg-muted/40' : ''}`}>
+                  {g.grade}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <Row label="Bill of Lading" cols={cols} val={(g) => f3v(g.bl)} />
+            <Row label="Vessel loaded" cols={cols} val={(g) => f3v(g.loaded)} bold />
+            <Row label="Δ vs B/L" cols={cols} val={(g) => cell(`${g.grade}:load`, 'delta')} muted />
+            <Row label="% vs B/L" cols={cols} val={(g) => pct(cell(`${g.grade}:load`, 'deltaPct'))} muted />
+            <Row label="Loaded w/ VEF" cols={cols} val={(g) => (g.loadedVef != null ? f3v(g.loadedVef) : '—')} />
+            <Row label="Δ (VEF) vs B/L" cols={cols} val={(g) => cell(`${g.grade}:vef`, 'delta')} muted />
+            <Row label="% (VEF) vs B/L" cols={cols} val={(g) => pct(cell(`${g.grade}:vef`, 'deltaPct'))} muted />
+            <Row label="At discharge" cols={cols} val={(g) => (g.atDischarge != null ? f3v(g.atDischarge) : '—')} />
+            <Row label="In-transit Δ" cols={cols} val={(g) => cell(`${g.grade}:transit`, 'delta')} muted />
+            <Row label="In-transit %" cols={cols} val={(g) => pct(cell(`${g.grade}:transit`, 'deltaPct'))} muted />
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        B/L → cargado (±VEF) → en tránsito (carga vs descarga). Δ y % por el motor de comparación del kernel.
+      </p>
+    </Section>
+  )
+}
+
+function pct(s: string) {
+  return s === '—' ? '—' : `${s}%`
+}
+type VoyG = NonNullable<OperationTemplate['voyage']>['grades'][number] & { grade: string }
+function Row({ label, cols, val, bold, muted }: { label: string; cols: VoyG[]; val: (g: VoyG) => string; bold?: boolean; muted?: boolean }) {
+  return (
+    <tr className={bold ? 'font-semibold' : ''}>
+      <td className={`${tdL} ${muted ? 'text-muted-foreground' : ''}`}>{label}</td>
+      {cols.map((g) => (
+        <td key={g.grade} className={`${td} ${g.grade === 'TOTAL' ? 'bg-muted/40 font-semibold' : ''}`}>
+          {val(g)}
+        </td>
+      ))}
+    </tr>
+  )
+}
+
 function Section({ title, children, avoidBreak }: { title: string; children: ReactNode; avoidBreak?: boolean }) {
   return (
     <section className={avoidBreak ? 'print:break-inside-avoid' : ''}>
@@ -457,6 +656,10 @@ export function SmartReport() {
                         <SamplingPanel />
                       </div>
                     )
+                  case 'quantityTable':
+                    return <QuantityTable key="qty" tpl={tpl} />
+                  case 'masterSummary':
+                    return <MasterSummary key="master" tpl={tpl} />
                   case 'custodySummary':
                     return <CustodySummary key="cust" tpl={tpl} mtByGrade={mtByGrade} />
                   case 'swDeduction':

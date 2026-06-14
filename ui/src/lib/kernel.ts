@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -439,6 +439,53 @@ export async function samplingLevels(tanks: SamplingTankInput[], decimals = 3): 
     })),
     errors: r.errors,
   }
+}
+
+// ---- Multi-unit custody figure (bbl/gal/m³/L @60,@15 + MT/LT, TCV/GSV/NSV) ----
+
+export interface UnitSet {
+  bbl60: string
+  gal60: string
+  m3_60: string
+  l_60: string
+  m3_15: string
+  l_15: string
+  mt_air: string
+  mt_vac: string
+  lt_air: string
+}
+export interface CustodyFigureResult {
+  success: boolean
+  tcv?: UnitSet
+  gsv?: UnitSet
+  nsv?: UnitSet
+  errors?: { code?: string; message?: string }[]
+}
+
+export interface CustodyFigureInput {
+  /** GSV at the standard base. */
+  gsv: number
+  /** 'M3_15' (default) or 'BBL_60'. */
+  gsvUnit?: 'M3_15' | 'BBL_60'
+  density15: number
+  density15Unit?: 'KG_L' | 'KG_M3'
+  swPct?: number
+  freeWater?: number
+}
+
+/** Expand one standard volume into all reported units (TCV/GSV/NSV) via the kernel. */
+export async function custodyFigure(input: CustodyFigureInput): Promise<CustodyFigureResult> {
+  await ensureReady()
+  const req = {
+    gsv_value: String(input.gsv),
+    gsv_unit: input.gsvUnit ?? 'M3_15',
+    density15_value: String(input.density15),
+    density15_unit: input.density15Unit ?? 'KG_L',
+    sw_pct: input.swPct !== undefined ? String(input.swPct) : undefined,
+    free_water_value: input.freeWater !== undefined ? String(input.freeWater) : undefined,
+  }
+  const r = JSON.parse(custody_figure(JSON.stringify(req))) as CustodyFigureResult
+  return r
 }
 
 let cachedVersion: string | null = null

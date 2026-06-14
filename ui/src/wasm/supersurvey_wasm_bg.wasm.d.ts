@@ -4,6 +4,7 @@ export const memory: WebAssembly.Memory;
 export const bqs_calculate_row: (a: number, b: number) => [number, number];
 export const bqs_calculate_row_imperial: (a: number, b: number) => [number, number];
 export const compare_sources: (a: number, b: number) => [number, number];
+export const custody_figure: (a: number, b: number) => [number, number];
 export const density_tool: (a: number, b: number) => [number, number];
 export const kernel_version: () => [number, number];
 export const pro_rata: (a: number, b: number) => [number, number];

@@ -30,6 +30,13 @@ export function bqs_calculate_row_imperial(request_json: string): string;
 export function compare_sources(request_json: string): string;
 
 /**
+ * Multi-unit custody figure: one standard volume + density → all units
+ * (bbl/gal/m³/L @60 and @15, MT air/vac, LT) at TCV/GSV/NSV. JSON
+ * `CustodyFigureRequestDTO` → `CustodyFigureResponseDTO`.
+ */
+export function custody_figure(request_json: string): string;
+
+/**
  * Density utilities: API ↔ ρ15, observed ρ@t ↔ ρ15, parcel blending.
  *
  * `request_json` is a JSON-encoded `DensityToolRequestDTO`; returns a JSON
@@ -74,6 +81,7 @@ export interface InitOutput {
     readonly bqs_calculate_row: (a: number, b: number) => [number, number];
     readonly bqs_calculate_row_imperial: (a: number, b: number) => [number, number];
     readonly compare_sources: (a: number, b: number) => [number, number];
+    readonly custody_figure: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];

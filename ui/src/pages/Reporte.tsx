@@ -6,6 +6,7 @@ import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, toleranceLayers, type VmrSectionData } from '../data/vmr'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
+import { useJobMeasurement } from '../lib/jobStore'
 import { Ship, FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte BQS imprimible: TODA cifra sale del kernel WASM (misma matemática
@@ -88,12 +89,16 @@ export function Reporte() {
   const { id } = useParams<{ id: string }>()
   const job = getJob(id || '1')
   const h = vmrData.header
+  // Mismas mediciones que editó el surveyor en Medición (estado compartido).
+  const { before, after } = useJobMeasurement()
+  const beforeSection: VmrSectionData = { ...vmrData.before, tanques: before }
+  const afterSection: VmrSectionData = { ...vmrData.after, tanques: after }
 
   const [edition, setEdition] = useState<TableVersion>('D1250_80')
-  const beforeCalc = useComputedRows(vmrData.before.tanques, edition)
-  const afterCalc = useComputedRows(vmrData.after.tanques, edition)
-  const totBefore = sectionTotals(vmrData.before.tanques, beforeCalc)
-  const totAfter = sectionTotals(vmrData.after.tanques, afterCalc)
+  const beforeCalc = useComputedRows(before, edition)
+  const afterCalc = useComputedRows(after, edition)
+  const totBefore = sectionTotals(before, beforeCalc)
+  const totAfter = sectionTotals(after, afterCalc)
   const transferred = useTransferred(totAfter.gsv - totBefore.gsv, h.suppliersDensity, edition)
   const editionLabel = edition === 'D1250_04' ? 'D1250-04 · API MPMS 11.1' : 'D1250-80'
   const mtAir = transferred?.mtAir ?? vmrData.transferred.mtAir
@@ -133,8 +138,8 @@ export function Reporte() {
       table_version: edition,
       header: h,
       sections: {
-        before: { tanks: vmrData.before.tanques, calc: beforeCalc, totals: totBefore },
-        after: { tanks: vmrData.after.tanques, calc: afterCalc, totals: totAfter },
+        before: { tanks: before, calc: beforeCalc, totals: totBefore },
+        after: { tanks: after, calc: afterCalc, totals: totAfter },
       },
       quantity_transferred: transferred,
       comparison: cmp,
@@ -222,8 +227,8 @@ export function Reporte() {
                 <Meta k="Densidad suplidor @15 °C" v={`${f4(h.suppliersDensity)} kg/L`} />
               </div>
 
-              <SectionTable title="Before receiving" section={vmrData.before} calc={beforeCalc} />
-              <SectionTable title="After receiving" section={vmrData.after} calc={afterCalc} />
+              <SectionTable title="Before receiving" section={beforeSection} calc={beforeCalc} />
+              <SectionTable title="After receiving" section={afterSection} calc={afterCalc} />
 
               {/* Quantity transferred */}
               <section className="print:break-inside-avoid">

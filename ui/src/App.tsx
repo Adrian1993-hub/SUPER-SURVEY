@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { TooltipProvider } from './components/ui/tooltip'
+import { JobMeasurementProvider } from './lib/jobStore'
 import { AppSidebar } from './components/AppSidebar'
 import { Dashboard } from './pages/Dashboard'
 import { ListaTrabajos } from './pages/ListaTrabajos'
@@ -44,10 +45,14 @@ export function App() {
   return (
     <TooltipProvider>
       <BrowserRouter>
-        <div className="flex h-screen w-full overflow-hidden bg-background text-foreground print:block print:h-auto print:overflow-visible">
-          <AppSidebar />
-          <AppShell />
-        </div>
+        {/* Provider fuera del AppShell (que se re-monta por ruta) → la medición
+            editada sobrevive al navegar Medición → Reporte. */}
+        <JobMeasurementProvider>
+          <div className="flex h-screen w-full overflow-hidden bg-background text-foreground print:block print:h-auto print:overflow-visible">
+            <AppSidebar />
+            <AppShell />
+          </div>
+        </JobMeasurementProvider>
       </BrowserRouter>
     </TooltipProvider>
   )

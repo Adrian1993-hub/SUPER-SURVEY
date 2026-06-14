@@ -8,10 +8,10 @@ import { vmrData, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, typ
 import { commonGrades, densityOutOfRange } from '../data/grades'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { isDesktop, saveMeasurement } from '../lib/ipc'
+import { useJobMeasurement } from '../lib/jobStore'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save } from 'lucide-react'
 
-const clone = (arr: VmrTank[]) => arr.map((t) => ({ ...t }))
 const blankTank = (): VmrTank => ({
   tanque: 'NUEVO', nominado: false, grade: 'VLSFO', densidad15: 0, tablesRefHeight: 0, measRefHeight: 0,
   level: 0, usg: 'S', temp: 0, tov: 0, freeWaterLevel: 0, freeWaterVol: 0, gov: 0, vcf: 0, gsv: 0, wcf56: 0, mt: 0,
@@ -196,8 +196,8 @@ export function Medicion() {
   const { id } = useParams<{ id: string }>()
   const job = getJob(id || '1')
   const h = vmrData.header
-  const [before, setBefore] = useState<VmrTank[]>(clone(vmrData.before.tanques))
-  const [after, setAfter] = useState<VmrTank[]>(clone(vmrData.after.tanques))
+  // Estado compartido por trabajo: editar aquí se refleja en el Reporte.
+  const { before, after, setBefore, setAfter } = useJobMeasurement()
   const [edition, setEdition] = useState<TableVersion>('D1250_80')
   const beforeCalc = useComputedRows(before, edition)
   const afterCalc = useComputedRows(after, edition)

@@ -71,7 +71,7 @@ Step 14 CTL (redondeo)                         ← ANCLA: 0.9587323707  (propano
 ```
 
 → La densidad de saturación usa un polinomio por fluido en `τ^(1/3), τ^(2/3), τ` con `K1..K4`
-(no las constantes COSTALD genéricas a,b,c,d). **Pendiente**: reproducir el polinomio exacto y
+(no las constantes COSTALD genéricas a,b,c,d). **Implementado** en `costald.rs`: COSTALD estándar (constantes universales a..h) + pseudo-componente por densidad relativa @60 °F entre dos componentes puros; reproduce la cadena de interpolación celda a celda y el ancla con **CTL = 0.958828 vs 0.9587323707** (residual ≈ 9.6×10⁻⁵, ~0.01 %). **Pendiente (cell-exact, 10 díg)**: reproducir el polinomio por fluido y
 validar contra la rejilla `59E/60e` y el ancla `CTL = 0.95873237`. Las constantes por componente
 (Propano, i/n‑Butano, Propileno, …) están en la hoja `shore (C3)` y se catalogarán en el kernel.
 
@@ -104,7 +104,7 @@ Relaciones verificadas: `MT_vac = 1174.058 × 0.501`; `LT = kg_vac / 1016.046908
 | Conversión densidad (API↔rel.density↔ρ15) | ✅ reutiliza `density.rs` |
 | Comparación buque/tierra + Line Capacity | ✅ `reconcile.rs` |
 | S&W / pro‑rata / muestreo / VEF | ✅ kernel existente |
-| **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | ⛔ **NUEVO — próximo paso** (constantes extraídas; validar vs `59E/60e` y `CTL=0.95873237`) |
+| **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | 🟡 **Implementado (COSTALD estándar)** en `costald.rs` (par Propano/i-Butano validado; residual ≈9.6e-5 vs ancla); cell-exact pendiente de `K1..K4` por componente de `shore (C3)` |
 | Corrección de vapor (presurizados) | ⛔ NUEVO (propano/butano presurizado) |
 | Plantilla de reporte LPG (Certificate of Quantity) + página UI | 🟡 pendiente (motor y unidades listos) |
 

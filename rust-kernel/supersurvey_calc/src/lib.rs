@@ -29,6 +29,7 @@ pub mod bqs;
 pub mod bqs60;
 pub mod comparison;
 pub mod conversions;
+pub mod costald;
 pub mod custody;
 pub mod decimal;
 pub mod density;
@@ -54,6 +55,7 @@ pub mod prelude {
     pub use crate::bqs60::*;
     pub use crate::comparison::*;
     pub use crate::conversions::*;
+    pub use crate::costald::*;
     pub use crate::custody::*;
     pub use crate::decimal::*;
     pub use crate::density::*;

@@ -7,6 +7,7 @@
 use supersurvey_calc::bqs::BqsRowRequestDTO;
 use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
+use supersurvey_calc::costald::CostaldCtlRequestDTO;
 use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
 use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateRequestDTO};
@@ -167,10 +168,24 @@ pub fn reconcile_terminal(request_json: &str) -> String {
 /// LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
 /// every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
 /// gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
-/// 11.2.4 COSTALD is a separate, upcoming export.)
+/// 11.2.4 COSTALD is `costald_ctl` below.)
 #[wasm_bindgen]
 pub fn lpg_custody(request_json: &str) -> String {
     match serde_json::from_str::<LpgCustodyRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// LPG / NGL temperature correction — CTL (VCF) by COSTALD / API MPMS 11.2.4
+/// (corresponding states). The cargo is characterised as a pseudo-component
+/// between two catalogued pure components by relative density @ 60 °F. JSON
+/// `CostaldCtlRequestDTO` → `CostaldCtlResponseDTO`. Same error convention as
+/// `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn costald_ctl(request_json: &str) -> String {
+    match serde_json::from_str::<CostaldCtlRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

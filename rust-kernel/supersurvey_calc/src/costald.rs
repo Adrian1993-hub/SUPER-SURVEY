@@ -122,51 +122,151 @@ impl FromStr for CtlReference {
 }
 
 /// One pure light-hydrocarbon component's corresponding-states constants.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// `omega_srk`, `vstar_m3_mol` and `z_ra` are the verified COSTALD parameters
+/// (chemicals `COSTALD Parameters.tsv`, lineage API/DIPPR). `tc_kelvin` is the
+/// GPA TP-27 worksheet value for propane / i-butane (validated against the SGS
+/// anchor) and the Yaws critical-property value for the rest. `zc` / `pc_bar`
+/// are worksheet-provenance quantities used only for the `h2` cross-check — the
+/// worksheet's `Pc` basis (5.0 / 3.86) is NOT the SI critical pressure, so they
+/// are `Some` only for the propane / i-butane reference pair.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LpgComponentConstants {
     /// Critical temperature, kelvin.
-    #[serde(with = "rust_decimal::serde::str")]
     pub tc_kelvin: Decimal,
     /// SRK acentric factor used by COSTALD (ω_SRK).
-    #[serde(with = "rust_decimal::serde::str")]
     pub omega_srk: Decimal,
     /// Relative density 60/60 °F (the worksheet's `Y60`) — interpolation key.
-    #[serde(with = "rust_decimal::serde::str")]
     pub rel_density_60: Decimal,
-    /// Critical compressibility factor (Zc) — for the `h2` cross-check.
-    #[serde(with = "rust_decimal::serde::str")]
-    pub zc: Decimal,
-    /// Critical pressure, bar (absolute) — for the `h2` cross-check.
-    #[serde(with = "rust_decimal::serde::str")]
-    pub pc_bar: Decimal,
+    /// COSTALD characteristic volume V*, m³/mol.
+    pub vstar_m3_mol: Decimal,
+    /// Rackett compressibility factor Z_RA (informational provenance).
+    pub z_ra: Decimal,
+    /// Molar mass, g/mol.
+    pub molar_mass_g_mol: Decimal,
+    /// Critical compressibility Zc — worksheet `h2` cross-check only.
+    pub zc: Option<Decimal>,
+    /// Worksheet critical-pressure basis — `h2` cross-check only (NOT SI Pc).
+    pub pc_bar: Option<Decimal>,
 }
 
-/// Catalogued pure components. Currently the validated propane / i-butane pair
-/// (the *EPIC MADEIRA* anchor); extend from the `shore (C3)` sheet.
+/// Catalogued pure light-hydrocarbon components (LPG / NGL family).
+///
+/// Source-verified constants: ω_SRK / V* / Z_RA from the COSTALD parameter set
+/// (chemicals, lineage API/DIPPR); Tc from the GPA TP-27 worksheet (propane,
+/// i-butane) or the Yaws compilation (others); rd60 from the worksheet (propane,
+/// i-butane) or COSTALD-derived from the verified Tc/V*/ω (others — cross-checked
+/// to GPA standard SG60 within ~3 dp). Cell-exact reproduction of the client
+/// worksheet still pends its per-fluid K1..K4 from the `shore (C3)` sheet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LpgComponent {
     Propane,
     IsoButane,
+    NButane,
+    Propylene,
+    Ethane,
+    NPentane,
+    IsoPentane,
+    Butadiene13,
+    Butene1,
 }
 
 impl LpgComponent {
     pub fn constants(self) -> LpgComponentConstants {
         match self {
-            // Worksheet `shore (C3)`: Tc, rd60, Zc, Pc. ω_SRK from API 2540 / GPA TP-27.
+            // propane / i-butane: Tc, rd60, Zc, Pc(basis) from the GPA TP-27
+            // worksheet (validated by the SGS anchor); ω_SRK/V*/Z_RA verified.
             LpgComponent::Propane => LpgComponentConstants {
                 tc_kelvin: dec!(369.78),
                 omega_srk: dec!(0.1532),
                 rel_density_60: dec!(0.507025),
-                zc: dec!(0.27626),
-                pc_bar: dec!(5.0),
+                vstar_m3_mol: dec!(0.0002001),
+                z_ra: dec!(0.2766),
+                molar_mass_g_mol: dec!(44.0956),
+                zc: Some(dec!(0.27626)),
+                pc_bar: Some(dec!(5.0)),
             },
             LpgComponent::IsoButane => LpgComponentConstants {
                 tc_kelvin: dec!(407.85),
                 omega_srk: dec!(0.1825),
                 rel_density_60: dec!(0.562827),
-                zc: dec!(0.28326),
-                pc_bar: dec!(3.86),
+                vstar_m3_mol: dec!(0.0002568),
+                z_ra: dec!(0.2754),
+                molar_mass_g_mol: dec!(58.1222),
+                zc: Some(dec!(0.28326)),
+                pc_bar: Some(dec!(3.86)),
+            },
+            // others: Tc from Yaws; rd60 COSTALD-derived; ω_SRK/V*/Z_RA verified.
+            LpgComponent::NButane => LpgComponentConstants {
+                tc_kelvin: dec!(425.12),
+                omega_srk: dec!(0.2008),
+                rel_density_60: dec!(0.584360),
+                vstar_m3_mol: dec!(0.0002544),
+                z_ra: dec!(0.273),
+                molar_mass_g_mol: dec!(58.1222),
+                zc: None,
+                pc_bar: None,
+            },
+            LpgComponent::Propylene => LpgComponentConstants {
+                tc_kelvin: dec!(364.9),
+                omega_srk: dec!(0.1455),
+                rel_density_60: dec!(0.522674),
+                vstar_m3_mol: dec!(0.0001829),
+                z_ra: dec!(0.2779),
+                molar_mass_g_mol: dec!(42.0797),
+                zc: None,
+                pc_bar: None,
+            },
+            LpgComponent::Ethane => LpgComponentConstants {
+                tc_kelvin: dec!(305.32),
+                omega_srk: dec!(0.0983),
+                rel_density_60: dec!(0.357459),
+                vstar_m3_mol: dec!(0.0001458),
+                z_ra: dec!(0.2808),
+                molar_mass_g_mol: dec!(30.0690),
+                zc: None,
+                pc_bar: None,
+            },
+            LpgComponent::NPentane => LpgComponentConstants {
+                tc_kelvin: dec!(469.7),
+                omega_srk: dec!(0.2522),
+                rel_density_60: dec!(0.630858),
+                vstar_m3_mol: dec!(0.0003113),
+                z_ra: dec!(0.2684),
+                molar_mass_g_mol: dec!(72.1488),
+                zc: None,
+                pc_bar: None,
+            },
+            LpgComponent::IsoPentane => LpgComponentConstants {
+                tc_kelvin: dec!(460.4),
+                omega_srk: dec!(0.24),
+                rel_density_60: dec!(0.626663),
+                vstar_m3_mol: dec!(0.0003096),
+                z_ra: dec!(0.2717),
+                molar_mass_g_mol: dec!(72.1488),
+                zc: None,
+                pc_bar: None,
+            },
+            LpgComponent::Butadiene13 => LpgComponentConstants {
+                tc_kelvin: dec!(425.37),
+                omega_srk: dec!(0.1934),
+                rel_density_60: dec!(0.627465),
+                vstar_m3_mol: dec!(0.0002202),
+                z_ra: dec!(0.2712),
+                molar_mass_g_mol: dec!(54.0904),
+                zc: None,
+                pc_bar: None,
+            },
+            LpgComponent::Butene1 => LpgComponentConstants {
+                tc_kelvin: dec!(419.59),
+                omega_srk: dec!(0.1921),
+                rel_density_60: dec!(0.598063),
+                vstar_m3_mol: dec!(0.0002377),
+                z_ra: dec!(0.2736),
+                molar_mass_g_mol: dec!(56.1063),
+                zc: None,
+                pc_bar: None,
             },
         }
     }
@@ -175,6 +275,13 @@ impl LpgComponent {
         match self {
             LpgComponent::Propane => "PROPANE",
             LpgComponent::IsoButane => "ISO_BUTANE",
+            LpgComponent::NButane => "N_BUTANE",
+            LpgComponent::Propylene => "PROPYLENE",
+            LpgComponent::Ethane => "ETHANE",
+            LpgComponent::NPentane => "N_PENTANE",
+            LpgComponent::IsoPentane => "ISO_PENTANE",
+            LpgComponent::Butadiene13 => "BUTADIENE_1_3",
+            LpgComponent::Butene1 => "BUTENE_1",
         }
     }
 }
@@ -192,6 +299,17 @@ impl FromStr for LpgComponent {
             "ISO_BUTANE" | "ISOBUTANE" | "I_BUTANE" | "IBUTANE" | "I_C4" | "IC4" => {
                 Ok(LpgComponent::IsoButane)
             }
+            "N_BUTANE" | "NBUTANE" | "BUTANE" | "N_C4" | "NC4" => Ok(LpgComponent::NButane),
+            "PROPYLENE" | "PROPENE" | "C3H6" => Ok(LpgComponent::Propylene),
+            "ETHANE" | "C2" | "C2H6" => Ok(LpgComponent::Ethane),
+            "N_PENTANE" | "NPENTANE" | "PENTANE" | "N_C5" | "NC5" => Ok(LpgComponent::NPentane),
+            "ISO_PENTANE" | "ISOPENTANE" | "I_PENTANE" | "IPENTANE" | "I_C5" | "IC5" => {
+                Ok(LpgComponent::IsoPentane)
+            }
+            "BUTADIENE_1_3" | "BUTADIENE" | "1_3_BUTADIENE" | "13_BUTADIENE" => {
+                Ok(LpgComponent::Butadiene13)
+            }
+            "BUTENE_1" | "1_BUTENE" | "BUTENE" | "1_BUTYLENE" => Ok(LpgComponent::Butene1),
             _ => Err(KernelError::with_field(
                 KernelErrorCode::InvalidUnit,
                 format!("Unsupported / uncatalogued LPG component: {input}"),
@@ -228,9 +346,10 @@ pub struct CostaldComputation {
     /// Reduced temperature at the reference (Tr,ref).
     #[serde(with = "rust_decimal::serde::str")]
     pub reduced_temp_ref: Decimal,
-    /// `h2 = (Zc₁·Pc₁)/(Zc₂·Pc₂)` — worksheet provenance cross-check.
-    #[serde(with = "rust_decimal::serde::str")]
-    pub h2: Decimal,
+    /// `h2 = (Zc₁·Pc₁)/(Zc₂·Pc₂)` — worksheet provenance cross-check; `Some`
+    /// only when both bracketing components carry worksheet Zc/Pc values.
+    #[serde(with = "rust_decimal::serde::str_option", default)]
+    pub h2: Option<Decimal>,
     /// Observed temperature normalised to kelvin.
     #[serde(with = "rust_decimal::serde::str")]
     pub observed_kelvin: Decimal,
@@ -294,7 +413,14 @@ pub fn costald_ctl(
     // CTL converts the observed-temperature volume back to the reference volume.
     let ctl_unrounded = vs_ref / vs_obs;
 
-    let h2 = (light.zc * light.pc_bar) / (heavy.zc * heavy.pc_bar);
+    // h2 is a worksheet cross-check, defined only for the reference pair whose
+    // Zc/Pc basis the worksheet supplies (propane / i-butane).
+    let h2 = match (light.zc, light.pc_bar, heavy.zc, heavy.pc_bar) {
+        (Some(zc1), Some(pc1), Some(zc2), Some(pc2)) if zc2 * pc2 != dec!(0) => {
+            Some((zc1 * pc1) / (zc2 * pc2))
+        }
+        _ => None,
+    };
 
     Ok(CostaldComputation {
         ctl: round_decimal(ctl_unrounded, ctl_decimals, rounding),
@@ -327,6 +453,31 @@ fn reduced_saturated_volume(tr: Decimal, omega: Decimal) -> Decimal {
         (COSTALD_E + COSTALD_F * tr + COSTALD_G * tr * tr + COSTALD_H * tr * tr * tr)
             / (tr - dec!(1.00001));
     vr0 * (dec!(1) - omega * vr_delta)
+}
+
+/// Saturated-liquid density (kg/m³) of a pure component by COSTALD, from its
+/// temperature and characteristic constants. Independent of any catalogue entry,
+/// so it can be validated directly against published reference values (e.g. the
+/// API Handbook propane example). `vstar_m3_mol` is the COSTALD characteristic
+/// volume V*; `molar_mass_g_mol` the molar mass.
+pub fn costald_saturated_density(
+    temperature: &TemperatureValue,
+    tc_kelvin: Decimal,
+    vstar_m3_mol: Decimal,
+    omega: Decimal,
+    molar_mass_g_mol: Decimal,
+) -> KernelResult<Decimal> {
+    if tc_kelvin <= dec!(0) || vstar_m3_mol <= dec!(0) || molar_mass_g_mol <= dec!(0) {
+        return Err(KernelError::new(
+            KernelErrorCode::OutOfTableRange,
+            "COSTALD constants (Tc, V*, molar mass) must be positive.",
+        ));
+    }
+    let tr = temperature_to_kelvin(temperature) / tc_kelvin;
+    check_reduced_range(tr, "temperature")?;
+    let vs_m3_mol = vstar_m3_mol * reduced_saturated_volume(tr, omega);
+    // kg/m³ = (g/mol ÷ 1000) ÷ (m³/mol)
+    Ok((molar_mass_g_mol / dec!(1000)) / vs_m3_mol)
 }
 
 fn check_reduced_range(tr: Decimal, field: &str) -> KernelResult<()> {
@@ -502,7 +653,7 @@ impl CostaldCtlRequestDTO {
             pseudo_omega: Some(c.pseudo_omega.normalize().to_string()),
             reduced_temp_obs: Some(c.reduced_temp_obs.normalize().to_string()),
             reduced_temp_ref: Some(c.reduced_temp_ref.normalize().to_string()),
-            h2: Some(c.h2.normalize().to_string()),
+            h2: c.h2.map(|v| v.normalize().to_string()),
             trace_json,
             errors: None,
         })
@@ -513,6 +664,7 @@ impl CostaldCtlRequestDTO {
 mod tests {
     use super::*;
     use crate::units::TemperatureUnit;
+    use std::str::FromStr;
 
     fn fahrenheit(t: Decimal) -> TemperatureValue {
         TemperatureValue::new(t, TemperatureUnit::Fahrenheit)
@@ -552,7 +704,11 @@ mod tests {
         assert!(approx(c.pseudo_tc_kelvin, dec!(367.034), dec!(0.01)));
         assert!(approx(c.reduced_temp_obs, dec!(0.822464), dec!(0.0005)));
         assert!(approx(c.reduced_temp_ref, dec!(0.786591), dec!(0.0005)));
-        assert!(approx(c.h2, dec!(1.263326), dec!(0.0001)));
+        assert!(approx(
+            c.h2.expect("reference pair carries h2"),
+            dec!(1.263326),
+            dec!(0.0001)
+        ));
     }
 
     #[test]
@@ -578,6 +734,55 @@ mod tests {
             "CTL was {}",
             c.ctl_unrounded
         );
+    }
+
+    #[test]
+    fn costald_density_matches_api_handbook_propane() {
+        // API Handbook propane example (via the `chemicals` library): at 30 °F
+        // (= 272.03889 K), Tc=369.83333 K, V*=0.20008161e-3 m³/mol, ω=0.1532,
+        // M=44.097 g/mol → 530.3009968 kg/m³. Independent validation of the
+        // COSTALD core (not the client worksheet).
+        let rho = costald_saturated_density(
+            &fahrenheit(dec!(30.0)),
+            dec!(369.83333),
+            dec!(0.00020008161),
+            dec!(0.1532),
+            dec!(44.097),
+        )
+        .expect("in range");
+        assert!(approx(rho, dec!(530.3009968), dec!(0.01)), "rho was {}", rho);
+    }
+
+    #[test]
+    fn catalogue_extends_beyond_reference_pair() {
+        // A propane↔n-butane blend computes a CTL with the verified constants,
+        // but h2 is None (no worksheet Zc/Pc basis outside the reference pair).
+        let c = costald_ctl(
+            dec!(0.55),
+            &fahrenheit(dec!(70.0)),
+            LpgComponent::Propane,
+            LpgComponent::NButane,
+            CtlReference::SixtyFahrenheit,
+            DEFAULT_CTL_DECIMALS,
+            SystemRoundingRule::HalfUp,
+        )
+        .expect("in range");
+        assert!(c.ctl_unrounded > dec!(0.9) && c.ctl_unrounded < dec!(1));
+        assert!(c.h2.is_none());
+        // Every catalogued component round-trips through FromStr/label.
+        for comp in [
+            LpgComponent::Propane,
+            LpgComponent::IsoButane,
+            LpgComponent::NButane,
+            LpgComponent::Propylene,
+            LpgComponent::Ethane,
+            LpgComponent::NPentane,
+            LpgComponent::IsoPentane,
+            LpgComponent::Butadiene13,
+            LpgComponent::Butene1,
+        ] {
+            assert_eq!(LpgComponent::from_str(comp.label()).unwrap(), comp);
+        }
     }
 
     #[test]

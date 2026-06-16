@@ -104,9 +104,48 @@ Relaciones verificadas: `MT_vac = 1174.058 × 0.501`; `LT = kg_vac / 1016.046908
 | Conversión densidad (API↔rel.density↔ρ15) | ✅ reutiliza `density.rs` |
 | Comparación buque/tierra + Line Capacity | ✅ `reconcile.rs` |
 | S&W / pro‑rata / muestreo / VEF | ✅ kernel existente |
-| **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | 🟡 **Implementado (COSTALD estándar)** en `costald.rs` (par Propano/i-Butano validado; residual ≈9.6e-5 vs ancla); cell-exact pendiente de `K1..K4` por componente de `shore (C3)` |
+| **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | 🟡 **Implementado** en `costald.rs`: catálogo de **9 componentes** con ω_SRK/V*/Z_RA **verificados** (`chemicals`/COSTALD, linaje API/DIPPR) + Tc (Yaws); validado vs ejemplo API Handbook (propano 530.30 kg/m³) y ancla SGS (residual ≈9.6e-5). Cell-exact pendiente de `K1..K4` por fluido de `shore (C3)` |
 | Corrección de vapor (presurizados) | ⛔ NUEVO (propano/butano presurizado) |
 | Plantilla de reporte LPG (Certificate of Quantity) + página UI | 🟡 pendiente (motor y unidades listos) |
 
 **Orden sugerido:** (1) ✅ ensamblador de unidades LPG; (2) **COSTALD CTL + catálogo de
 componentes** validado vs rejilla; (3) corrección de vapor; (4) página/plantilla LPG.
+
+---
+
+## 6. Constantes COSTALD verificadas (investigación 2026-06-16)
+
+Investigación multi-fuente (deep-research). La **ecuación COSTALD** (`a..h` universales)
+quedó confirmada carácter por carácter, y las constantes por componente verificadas;
+**los ω del kernel ya eran correctos** (la diferencia con el worksheet NO era una constante
+errónea, sino estructural — ver abajo).
+
+| Componente | ω_SRK | V\* (m³/mol) | Z_RA | Tc (K) |
+|---|---|---|---|---|
+| Propano | 0.1532 | 0.0002001 | 0.2766 | 369.78\* / 369.83 |
+| i-Butano | 0.1825 | 0.0002568 | 0.2754 | 407.85\* |
+| n-Butano | 0.2008 | 0.0002544 | 0.273 | 425.12 |
+| Propileno | 0.1455 | 0.0001829 | 0.2779 | 364.9 |
+| Etano | 0.0983 | 0.0001458 | 0.2808 | 305.32 |
+| n-Pentano | 0.2522 | 0.0003113 | 0.2684 | 469.7 |
+| i-Pentano | 0.24 | 0.0003096 | 0.2717 | 460.4 |
+| 1,3-Butadieno | 0.1934 | 0.0002202 | 0.2712 | 425.37 |
+| 1-Buteno | 0.1921 | 0.0002377 | 0.2736 | 419.59 |
+
+\* Propano/i-Butano usan el `Tc` del worksheet (reproduce el ancla SGS). El resto usa `Tc`
+de Yaws. `rd60`: del worksheet (propano/i-butano) o **derivada por COSTALD** (resto, ✓ vs
+SG60 GPA a ~3 dp). `Z_RA` es el factor de Rackett (informativo, ≠ `Zc`).
+
+**Validación independiente:** ejemplo del *API Handbook* — propano a 30 °F con
+`Tc=369.83333, V*=200.08 cm³/mol, ω=0.1532` → **530.30 kg/m³** (test `costald_density_matches_api_handbook_propane`).
+
+**Fuentes:** ecuación + ejemplo propano y `COSTALD Parameters.tsv` de la librería
+`chemicals` (linaje API/DIPPR); `Tc`/`Pc` de la compilación Yaws; Hankinson & Thomson
+(AIChE J. 1979); GPA TP-27 (density referral, dens.60 0.3500–0.6880) y GPA/API TP-25
+(Tablas 23E/24E) — **derivan de GPA RR-148**.
+
+**Hallazgo clave (por qué el residual ≈9.6×10⁻⁵ es estructural):** el worksheet usa, por
+fluido, un polinomio de densidad de saturación con coeficientes `K1..K4` propietarios de
+**GPA TP-25 / RR-148** (normas de pago; extraídos en la hoja `shore (C3)`), distinto del
+COSTALD genérico `a..h`. El motor implementado **es** el método API 11.2.4 publicado con
+constantes verificadas; cerrar a cell-exact requiere esos `K1..K4`.

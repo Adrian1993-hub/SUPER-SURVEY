@@ -105,11 +105,11 @@ Relaciones verificadas: `MT_vac = 1174.058 × 0.501`; `LT = kg_vac / 1016.046908
 | Comparación buque/tierra + Line Capacity | ✅ `reconcile.rs` |
 | S&W / pro‑rata / muestreo / VEF | ✅ kernel existente |
 | **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | 🟡 **Implementado** en `costald.rs`: catálogo de **9 componentes** con ω_SRK/V*/Z_RA **verificados** (`chemicals`/COSTALD, linaje API/DIPPR) + Tc (Yaws); validado vs ejemplo API Handbook (propano 530.30 kg/m³) y ancla SGS (residual ≈9.6e-5). Cell-exact pendiente de `K1..K4` por fluido de `shore (C3)` |
-| Corrección de vapor (presurizados) | ⛔ NUEVO (propano/butano presurizado) |
+| Corrección de vapor (presurizados) | ✅ `lpg_vapor.rs` (API MPMS 17.10.2): ρv=(288.15/T)(P/1.01325)(M/23.6451)/Z + total líq.+vapor; validado vs ejemplos del estándar (3.332 / 9.146 kg/m³) |
 | Plantilla de reporte LPG (Certificate of Quantity) + página UI | 🟡 pendiente (motor y unidades listos) |
 
-**Orden sugerido:** (1) ✅ ensamblador de unidades LPG; (2) **COSTALD CTL + catálogo de
-componentes** validado vs rejilla; (3) corrección de vapor; (4) página/plantilla LPG.
+**Orden sugerido:** (1) ✅ ensamblador de unidades LPG; (2) ✅ **COSTALD CTL + catálogo**;
+(3) ✅ **corrección de vapor** (API 17.10.2); (4) ⬜ página/plantilla LPG (Certificate of Quantity).
 
 ---
 
@@ -149,3 +149,33 @@ fluido, un polinomio de densidad de saturación con coeficientes `K1..K4` propie
 **GPA TP-25 / RR-148** (normas de pago; extraídos en la hoja `shore (C3)`), distinto del
 COSTALD genérico `a..h`. El motor implementado **es** el método API 11.2.4 publicado con
 constantes verificadas; cerrar a cell-exact requiere esos `K1..K4`.
+
+---
+
+## 7. API MPMS 17.10.2 / EI HM 55 — estándar de gas carriers (aportado por el cliente)
+
+Documento `API_MPMS_17.10.2` (Measurement of Cargoes On Board Marine Gas Carriers,
+Liquefied Petroleum and Chemical Gases). Confirma toda la cadena LPG del kernel y aporta
+la **fórmula y ejemplos de la corrección de vapor**.
+
+**Densidad de vapor (§7.4.3.2):**
+
+```
+ρv (kg/m³) = (288.15 / (273.15 + T°C)) · (P_bar_abs / 1.01325) · (M / 23.6451) · (1/Z)
+```
+
+`23.6451 m³/kmol` = volumen molar del gas ideal a 15 °C, 1 atm (la constante exacta del
+estándar). En los ejemplos se usa `Z=1` (gas ideal) incluso a 4.7 bar; aplicar `1/Z`
+(tabla o EoS) lejos de la presión atmosférica. **Masa total = masa líquida + masa de vapor.**
+
+**Anclas reproducidas celda a celda** (Tablas 5/6, propano) → `lpg_vapor.rs`:
+
+| Método | P (bar abs) | T (°C) | M | ρv (kg/m³) |
+|---|---|---|---|---|
+| A (Tabla 5, tk1) | 1.510 | −32.8 | 44.097 | **3.332** |
+| B (Tabla 6, tk1) | 4.700 | −0.6 | 44.097 | **9.146** |
+
+**Validación de la cadena completa** (lo más valioso del documento): el estándar usa
+- **CTL líquido por API MPMS 11.2.4 (Tabla 54E)** = nuestro `costald` ✅
+- **conversiones de unidad por API MPMS 11.5.3** (rel.dens 60/60, bbl@60, LT/ST, lb…) — consistente con `lpg.rs` / `figures.rs` ✅
+- ancla líquida del estándar: propano `CTL=1.138020` (refrigerado, a 15 °C, dens. 509.300 kg/m³, rel.dens 0.50900) — **anclaje independiente** para una prueba futura de `costald`.

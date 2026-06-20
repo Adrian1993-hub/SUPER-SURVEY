@@ -13,6 +13,7 @@ use supersurvey_calc::density::DensityToolRequestDTO;
 use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateRequestDTO};
 use supersurvey_calc::figures::CustodyFigureRequestDTO;
 use supersurvey_calc::lpg::LpgCustodyRequestDTO;
+use supersurvey_calc::lpg_vapor::LpgVaporRequestDTO;
 use supersurvey_calc::reconcile::ReconciliationRequestDTO;
 use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
@@ -186,6 +187,19 @@ pub fn lpg_custody(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn costald_ctl(request_json: &str) -> String {
     match serde_json::from_str::<CostaldCtlRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// LPG / NGL vapour-space correction (API MPMS 17.10.2): vapour mass in the
+/// vapour space (ρv = (288.15/T)(P/1.01325)(M/23.6451)/Z) and the liquid +
+/// vapour total. JSON `LpgVaporRequestDTO` → `LpgVaporResponseDTO`. Same error
+/// convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn lpg_vapor_correction(request_json: &str) -> String {
+    match serde_json::from_str::<LpgVaporRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

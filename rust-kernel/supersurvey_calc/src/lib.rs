@@ -38,6 +38,7 @@ pub mod dto;
 pub mod error;
 pub mod figures;
 pub mod lpg;
+pub mod lpg_vapor;
 pub mod movement;
 pub mod precision;
 pub mod quantity_chain;
@@ -64,6 +65,7 @@ pub mod prelude {
     pub use crate::error::*;
     pub use crate::figures::*;
     pub use crate::lpg::*;
+    pub use crate::lpg_vapor::*;
     pub use crate::movement::*;
     pub use crate::precision::*;
     pub use crate::quantity_chain::*;

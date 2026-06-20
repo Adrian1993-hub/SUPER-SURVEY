@@ -30,6 +30,15 @@ export function bqs_calculate_row_imperial(request_json: string): string;
 export function compare_sources(request_json: string): string;
 
 /**
+ * LPG / NGL temperature correction — CTL (VCF) by COSTALD / API MPMS 11.2.4
+ * (corresponding states). The cargo is characterised as a pseudo-component
+ * between two catalogued pure components by relative density @ 60 °F. JSON
+ * `CostaldCtlRequestDTO` → `CostaldCtlResponseDTO`. Same error convention as
+ * `bqs_calculate_row`.
+ */
+export function costald_ctl(request_json: string): string;
+
+/**
  * Multi-unit custody figure: one standard volume + density → all units
  * (bbl/gal/m³/L @60 and @15, MT air/vac, LT) at TCV/GSV/NSV. JSON
  * `CustodyFigureRequestDTO` → `CustodyFigureResponseDTO`.
@@ -65,9 +74,17 @@ export function kernel_version(): string;
  * LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
  * every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
  * gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
- * 11.2.4 COSTALD is a separate, upcoming export.)
+ * 11.2.4 COSTALD is `costald_ctl` below.)
  */
 export function lpg_custody(request_json: string): string;
+
+/**
+ * LPG / NGL vapour-space correction (API MPMS 17.10.2): vapour mass in the
+ * vapour space (ρv = (288.15/T)(P/1.01325)(M/23.6451)/Z) and the liquid +
+ * vapour total. JSON `LpgVaporRequestDTO` → `LpgVaporResponseDTO`. Same error
+ * convention as `bqs_calculate_row`.
+ */
+export function lpg_vapor_correction(request_json: string): string;
 
 /**
  * Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
@@ -108,12 +125,14 @@ export interface InitOutput {
     readonly bqs_calculate_row: (a: number, b: number) => [number, number];
     readonly bqs_calculate_row_imperial: (a: number, b: number) => [number, number];
     readonly compare_sources: (a: number, b: number) => [number, number];
+    readonly costald_ctl: (a: number, b: number) => [number, number];
     readonly custody_figure: (a: number, b: number) => [number, number];
     readonly density_tool: (a: number, b: number) => [number, number];
     readonly draft_survey: (a: number, b: number) => [number, number];
     readonly hydrostatic_interpolate: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
     readonly lpg_custody: (a: number, b: number) => [number, number];
+    readonly lpg_vapor_correction: (a: number, b: number) => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
     readonly reconcile_terminal: (a: number, b: number) => [number, number];
     readonly sampling_levels: (a: number, b: number) => [number, number];

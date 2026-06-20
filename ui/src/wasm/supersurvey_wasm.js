@@ -74,6 +74,30 @@ export function compare_sources(request_json) {
 }
 
 /**
+ * LPG / NGL temperature correction — CTL (VCF) by COSTALD / API MPMS 11.2.4
+ * (corresponding states). The cargo is characterised as a pseudo-component
+ * between two catalogued pure components by relative density @ 60 °F. JSON
+ * `CostaldCtlRequestDTO` → `CostaldCtlResponseDTO`. Same error convention as
+ * `bqs_calculate_row`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function costald_ctl(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.costald_ctl(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Multi-unit custody figure: one standard volume + density → all units
  * (bbl/gal/m³/L @60 and @15, MT air/vac, LT) at TCV/GSV/NSV. JSON
  * `CustodyFigureRequestDTO` → `CustodyFigureResponseDTO`.
@@ -181,7 +205,7 @@ export function kernel_version() {
  * LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
  * every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
  * gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
- * 11.2.4 COSTALD is a separate, upcoming export.)
+ * 11.2.4 COSTALD is `costald_ctl` below.)
  * @param {string} request_json
  * @returns {string}
  */
@@ -192,6 +216,29 @@ export function lpg_custody(request_json) {
         const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.lpg_custody(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * LPG / NGL vapour-space correction (API MPMS 17.10.2): vapour mass in the
+ * vapour space (ρv = (288.15/T)(P/1.01325)(M/23.6451)/Z) and the liquid +
+ * vapour total. JSON `LpgVaporRequestDTO` → `LpgVaporResponseDTO`. Same error
+ * convention as `bqs_calculate_row`.
+ * @param {string} request_json
+ * @returns {string}
+ */
+export function lpg_vapor_correction(request_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(request_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.lpg_vapor_correction(ptr0, len0);
         deferred2_0 = ret[0];
         deferred2_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);

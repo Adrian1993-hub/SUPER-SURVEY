@@ -16,6 +16,7 @@ import { MedicionMultigrado } from './pages/MedicionMultigrado'
 import { SmartReport } from './pages/SmartReport'
 import { DraftSurvey } from './pages/DraftSurvey'
 import { ShipShore } from './pages/ShipShore'
+import { Lpg } from './pages/Lpg'
 import { Utilidades } from './pages/Utilidades'
 
 function AppShell() {
@@ -39,6 +40,7 @@ function AppShell() {
         <Route path="/trabajo/:id/multigrado" element={<MedicionMultigrado />} />
         <Route path="/trabajo/:id/draft" element={<DraftSurvey />} />
         <Route path="/trabajo/:id/ship-shore" element={<ShipShore />} />
+        <Route path="/trabajo/:id/lpg" element={<Lpg />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

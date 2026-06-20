@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -542,6 +542,139 @@ export async function lpgCustody(input: LpgCustodyInput): Promise<LpgCustodyResu
     bbl60: r.bbl_60,
     gal60: r.gal_60,
     m3_60: r.m3_60,
+    errors: r.errors,
+  }
+}
+
+// ---- COSTALD CTL (LPG/NGL temperature correction, API MPMS 11.2.4) -------
+
+export type LpgComponent =
+  | 'PROPANE' | 'ISO_BUTANE' | 'N_BUTANE' | 'PROPYLENE' | 'ETHANE'
+  | 'N_PENTANE' | 'ISO_PENTANE' | 'BUTADIENE_1_3' | 'BUTENE_1'
+
+export interface CostaldCtlInput {
+  /** Measured relative density 60/60 °F (the worksheet Y60) — interpolation key. */
+  relDensity60: number
+  temperature: number
+  temperatureUnit?: 'CELSIUS' | 'FAHRENHEIT'
+  /** Bracketing pure components (light has the lower rel.density). */
+  componentLight?: LpgComponent
+  componentHeavy?: LpgComponent
+  /** Correction reference: 60 °F (bbl@60) or 15 °C (m³@15). */
+  reference?: '60F' | '15C'
+  decimals?: number
+  scope?: 'LIVE' | 'TRACE_VIEW' | 'EXPORT'
+}
+export interface CostaldCtlResult {
+  success: boolean
+  ctl?: string
+  ctlUnrounded?: string
+  interpolationS?: string
+  pseudoTcKelvin?: string
+  pseudoOmega?: string
+  reducedTempObs?: string
+  reducedTempRef?: string
+  h2?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+/** COSTALD CTL for an LPG cargo (pseudo-component by rel.density). Kernel. */
+export async function costaldCtl(input: CostaldCtlInput): Promise<CostaldCtlResult> {
+  await ensureReady()
+  const req = {
+    rel_density_60: String(input.relDensity60),
+    temperature: String(input.temperature),
+    temperature_unit: input.temperatureUnit ?? 'CELSIUS',
+    component_light: input.componentLight ?? 'PROPANE',
+    component_heavy: input.componentHeavy ?? 'ISO_BUTANE',
+    reference: input.reference ?? '60F',
+    decimals: input.decimals ?? 5,
+    rounding_rule: 'HALF_UP',
+    calculation_scope: input.scope ?? 'LIVE',
+  }
+  const r = JSON.parse(costald_ctl(JSON.stringify(req))) as {
+    success: boolean
+    ctl?: string; ctl_unrounded?: string; interpolation_s?: string
+    pseudo_tc_kelvin?: string; pseudo_omega?: string
+    reduced_temp_obs?: string; reduced_temp_ref?: string; h2?: string
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    ctl: r.ctl,
+    ctlUnrounded: r.ctl_unrounded,
+    interpolationS: r.interpolation_s,
+    pseudoTcKelvin: r.pseudo_tc_kelvin,
+    pseudoOmega: r.pseudo_omega,
+    reducedTempObs: r.reduced_temp_obs,
+    reducedTempRef: r.reduced_temp_ref,
+    h2: r.h2,
+    errors: r.errors,
+  }
+}
+
+// ---- LPG vapour-space correction (API MPMS 17.10.2) ---------------------
+
+export type PressureUnit = 'BARA' | 'BARG' | 'KPA_ABS' | 'KPA_G' | 'PSIA' | 'PSIG'
+
+export interface LpgVaporInput {
+  /** Vapour-space volume (total tank volume − liquid volume), m³. */
+  vaporVolume: number
+  pressure: number
+  pressureUnit?: PressureUnit
+  vaporTemperature: number
+  vaporTemperatureUnit?: 'CELSIUS' | 'FAHRENHEIT'
+  /** Vapour molar mass, kg/kmol (≡ g/mol). */
+  molarMass: number
+  /** Vapour compressibility Z (1.0 = ideal gas, per 17.10.2 examples). */
+  z?: number
+  /** Atmospheric pressure for gauge→absolute referral, bar (default 1.01325). */
+  atmosphericBar?: number
+  /** Optional liquid mass (MT) to also return the liquid + vapour total. */
+  liquidMassMt?: number
+  decimals?: number
+  scope?: 'LIVE' | 'TRACE_VIEW' | 'EXPORT'
+}
+export interface LpgVaporResult {
+  success: boolean
+  pressureBarAbs?: string
+  vaporDensityKgM3?: string
+  vaporMassKg?: string
+  vaporMassMt?: string
+  totalMassMt?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+/** LPG vapour-space correction: vapour mass + liquid+vapour total (kernel). */
+export async function lpgVaporCorrection(input: LpgVaporInput): Promise<LpgVaporResult> {
+  await ensureReady()
+  const req = {
+    vapor_volume_m3: String(input.vaporVolume),
+    pressure: String(input.pressure),
+    pressure_unit: input.pressureUnit ?? 'BARG',
+    vapor_temperature: String(input.vaporTemperature),
+    vapor_temperature_unit: input.vaporTemperatureUnit ?? 'CELSIUS',
+    molar_mass_g_mol: String(input.molarMass),
+    compressibility_z: String(input.z ?? 1.0),
+    atmospheric_bar: input.atmosphericBar !== undefined ? String(input.atmosphericBar) : undefined,
+    liquid_mass_mt: input.liquidMassMt !== undefined ? String(input.liquidMassMt) : undefined,
+    decimals: input.decimals ?? 3,
+    rounding_rule: 'HALF_UP',
+    calculation_scope: input.scope ?? 'LIVE',
+  }
+  const r = JSON.parse(lpg_vapor_correction(JSON.stringify(req))) as {
+    success: boolean
+    pressure_bar_abs?: string; vapor_density_kg_m3?: string
+    vapor_mass_kg?: string; vapor_mass_mt?: string; total_mass_mt?: string
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    pressureBarAbs: r.pressure_bar_abs,
+    vaporDensityKgM3: r.vapor_density_kg_m3,
+    vaporMassKg: r.vapor_mass_kg,
+    vaporMassMt: r.vapor_mass_mt,
+    totalMassMt: r.total_mass_mt,
     errors: r.errors,
   }
 }

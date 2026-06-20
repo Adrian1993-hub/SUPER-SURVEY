@@ -670,6 +670,10 @@ mod tests {
         TemperatureValue::new(t, TemperatureUnit::Fahrenheit)
     }
 
+    fn celsius(t: Decimal) -> TemperatureValue {
+        TemperatureValue::new(t, TemperatureUnit::Celsius)
+    }
+
     fn approx(a: Decimal, b: Decimal, tol: Decimal) -> bool {
         (a - b).abs() <= tol
     }
@@ -731,6 +735,31 @@ mod tests {
         .expect("in range");
         assert!(
             approx(c.ctl_unrounded, dec!(0.9587323707), dec!(0.0002)),
+            "CTL was {}",
+            c.ctl_unrounded
+        );
+    }
+
+    #[test]
+    fn ctl_matches_api_17_10_2_table5_propane() {
+        // Second, INDEPENDENT anchor — API MPMS 17.10.2 Table 5 (Method A,
+        // propane, tank 1): liquid rel.density 0.509, T = -39.6 °C, base 15 °C
+        // → CTL = 1.138020 (the standard's Table 54E / API 11.2.4 algorithm).
+        // Generic COSTALD gives 1.138142 — residual ~1.2e-4 (structural, the
+        // per-fluid K1..K4 gap), confirming the engine against a refrigerated
+        // temperature and a different source than the EPIC MADEIRA worksheet.
+        let c = costald_ctl(
+            dec!(0.509),
+            &celsius(dec!(-39.6)),
+            LpgComponent::Propane,
+            LpgComponent::IsoButane,
+            CtlReference::FifteenCelsius,
+            6,
+            SystemRoundingRule::HalfUp,
+        )
+        .expect("in range");
+        assert!(
+            approx(c.ctl_unrounded, dec!(1.138020), dec!(0.0005)),
             "CTL was {}",
             c.ctl_unrounded
         );

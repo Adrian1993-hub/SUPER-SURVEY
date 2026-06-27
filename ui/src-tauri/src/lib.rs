@@ -228,6 +228,15 @@ fn load_measurement_snapshots(
         .collect())
 }
 
+/// Read an optional runtime branding override (brand.json) from the app config
+/// dir — restyle colors + product name WITHOUT a rebuild. `null` if absent.
+#[tauri::command]
+fn read_brand_override(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri::Manager;
+    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    Ok(std::fs::read_to_string(dir.join("brand.json")).ok())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Offline-first: a local SQLite file next to the app.
@@ -242,7 +251,8 @@ pub fn run() {
             list_jobs,
             load_job_detail,
             create_job,
-            load_measurement_snapshots
+            load_measurement_snapshots,
+            read_brand_override
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

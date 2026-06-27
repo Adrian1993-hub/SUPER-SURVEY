@@ -179,6 +179,55 @@ fn calculation_logs_are_append_only() {
 }
 
 #[test]
+fn loads_and_lists_jobs_sets_and_logs() {
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+    let set_id = db
+        .create_measurement_set(&NewMeasurementSet {
+            job_id: job_id.clone(),
+            module_type: "VMR".into(),
+            title: "Before receiving".into(),
+            role: "RECEIVING".into(),
+            movement_sign_rule: "CLOSING_MINUS_OPENING".into(),
+        })
+        .unwrap();
+    let request = bqs_request();
+    let response = request.calculate();
+    db.append_bqs_calculation(&job_id, Some(&set_id), None, "test", &request, &response)
+        .unwrap();
+
+    // list_jobs: the job appears with its active-log count.
+    let jobs = db.list_jobs().unwrap();
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0].job_ref, "BQS-DEMO-0142");
+    assert_eq!(jobs[0].active_log_count, 1);
+
+    // load_job: by id, and None for a missing id.
+    let loaded = db.load_job(&job_id).unwrap().expect("job exists");
+    assert_eq!(loaded.port_name.as_deref(), Some("Puerto Demo"));
+    assert!(db.load_job("does-not-exist").unwrap().is_none());
+
+    // list_measurement_sets + list_active_calculation_logs round-trip.
+    let sets = db.list_measurement_sets(&job_id).unwrap();
+    assert_eq!(sets.len(), 1);
+    assert_eq!(sets[0].title, "Before receiving");
+
+    let logs = db.list_active_calculation_logs(&job_id).unwrap();
+    assert_eq!(logs.len(), 1);
+    assert!(logs[0].output_snapshot_json.contains("209.004"));
+
+    // Superseding the log removes it from the active list.
+    db.connection()
+        .execute(
+            "UPDATE calculation_logs SET status = 'SUPERSEDED' WHERE id = ?1",
+            [&logs[0].id],
+        )
+        .unwrap();
+    assert_eq!(db.list_active_calculation_logs(&job_id).unwrap().len(), 0);
+    assert_eq!(db.list_jobs().unwrap()[0].active_log_count, 0);
+}
+
+#[test]
 fn foreign_keys_are_enforced() {
     let db = Database::open_in_memory().unwrap();
     let orphan = db.create_measurement_set(&NewMeasurementSet {

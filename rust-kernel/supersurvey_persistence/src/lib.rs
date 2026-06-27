@@ -237,6 +237,101 @@ impl Database {
             |r| r.get(0),
         )
     }
+
+    // ---------------- Reads / listing (load) ----------------
+
+    /// All jobs, newest first, each with its count of ACTIVE calculation logs.
+    pub fn list_jobs(&self) -> Result<Vec<JobSummary>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, job_ref, operation_family, operation_type, port_name, report_ref,
+                    client_ref, created_at, updated_at,
+                    (SELECT count(*) FROM calculation_logs c
+                       WHERE c.job_id = jobs.id AND c.status = 'ACTIVE')
+             FROM jobs ORDER BY created_at DESC, id",
+        )?;
+        let rows = stmt.query_map([], job_summary_from_row)?;
+        rows.collect()
+    }
+
+    /// One job by id (`None` if it does not exist).
+    pub fn load_job(&self, job_id: &str) -> Result<Option<JobSummary>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, job_ref, operation_family, operation_type, port_name, report_ref,
+                    client_ref, created_at, updated_at,
+                    (SELECT count(*) FROM calculation_logs c
+                       WHERE c.job_id = jobs.id AND c.status = 'ACTIVE')
+             FROM jobs WHERE id = ?1",
+        )?;
+        let mut rows = stmt.query_map([job_id], job_summary_from_row)?;
+        match rows.next() {
+            Some(row) => Ok(Some(row?)),
+            None => Ok(None),
+        }
+    }
+
+    /// Measurement sets for a job, oldest first.
+    pub fn list_measurement_sets(&self, job_id: &str) -> Result<Vec<MeasurementSetRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, job_id, module_type, title, role, movement_sign_rule, status,
+                    created_at, updated_at
+             FROM measurement_sets WHERE job_id = ?1 ORDER BY created_at, id",
+        )?;
+        let rows = stmt.query_map([job_id], |r| {
+            Ok(MeasurementSetRow {
+                id: r.get(0)?,
+                job_id: r.get(1)?,
+                module_type: r.get(2)?,
+                title: r.get(3)?,
+                role: r.get(4)?,
+                movement_sign_rule: r.get(5)?,
+                status: r.get(6)?,
+                created_at: r.get(7)?,
+                updated_at: r.get(8)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    /// Active (non-superseded) calculation logs for a job, oldest first — the
+    /// stored, immutable official figures to reload into the report.
+    pub fn list_active_calculation_logs(&self, job_id: &str) -> Result<Vec<CalculationLogRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, job_id, measurement_set_id, calculation_type, calculation_scope,
+                    engine_version, input_snapshot_json, output_snapshot_json, created_at
+             FROM calculation_logs
+             WHERE job_id = ?1 AND status = 'ACTIVE'
+             ORDER BY created_at, id",
+        )?;
+        let rows = stmt.query_map([job_id], |r| {
+            Ok(CalculationLogRow {
+                id: r.get(0)?,
+                job_id: r.get(1)?,
+                measurement_set_id: r.get(2)?,
+                calculation_type: r.get(3)?,
+                calculation_scope: r.get(4)?,
+                engine_version: r.get(5)?,
+                input_snapshot_json: r.get(6)?,
+                output_snapshot_json: r.get(7)?,
+                created_at: r.get(8)?,
+            })
+        })?;
+        rows.collect()
+    }
+}
+
+fn job_summary_from_row(r: &rusqlite::Row<'_>) -> Result<JobSummary> {
+    Ok(JobSummary {
+        id: r.get(0)?,
+        job_ref: r.get(1)?,
+        operation_family: r.get(2)?,
+        operation_type: r.get(3)?,
+        port_name: r.get(4)?,
+        report_ref: r.get(5)?,
+        client_ref: r.get(6)?,
+        created_at: r.get(7)?,
+        updated_at: r.get(8)?,
+        active_log_count: r.get(9)?,
+    })
 }
 
 // ---------------- Input structs (minimal NOT NULL surface) ----------------
@@ -298,4 +393,47 @@ pub struct NewCalculationLog {
     pub output_snapshot_json: String,
     pub precision_snapshot_json: String,
     pub trace_json: Option<String>,
+}
+
+// ---------------- Read structs (serialized to the UI over IPC) ----------------
+
+/// Stored job summary for the Trabajos list / load.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct JobSummary {
+    pub id: String,
+    pub job_ref: String,
+    pub operation_family: String,
+    pub operation_type: String,
+    pub port_name: Option<String>,
+    pub report_ref: Option<String>,
+    pub client_ref: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub active_log_count: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MeasurementSetRow {
+    pub id: String,
+    pub job_id: String,
+    pub module_type: String,
+    pub title: String,
+    pub role: String,
+    pub movement_sign_rule: String,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CalculationLogRow {
+    pub id: String,
+    pub job_id: String,
+    pub measurement_set_id: Option<String>,
+    pub calculation_type: String,
+    pub calculation_scope: String,
+    pub engine_version: String,
+    pub input_snapshot_json: String,
+    pub output_snapshot_json: String,
+    pub created_at: String,
 }

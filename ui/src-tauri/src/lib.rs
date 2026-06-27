@@ -167,6 +167,31 @@ fn load_job_detail(
     Ok(Some(JobDetail { job, sets, logs }))
 }
 
+/// Create a new (empty) job; returns its generated id.
+#[derive(Debug, Deserialize)]
+struct CreateJobArgs {
+    job_ref: String,
+    operation_family: String,
+    operation_type: String,
+    report_ref: Option<String>,
+    client_ref: Option<String>,
+    port_name: Option<String>,
+}
+
+#[tauri::command]
+fn create_job(state: tauri::State<'_, AppState>, args: CreateJobArgs) -> Result<String, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.create_job(&NewJob {
+        job_ref: args.job_ref,
+        operation_family: args.operation_family,
+        operation_type: args.operation_type,
+        report_ref: args.report_ref,
+        client_ref: args.client_ref,
+        port_name: args.port_name,
+    })
+    .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Offline-first: a local SQLite file next to the app.
@@ -179,7 +204,8 @@ pub fn run() {
             save_bqs_calculation,
             save_measurement,
             list_jobs,
-            load_job_detail
+            load_job_detail,
+            create_job
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

@@ -5,6 +5,7 @@
 // it is written, so a stored number is always traceable to its inputs.
 
 import { bqsRowRequest, type BqsRowInput } from './kernel'
+import { listLocalJobs, createLocalJob, type NewLocalJob } from './localJobs'
 
 /** True when running inside the Tauri desktop shell (not the browser demo). */
 export function isDesktop(): boolean {
@@ -134,11 +135,25 @@ const fromRawJob = (r: RawJob): StoredJob => ({
   activeLogCount: r.active_log_count,
 })
 
-/** Stored jobs (desktop SQLite); empty array in the browser demo (no storage). */
+/** Stored jobs — SQLite on desktop, localStorage in the browser demo. */
 export async function listStoredJobs(): Promise<StoredJob[]> {
-  if (!isDesktop()) return []
+  if (!isDesktop()) return listLocalJobs()
   const rows = await invoke<RawJob[]>('list_jobs')
   return rows.map(fromRawJob)
+}
+
+/** Create a new job; returns its id — SQLite on desktop, localStorage in browser. */
+export async function createJob(input: NewLocalJob): Promise<string> {
+  if (!isDesktop()) return createLocalJob(input).id
+  const args = {
+    job_ref: input.jobRef,
+    operation_family: input.operationFamily,
+    operation_type: input.operationType,
+    report_ref: input.reportRef ?? null,
+    client_ref: input.clientRef ?? null,
+    port_name: input.portName ?? null,
+  }
+  return invoke<string>('create_job', { args })
 }
 
 /** Load one stored job with its sets + official (active) calc logs; null in browser. */

@@ -25,6 +25,7 @@ pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod astm;
 pub mod astm60;
+pub mod blend;
 pub mod bqs;
 pub mod bqs60;
 pub mod comparison;
@@ -52,6 +53,7 @@ pub mod vef;
 pub mod prelude {
     pub use crate::astm::*;
     pub use crate::astm60::*;
+    pub use crate::blend::*;
     pub use crate::bqs::*;
     pub use crate::bqs60::*;
     pub use crate::comparison::*;

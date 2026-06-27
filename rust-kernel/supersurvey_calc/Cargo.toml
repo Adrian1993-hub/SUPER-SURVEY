@@ -6,7 +6,7 @@ description = "SuperSurvey calculation kernel - Sprint 1C movement and paired me
 license = "UNLICENSED"
 
 [dependencies]
-rust_decimal = { version = "1", features = ["serde-with-str"] }
+rust_decimal = { version = "1", features = ["serde-with-str", "maths"] }
 rust_decimal_macros = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

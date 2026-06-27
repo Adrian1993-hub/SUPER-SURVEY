@@ -10,7 +10,7 @@ import { compareSources, kernelVersion, type ComparisonResult } from '../lib/ker
 import { isDesktop, saveMeasurement } from '../lib/ipc'
 import { useJobMeasurement } from '../lib/jobStore'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
-import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save } from 'lucide-react'
+import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save, RotateCcw } from 'lucide-react'
 
 const blankTank = (): VmrTank => ({
   tanque: 'NUEVO', nominado: false, grade: 'VLSFO', densidad15: 0, tablesRefHeight: 0, measRefHeight: 0,
@@ -197,7 +197,7 @@ export function Medicion() {
   const job = getJob(id || '1')
   const h = vmrData.header
   // Estado compartido por trabajo: editar aquí se refleja en el Reporte.
-  const { before, after, setBefore, setAfter } = useJobMeasurement()
+  const { before, after, setBefore, setAfter, reset } = useJobMeasurement()
   const [edition, setEdition] = useState<TableVersion>('D1250_80')
   const beforeCalc = useComputedRows(before, edition)
   const afterCalc = useComputedRows(after, edition)
@@ -311,6 +311,16 @@ export function Medicion() {
                 </select>
               </label>
               {saveMsg && <span className="text-sm text-muted-foreground">{saveMsg}</span>}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (window.confirm('¿Descartar el borrador local de medición y re-sembrar desde el demo?')) reset()
+                }}
+                title="Descartar el borrador guardado en este navegador y re-sembrar desde el demo"
+                className="gap-2"
+              >
+                <RotateCcw className="h-4 w-4" /> Restablecer
+              </Button>
               <Button
                 onClick={onSave}
                 disabled={saving || !desktop}

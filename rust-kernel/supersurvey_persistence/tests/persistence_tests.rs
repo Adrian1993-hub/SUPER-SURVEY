@@ -96,6 +96,7 @@ fn capture_to_calculation_log_flow_persists() {
             tank_name: "4 AFT S".into(),
             sequence_no: 1,
             is_non_nominated: false,
+            tank_profile_snapshot_json: "{}".into(),
         })
         .unwrap();
 
@@ -225,6 +226,38 @@ fn loads_and_lists_jobs_sets_and_logs() {
         .unwrap();
     assert_eq!(db.list_active_calculation_logs(&job_id).unwrap().len(), 0);
     assert_eq!(db.list_jobs().unwrap()[0].active_log_count, 0);
+}
+
+#[test]
+fn tank_row_snapshot_round_trips_for_hydration() {
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+    let set_id = db
+        .create_measurement_set(&NewMeasurementSet {
+            job_id,
+            module_type: "VMR".into(),
+            title: "Before receiving".into(),
+            role: "RECEIVING".into(),
+            movement_sign_rule: "CLOSING_MINUS_OPENING".into(),
+        })
+        .unwrap();
+    let snapshot = r#"{"tanque":"4 AFT S","grade":"VLSFO","densidad15":0.9534,"tov":222.68}"#;
+    db.create_tank_row(&NewTankRow {
+        measurement_set_id: set_id.clone(),
+        tank_name: "4 AFT S".into(),
+        sequence_no: 1,
+        is_non_nominated: false,
+        tank_profile_snapshot_json: snapshot.into(),
+    })
+    .unwrap();
+
+    // list_tank_rows returns the full snapshot → the UI can rebuild the grid.
+    let rows = db.list_tank_rows(&set_id).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].tank_name, "4 AFT S");
+    assert!(!rows[0].is_non_nominated);
+    assert!(rows[0].tank_profile_snapshot_json.contains("VLSFO"));
+    assert!(rows[0].tank_profile_snapshot_json.contains("222.68"));
 }
 
 #[test]

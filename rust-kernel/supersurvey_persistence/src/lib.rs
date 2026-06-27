@@ -113,13 +113,14 @@ impl Database {
         self.conn.execute(
             "INSERT INTO measurement_tank_rows
                (id, measurement_set_id, tank_name, sequence_no, is_non_nominated, tank_profile_snapshot_json)
-             VALUES (?1, ?2, ?3, ?4, ?5, '{}')",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
                 id,
                 row.measurement_set_id,
                 row.tank_name,
                 row.sequence_no,
                 row.is_non_nominated as i64,
+                row.tank_profile_snapshot_json,
             ],
         )?;
         Ok(id)
@@ -317,6 +318,27 @@ impl Database {
         })?;
         rows.collect()
     }
+
+    /// Tank rows for a measurement set, with their profile snapshots — the
+    /// lossless source for rebuilding the measurement grid on load (hydration).
+    pub fn list_tank_rows(&self, set_id: &str) -> Result<Vec<TankRowDetail>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, measurement_set_id, tank_name, sequence_no, is_non_nominated,
+                    tank_profile_snapshot_json
+             FROM measurement_tank_rows WHERE measurement_set_id = ?1 ORDER BY sequence_no, id",
+        )?;
+        let rows = stmt.query_map([set_id], |r| {
+            Ok(TankRowDetail {
+                id: r.get(0)?,
+                measurement_set_id: r.get(1)?,
+                tank_name: r.get(2)?,
+                sequence_no: r.get(3)?,
+                is_non_nominated: r.get::<_, i64>(4)? != 0,
+                tank_profile_snapshot_json: r.get(5)?,
+            })
+        })?;
+        rows.collect()
+    }
 }
 
 fn job_summary_from_row(r: &rusqlite::Row<'_>) -> Result<JobSummary> {
@@ -357,12 +379,14 @@ pub struct NewMeasurementSet {
     pub movement_sign_rule: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct NewTankRow {
     pub measurement_set_id: String,
     pub tank_name: String,
     pub sequence_no: i64,
     pub is_non_nominated: bool,
+    /// Full per-tank snapshot (the UI's VmrTank as JSON) for lossless hydration.
+    pub tank_profile_snapshot_json: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -436,4 +460,14 @@ pub struct CalculationLogRow {
     pub input_snapshot_json: String,
     pub output_snapshot_json: String,
     pub created_at: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TankRowDetail {
+    pub id: String,
+    pub measurement_set_id: String,
+    pub tank_name: String,
+    pub sequence_no: i64,
+    pub is_non_nominated: bool,
+    pub tank_profile_snapshot_json: String,
 }

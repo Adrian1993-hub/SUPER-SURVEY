@@ -18,6 +18,7 @@ import { DraftSurvey } from './pages/DraftSurvey'
 import { ShipShore } from './pages/ShipShore'
 import { Lpg } from './pages/Lpg'
 import { Utilidades } from './pages/Utilidades'
+import { DesignGuide } from './pages/DesignGuide'
 
 function AppShell() {
   const location = useLocation()
@@ -28,6 +29,7 @@ function AppShell() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/trabajos" element={<ListaTrabajos />} />
         <Route path="/utilidades" element={<Utilidades />} />
+        <Route path="/design" element={<DesignGuide />} />
         <Route path="/trabajo/:id/cover" element={<Cover />} />
         <Route path="/trabajo/:id/perfiles" element={<Perfiles />} />
         <Route path="/trabajo/:id/key-meeting" element={<KeyMeeting />} />

@@ -17,6 +17,7 @@ import {
   Anchor,
   Factory,
   Droplets,
+  Palette,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -75,6 +76,10 @@ export function AppSidebar() {
           <NavLink to="/utilidades" className={itemClass}>
             <FlaskConical className="h-4 w-4" />
             <span>Utilidades</span>
+          </NavLink>
+          <NavLink to="/design" className={itemClass}>
+            <Palette className="h-4 w-4" />
+            <span>Guía de diseño</span>
           </NavLink>
         </div>
 

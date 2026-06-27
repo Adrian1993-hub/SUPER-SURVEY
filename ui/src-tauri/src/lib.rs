@@ -12,7 +12,9 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use supersurvey_calc::bqs::{BqsRowRequestDTO, BqsRowResponseDTO};
-use supersurvey_persistence::{Database, NewJob, NewMeasurementSet};
+use supersurvey_persistence::{
+    CalculationLogRow, Database, JobSummary, MeasurementSetRow, NewJob, NewMeasurementSet,
+};
 
 /// App-wide state: a single SQLite connection guarded by a Mutex
 /// (`rusqlite::Connection` is `Send` but not `Sync`).
@@ -132,6 +134,39 @@ fn save_measurement(
     })
 }
 
+/// List all stored jobs (newest first) for the Trabajos screen.
+#[tauri::command]
+fn list_jobs(state: tauri::State<'_, AppState>) -> Result<Vec<JobSummary>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.list_jobs().map_err(|e| e.to_string())
+}
+
+/// A loaded job with its measurement sets and active (official) calculation logs.
+#[derive(Debug, Serialize)]
+struct JobDetail {
+    job: JobSummary,
+    sets: Vec<MeasurementSetRow>,
+    logs: Vec<CalculationLogRow>,
+}
+
+/// Load one job (with sets + active calculation logs); `null` if it doesn't exist.
+#[tauri::command]
+fn load_job_detail(
+    state: tauri::State<'_, AppState>,
+    job_id: String,
+) -> Result<Option<JobDetail>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let job = match db.load_job(&job_id).map_err(|e| e.to_string())? {
+        Some(j) => j,
+        None => return Ok(None),
+    };
+    let sets = db.list_measurement_sets(&job_id).map_err(|e| e.to_string())?;
+    let logs = db
+        .list_active_calculation_logs(&job_id)
+        .map_err(|e| e.to_string())?;
+    Ok(Some(JobDetail { job, sets, logs }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Offline-first: a local SQLite file next to the app.
@@ -142,7 +177,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             calculate_bqs_row,
             save_bqs_calculation,
-            save_measurement
+            save_measurement,
+            list_jobs,
+            load_job_detail
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

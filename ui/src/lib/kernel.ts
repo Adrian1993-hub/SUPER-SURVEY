@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, blend_calculate, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -675,6 +675,79 @@ export async function lpgVaporCorrection(input: LpgVaporInput): Promise<LpgVapor
     vaporMassKg: r.vapor_mass_kg,
     vaporMassMt: r.vapor_mass_mt,
     totalMassMt: r.total_mass_mt,
+    errors: r.errors,
+  }
+}
+
+// ---- Fuel-oil blend (commingling) ---------------------------------------
+
+export interface BlendComponentInput {
+  volume: number
+  api60f: number
+  viscosityCst: number
+  sulfurWtPct: number
+  waterVolPct: number
+  sedimentWtPct: number
+  flashF: number
+  pourF: number
+}
+export interface BlendFraction {
+  volumePct: string
+  weightPct: string
+}
+export interface BlendResult {
+  success: boolean
+  totalVolume?: string
+  api60f?: string
+  sg60?: string
+  viscosityCst?: string
+  sulfurWtPct?: string
+  waterVolPct?: string
+  sedimentWtPct?: string
+  flashF?: string
+  pourF?: string
+  fractions?: BlendFraction[]
+  errors?: { code?: string; message?: string }[]
+}
+
+/** Blend N fuel-oil component parcels into the product property slate (kernel). */
+export async function blendFuelOil(components: BlendComponentInput[], decimals = 4): Promise<BlendResult> {
+  await ensureReady()
+  const req = {
+    components: components.map((c) => ({
+      volume: String(c.volume),
+      api_60f: String(c.api60f),
+      viscosity_cst: String(c.viscosityCst),
+      sulfur_wt_pct: String(c.sulfurWtPct),
+      water_vol_pct: String(c.waterVolPct),
+      sediment_wt_pct: String(c.sedimentWtPct),
+      flash_f: String(c.flashF),
+      pour_f: String(c.pourF),
+    })),
+    decimals,
+    rounding_rule: 'HALF_UP',
+    calculation_scope: 'LIVE',
+  }
+  const r = JSON.parse(blend_calculate(JSON.stringify(req))) as {
+    success: boolean
+    total_volume?: string; api_60f?: string; sg_60?: string; viscosity_cst?: string
+    sulfur_wt_pct?: string; water_vol_pct?: string; sediment_wt_pct?: string
+    flash_f?: string; pour_f?: string
+    fractions?: { volume_pct: string; weight_pct: string }[]
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    totalVolume: r.total_volume,
+    api60f: r.api_60f,
+    sg60: r.sg_60,
+    viscosityCst: r.viscosity_cst,
+    sulfurWtPct: r.sulfur_wt_pct,
+    waterVolPct: r.water_vol_pct,
+    sedimentWtPct: r.sediment_wt_pct,
+    flashF: r.flash_f,
+    pourF: r.pour_f,
+    fractions: r.fractions?.map((f) => ({ volumePct: f.volume_pct, weightPct: f.weight_pct })),
     errors: r.errors,
   }
 }

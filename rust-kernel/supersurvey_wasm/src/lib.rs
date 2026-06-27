@@ -4,6 +4,7 @@
 //! / VCF / WCF logic is ever reimplemented in TypeScript. The desktop additionally
 //! persists results via Tauri + SQLite; this module only *computes*.
 
+use supersurvey_calc::blend::BlendRequestDTO;
 use supersurvey_calc::bqs::BqsRowRequestDTO;
 use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 use supersurvey_calc::comparison::ComparisonRequestDTO;
@@ -200,6 +201,19 @@ pub fn costald_ctl(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn lpg_vapor_correction(request_json: &str) -> String {
     match serde_json::from_str::<LpgVaporRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Fuel-oil blend (commingling): N component parcels -> blended property slate
+/// (API/density mixing, Refutas viscosity, flash/pour blending indices, linear
+/// sulfur/water/sediment). JSON `BlendRequestDTO` -> `BlendResponseDTO`. Same
+/// error convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn blend_calculate(request_json: &str) -> String {
+    match serde_json::from_str::<BlendRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

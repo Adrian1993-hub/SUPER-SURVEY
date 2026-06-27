@@ -2,6 +2,14 @@
 /* eslint-disable */
 
 /**
+ * Fuel-oil blend (commingling): N component parcels -> blended property slate
+ * (API/density mixing, Refutas viscosity, flash/pour blending indices, linear
+ * sulfur/water/sediment). JSON `BlendRequestDTO` -> `BlendResponseDTO`. Same
+ * error convention as `bqs_calculate_row`.
+ */
+export function blend_calculate(request_json: string): string;
+
+/**
  * Compute one BQS tank row.
  *
  * `request_json` is a JSON-encoded `BqsRowRequestDTO` — the same string-in /
@@ -122,6 +130,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly blend_calculate: (a: number, b: number) => [number, number];
     readonly bqs_calculate_row: (a: number, b: number) => [number, number];
     readonly bqs_calculate_row_imperial: (a: number, b: number) => [number, number];
     readonly compare_sources: (a: number, b: number) => [number, number];

@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const blend_calculate: (a: number, b: number) => [number, number];
 export const bqs_calculate_row: (a: number, b: number) => [number, number];
 export const bqs_calculate_row_imperial: (a: number, b: number) => [number, number];
 export const compare_sources: (a: number, b: number) => [number, number];

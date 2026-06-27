@@ -14,6 +14,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to create (e.g. v0.1.0)"
+        required: true
+        default: "v0.1.0"
 
 permissions:
   contents: write
@@ -87,7 +92,10 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: ui
-          tagName: ${{ github.ref_name }}
-          releaseName: "SuperSurvey ${{ github.ref_name }}"
+          # Tag-push uses the pushed tag; manual dispatch uses the `version` input
+          # so tauri-action creates that tag + release (the CI token can; the dev
+          # sandbox cannot push tags).
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: "SuperSurvey ${{ github.event.inputs.version || github.ref_name }}"
           releaseDraft: true
           prerelease: false

@@ -272,6 +272,7 @@ export function Medicion() {
         moduleTitle: `${h.surveyType} — ${h.buque}`,
         portName: h.puerto,
         rows,
+        tankSnapshots: after.map((t) => JSON.stringify(t)),
       })
       setSaveMsg(`Guardado: ${res.saved} filas${res.skipped ? ` (${res.skipped} omitidas)` : ''} · set ${res.measurementSetId.slice(0, 8)}…`)
     } catch (e) {

@@ -14,6 +14,7 @@ use std::sync::Mutex;
 use supersurvey_calc::bqs::{BqsRowRequestDTO, BqsRowResponseDTO};
 use supersurvey_persistence::{
     CalculationLogRow, Database, JobSummary, MeasurementSetRow, NewJob, NewMeasurementSet,
+    NewTankRow,
 };
 
 /// App-wide state: a single SQLite connection guarded by a Mutex
@@ -70,6 +71,9 @@ struct SaveMeasurementArgs {
     role: String,
     movement_sign_rule: String,
     rows: Vec<BqsRowRequestDTO>,
+    /// Per-tank VmrTank JSON snapshots (lossless source for hydration on load).
+    #[serde(default)]
+    tank_snapshots: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -105,6 +109,18 @@ fn save_measurement(
             movement_sign_rule: args.movement_sign_rule,
         })
         .map_err(|e| e.to_string())?;
+
+    // Persist a full per-tank snapshot per row (the lossless source for hydration).
+    for (i, snap) in args.tank_snapshots.iter().enumerate() {
+        db.create_tank_row(&NewTankRow {
+            measurement_set_id: set_id.clone(),
+            tank_name: format!("Tank {}", i + 1),
+            sequence_no: (i + 1) as i64,
+            is_non_nominated: false,
+            tank_profile_snapshot_json: snap.clone(),
+        })
+        .map_err(|e| e.to_string())?;
+    }
 
     let mut saved = 0usize;
     let mut skipped = 0usize;
@@ -192,6 +208,26 @@ fn create_job(state: tauri::State<'_, AppState>, args: CreateJobArgs) -> Result<
     .map_err(|e| e.to_string())
 }
 
+/// Tank-row snapshots (VmrTank JSON) of the most recent measurement set for a
+/// job — the lossless source the UI parses to rebuild the measurement grid.
+#[tauri::command]
+fn load_measurement_snapshots(
+    state: tauri::State<'_, AppState>,
+    job_id: String,
+) -> Result<Vec<String>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let sets = db.list_measurement_sets(&job_id).map_err(|e| e.to_string())?;
+    let last = match sets.last() {
+        Some(s) => s,
+        None => return Ok(vec![]),
+    };
+    let rows = db.list_tank_rows(&last.id).map_err(|e| e.to_string())?;
+    Ok(rows
+        .into_iter()
+        .map(|r| r.tank_profile_snapshot_json)
+        .collect())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Offline-first: a local SQLite file next to the app.
@@ -205,7 +241,8 @@ pub fn run() {
             save_measurement,
             list_jobs,
             load_job_detail,
-            create_job
+            create_job,
+            load_measurement_snapshots
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

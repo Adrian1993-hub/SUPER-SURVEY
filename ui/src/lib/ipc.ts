@@ -32,6 +32,8 @@ export interface SaveMeasurementInput {
   moduleType?: string
   role?: string
   movementSignRule?: string
+  /** Per-tank VmrTank JSON snapshots, for lossless hydration on reload. */
+  tankSnapshots?: string[]
 }
 
 export interface SaveMeasurementResult {
@@ -57,6 +59,7 @@ export async function saveMeasurement(input: SaveMeasurementInput): Promise<Save
     role: input.role ?? 'RECEIVING',
     movement_sign_rule: input.movementSignRule ?? 'CLOSING_MINUS_OPENING',
     rows: input.rows.map((r) => bqsRowRequest({ ...r, scope: 'SAVE' })),
+    tank_snapshots: input.tankSnapshots ?? [],
   }
   const res = await invoke<{
     job_id: string
@@ -154,6 +157,12 @@ export async function createJob(input: NewLocalJob): Promise<string> {
     port_name: input.portName ?? null,
   }
   return invoke<string>('create_job', { args })
+}
+
+/** Tank-row snapshots (VmrTank JSON) of a saved job's latest set; [] in the browser. */
+export async function loadMeasurementSnapshots(jobId: string): Promise<string[]> {
+  if (!isDesktop()) return []
+  return invoke<string[]>('load_measurement_snapshots', { jobId })
 }
 
 /** Load one stored job with its sets + official (active) calc logs; null in browser. */

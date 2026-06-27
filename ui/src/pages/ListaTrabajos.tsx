@@ -6,7 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { EstadoBadge } from '../components/EstadoBadge'
 import { TopBar } from '../components/TopBar'
 import { jobs } from '../data/demoJobs'
-import { listStoredJobs, createJob, isDesktop, type StoredJob } from '../lib/ipc'
+import { listStoredJobs, createJob, isDesktop, loadMeasurementSnapshots, type StoredJob } from '../lib/ipc'
+import { useJobMeasurement } from '../lib/jobStore'
+import { type VmrTank } from '../data/vmr'
 import { Plus, ChevronRight, Database, X } from 'lucide-react'
 
 const OP_TYPES = ['BUNKER_LOADING', 'BUNKER_DELIVERY', 'CARGO_LOADING', 'CARGO_DISCHARGE', 'LPG_DISCHARGE', 'BLEND']
@@ -18,6 +20,7 @@ export function ListaTrabajos() {
   const [showForm, setShowForm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [form, setForm] = useState({ jobRef: '', operationType: 'BUNKER_LOADING', clientRef: '', portName: '' })
+  const { setAfter } = useJobMeasurement()
 
   const reload = () =>
     listStoredJobs()
@@ -30,6 +33,19 @@ export function ListaTrabajos() {
 
   const handleRowClick = (jobId: string) => navigate(`/trabajo/${jobId}/cover`)
   const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
+
+  // Abrir un trabajo guardado: hidrata la sección "after" desde los snapshots
+  // (escritorio/SQLite). En el navegador no hay snapshots y se conserva el
+  // borrador local; luego navega al trabajo.
+  async function openStoredJob(j: StoredJob) {
+    try {
+      const snaps = await loadMeasurementSnapshots(j.id)
+      if (snaps.length > 0) setAfter(snaps.map((s) => JSON.parse(s) as VmrTank))
+    } catch {
+      /* si falla la carga, navegamos igual */
+    }
+    navigate(`/trabajo/${j.id}/cover`)
+  }
 
   async function onCreate(e: FormEvent) {
     e.preventDefault()
@@ -121,7 +137,7 @@ export function ListaTrabajos() {
                   </TableHeader>
                   <TableBody>
                     {stored.map((j) => (
-                      <TableRow key={j.id} className="cursor-pointer" onClick={() => handleRowClick(j.id)}>
+                      <TableRow key={j.id} className="cursor-pointer" onClick={() => openStoredJob(j)}>
                         <TableCell className="text-right font-mono tabular-nums">{j.jobRef}</TableCell>
                         <TableCell>
                           <div className="flex flex-col">

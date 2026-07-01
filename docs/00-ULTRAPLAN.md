@@ -2,7 +2,7 @@
 
 > **Documento maestro.** Reemplaza cualquier plan anterior. El prototipo .NET/WPF queda
 > únicamente como referencia histórica en `/reference`.
-> Última actualización: **2026-06-06**.
+> Última actualización: **2026-06-29** (F0–F5 completas; en F6 — empaque/QA; instaladores v0.1.0 generados).
 
 ---
 
@@ -122,20 +122,19 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 
 ## 6. Roadmap por fases (con % y tiempo)
 
-| Fase | Entregable | Estado | Tiempo estimado |
-|---|---|---|---|
-| **F0 — Organización** | Consolidar repo, plan maestro, handoff, skills, auditoría | 🟡 en curso | — |
-| **F1 — Doctrina + Kernel BQS validado** | `docs/operations/01-BQS.md` + cálculo BQS en Rust validado vs el caso BQS de referencia + 6 fixes de hardening | ⏭️ siguiente | 2–4 sem |
-| **F2 — Persistencia + Comparison + IPC** | SQLite cableado, comparison engine, comandos Tauri | ⏳ | 3–5 sem |
-| **F3 — UI BQS de punta a punta** | Cover, Profiles, grid pareado, live summary | ⏳ | 4–6 sem |
-| **F4 — Report engine + white-label** | VMR/BMR/Summary/SOF → PDF/XLSX con branding | ⏳ | 3–5 sem |
-| **F5 — Resto de operaciones** | Terminal, STS, LPG, Draft (reusan el patrón) | ⏳ | 2–4 meses |
-| **F6 — QA + empaque + marca** | casos reales, instaladores, branding final | ⏳ | 1–2 meses |
+| Fase | Entregable | Estado |
+|---|---|---|
+| **F0 — Organización** | Consolidar repo, plan maestro, handoff, skills, auditoría | ✅ completa |
+| **F1 — Doctrina + Kernel BQS validado** | doctrina BQS + cálculo BQS en Rust validado vs caso real + hardening | ✅ completa (2–3 nits de §9 abiertos) |
+| **F2 — Persistencia + Comparison + IPC** | SQLite (crear/listar/guardar/cargar/hidratar) + comparison NOAD/LOP + comandos Tauri | ✅ completa |
+| **F3 — UI BQS de punta a punta** | Cover, Profiles, grid pareado, live summary | ✅ completa |
+| **F4 — Report engine + white-label** | VMR/BMR/Summary/SOF → PDF/XLSX con branding + branding runtime | ✅ completa |
+| **F5 — Resto de operaciones** | Terminal, STS, **LPG** (custody+COSTALD+vapor), Draft, **Blend**, multigrado, VEF, muestreo, ROB | ✅ completa y ampliada |
+| **F6 — QA + empaque + marca** | ~152 tests vs casos reales; **instaladores CI** (build v0.1.0 ✅); branding final | 🔄 en curso |
 
-- **% del sistema completo hoy:** ~10 % (base técnica sólida; falta casi toda la operación).
-- **MVP usable (BQS de punta a punta, F1–F4):** ~2–3 meses de trabajo iterativo.
-- **Sistema amplio y robusto (todas las operaciones):** 6–12 meses.
-- El siguiente **20 %** (doctrina + kernel validado) es el que **quita todo el riesgo**.
+- **% del sistema completo hoy:** **~90 %** (actualizado 2026-06-29; el plan original marcaba ~10 % en el día 0).
+- **MVP BQS punta a punta (F1–F4):** ✅ hecho. **Resto de operaciones (F5):** ✅ hecho y ampliado.
+- **Cierre (F6):** en curso — instaladores **v0.1.0** compilados en CI (Win/Mac/Linux); falta **firma de código**, auto-updater (opcional), **QA visual** y los nits de §9.
 
 ---
 
@@ -178,13 +177,15 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 
 ## 10. Estado actual y próximos pasos inmediatos
 
-**Hecho hoy:** repo consolidado (kernel Rust + CI), prototipo .NET archivado, skills de dev
-instalados, auditoría completa, plan maestro y handoff escritos.
+> **Actualizado 2026-06-29.** F0–F5 completas; estamos en **F6 (QA + empaque)**.
 
-**Siguiente:**
-1. Recibir **el caso BQS de referencia** (Excel lleno + PDF del reporte firmado).
-2. Escribir la **doctrina BQS** (`docs/operations/01-BQS.md`).
-3. Implementar el **cálculo BQS** en Rust validado contra el caso BQS de referencia.
-4. Aplicar los **6 fixes** de hardening.
+**Hecho:** kernel decimal-exacto validado — BQS/ASTM D1250, LPG custody + **COSTALD CTL** + corrección de vapor (API 17.10.2), **blend de fuel oil** (Refutas + índices flash/pour), draft survey, ship↔shore, VEF, muestreo, multi-unidad — con **~152 tests** contra casos reales; UI completa del flujo + guía de diseño `/design` + 3 temas; **persistencia** SQLite (escritorio) / localStorage (demo) con crear/listar/guardar/cargar/hidratar; **branding en runtime** (`brand.json` sin recompilar); **empaquetado** — CI de release + config Tauri, con el **primer build de instaladores v0.1.0 exitoso** (borrador de Release listo para publicar).
+
+**Siguiente (cierre F6):**
+1. **Publicar** el Release **v0.1.0** (eso crea el tag) tras revisar los instaladores.
+2. **Firma de código** (certificados Win/Mac como secrets) + auto-updater (opcional).
+3. **QA visual** de la app y ajuste fino de temas (requiere correrla).
+4. Cerrar los **nits de §9**: unificar versiones, `rust-toolchain.toml`, chequeo `product_id` entre tanques, `MovementRole`↔`movement_sign_rule`, exponer `aggregate_from_unrounded` en el DTO.
+5. **COSTALD cell-exact** (hoja `shore C3`) y refinamientos de Blend (cSt↔SFS, propiedades extra).
 
 Ver `docs/CONTEXT.md` para el estado vivo y cómo retomar.

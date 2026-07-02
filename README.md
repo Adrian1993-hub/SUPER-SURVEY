@@ -1,7 +1,6 @@
 # SUPER-SURVEY
 
-Nueva versión **modernizada** de la herramienta de cálculo de SGS OGC conocida como
-**OGC InfoPro** (motor interno *SAT*): una aplicación para la **inspección de cantidad y
+Nueva versión **modernizada** de la herramienta de cálculo de Inspecciones maritimas una aplicación para la **inspección de cantidad y
 calidad de cargas de petróleo y derivados** (marine cargo / quantity surveying).
 
 ## Objetivo

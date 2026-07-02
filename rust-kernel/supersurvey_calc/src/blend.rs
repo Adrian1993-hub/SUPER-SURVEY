@@ -92,7 +92,16 @@ fn refutas_invert(vbi: Decimal) -> KernelResult<Decimal> {
 
 /// Flash point blending index from flash temperature (°F).
 fn flash_index(t_f: Decimal) -> KernelResult<Decimal> {
-    let x = -FLASH_C + FLASH_D / (t_f + FLASH_E);
+    // `t_f + 383 == 0` (flash = -383 °F, below absolute zero) is the pole of the
+    // index. `checked_div` returns None there instead of panicking rust_decimal's
+    // bare `/`, so an impossible input errors cleanly across the WASM/Tauri boundary.
+    let ratio = FLASH_D.checked_div(t_f + FLASH_E).ok_or_else(|| {
+        math_err(
+            "Flash point out of range (T = -383 °F is undefined).",
+            "flash_f",
+        )
+    })?;
+    let x = -FLASH_C + ratio;
     TEN.checked_powd(x)
         .ok_or_else(|| math_err("Flash point out of range.", "flash_f"))
 }
@@ -102,7 +111,12 @@ fn flash_invert(idx: Decimal) -> KernelResult<Decimal> {
     let l = idx
         .checked_log10()
         .ok_or_else(|| math_err("Blend flash index invalid.", "flash_f"))?;
-    Ok(FLASH_D / (l + FLASH_C) - FLASH_E)
+    // `l + FLASH_C == 0` (blended index ≈ 10^-6.1188) is the inverse pole — guard
+    // with checked_div so a degenerate blend errors instead of panicking.
+    let ratio = FLASH_D
+        .checked_div(l + FLASH_C)
+        .ok_or_else(|| math_err("Blend flash index invalid.", "flash_f"))?;
+    Ok(ratio - FLASH_E)
 }
 
 /// Pour point blending index from pour temperature (°F).
@@ -190,13 +204,24 @@ pub fn blend_fuel_oil(
             "components",
         ));
     }
+    // Guard the SG denominator up front: API ≤ -131.5 makes (131.5 + API) ≤ 0, and
+    // sg_from_api's bare `/` (called just below in the mass sum) would panic. Reject
+    // it cleanly here so every later sg_from_api call has a positive denominator.
+    for c in components {
+        if c.api_60f <= -API_OFFSET {
+            return Err(KernelError::with_field(
+                KernelErrorCode::OutOfTableRange,
+                "API gravity too low (≤ -131.5 makes specific gravity undefined).",
+                "api_60f",
+            ));
+        }
+    }
     let total_mass: Decimal = components
         .iter()
         .map(|c| c.volume * sg_from_api(c.api_60f))
         .sum();
 
-    let (mut sg_blend, mut sulfur, mut water, mut sediment) =
-        (dec!(0), dec!(0), dec!(0), dec!(0));
+    let (mut sg_blend, mut sulfur, mut water, mut sediment) = (dec!(0), dec!(0), dec!(0), dec!(0));
     let (mut vbi, mut fpbi, mut ppbi) = (dec!(0), dec!(0), dec!(0));
 
     for c in components {
@@ -393,7 +418,14 @@ mod tests {
     }
     // Build a component with only the property under test meaningful; the rest
     // are valid in-range fillers so the whole blend computes.
-    fn comp(volume: f64, api: f64, visc: f64, flash: f64, pour: f64, sulfur: f64) -> BlendComponent {
+    fn comp(
+        volume: f64,
+        api: f64,
+        visc: f64,
+        flash: f64,
+        pour: f64,
+        sulfur: f64,
+    ) -> BlendComponent {
         BlendComponent {
             volume: Decimal::try_from(volume).unwrap(),
             api_60f: Decimal::try_from(api).unwrap(),
@@ -410,53 +442,86 @@ mod tests {
     fn api_blend_is_density_mixing() {
         // 50/50 by volume of 30 & 40 API → 34.84985 (volume-weighted SG).
         let b = blend_fuel_oil(
-            &[comp(1.0, 30.0, 50.0, 180.0, 30.0, 1.0), comp(1.0, 40.0, 50.0, 180.0, 30.0, 1.0)],
+            &[
+                comp(1.0, 30.0, 50.0, 180.0, 30.0, 1.0),
+                comp(1.0, 40.0, 50.0, 180.0, 30.0, 1.0),
+            ],
             5,
             SystemRoundingRule::HalfUp,
         )
         .unwrap();
-        assert!(approx(b.api_60f, dec!(34.84985), dec!(0.0005)), "API was {}", b.api_60f);
+        assert!(
+            approx(b.api_60f, dec!(34.84985), dec!(0.0005)),
+            "API was {}",
+            b.api_60f
+        );
     }
 
     #[test]
     fn viscosity_blend_is_refutas() {
         // 50/50 (equal density → vol=wt) of 10 & 100 cSt → 26.672406 cSt.
         let b = blend_fuel_oil(
-            &[comp(1.0, 30.0, 10.0, 180.0, 30.0, 1.0), comp(1.0, 30.0, 100.0, 180.0, 30.0, 1.0)],
+            &[
+                comp(1.0, 30.0, 10.0, 180.0, 30.0, 1.0),
+                comp(1.0, 30.0, 100.0, 180.0, 30.0, 1.0),
+            ],
             6,
             SystemRoundingRule::HalfUp,
         )
         .unwrap();
-        assert!(approx(b.viscosity_cst, dec!(26.672406), dec!(0.0005)), "visc was {}", b.viscosity_cst);
+        assert!(
+            approx(b.viscosity_cst, dec!(26.672406), dec!(0.0005)),
+            "visc was {}",
+            b.viscosity_cst
+        );
     }
 
     #[test]
     fn flash_blend_is_index_based() {
         // 50/50 by volume of 150 & 200 °F → 164.9125 °F (non-linear).
         let b = blend_fuel_oil(
-            &[comp(1.0, 30.0, 50.0, 150.0, 30.0, 1.0), comp(1.0, 30.0, 50.0, 200.0, 30.0, 1.0)],
+            &[
+                comp(1.0, 30.0, 50.0, 150.0, 30.0, 1.0),
+                comp(1.0, 30.0, 50.0, 200.0, 30.0, 1.0),
+            ],
             6,
             SystemRoundingRule::HalfUp,
         )
         .unwrap();
-        assert!(approx(b.flash_f, dec!(164.9125), dec!(0.001)), "flash was {}", b.flash_f);
+        assert!(
+            approx(b.flash_f, dec!(164.9125), dec!(0.001)),
+            "flash was {}",
+            b.flash_f
+        );
     }
 
     #[test]
     fn pour_blend_is_index_based() {
         // 50/50 by volume of 20 & 40 °F → 31.1616 °F (non-linear).
         let b = blend_fuel_oil(
-            &[comp(1.0, 30.0, 50.0, 180.0, 20.0, 1.0), comp(1.0, 30.0, 50.0, 180.0, 40.0, 1.0)],
+            &[
+                comp(1.0, 30.0, 50.0, 180.0, 20.0, 1.0),
+                comp(1.0, 30.0, 50.0, 180.0, 40.0, 1.0),
+            ],
             6,
             SystemRoundingRule::HalfUp,
         )
         .unwrap();
-        assert!(approx(b.pour_f, dec!(31.1616), dec!(0.001)), "pour was {}", b.pour_f);
+        assert!(
+            approx(b.pour_f, dec!(31.1616), dec!(0.001)),
+            "pour was {}",
+            b.pour_f
+        );
     }
 
     #[test]
     fn single_component_is_identity() {
-        let b = blend_fuel_oil(&[comp(500.0, 33.0, 45.0, 175.0, 25.0, 3.5)], 4, SystemRoundingRule::HalfUp).unwrap();
+        let b = blend_fuel_oil(
+            &[comp(500.0, 33.0, 45.0, 175.0, 25.0, 3.5)],
+            4,
+            SystemRoundingRule::HalfUp,
+        )
+        .unwrap();
         assert!(approx(b.api_60f, dec!(33.0), dec!(0.001)));
         assert!(approx(b.viscosity_cst, dec!(45.0), dec!(0.001)));
         assert!(approx(b.flash_f, dec!(175.0), dec!(0.01)));
@@ -469,22 +534,38 @@ mod tests {
         // Blend Program anchor: vol 546.5 / 225, API 33.1 / 34.6, sulfur 4.4 / 4.5
         // → API 33.5347 (J13) and sulfur 4.4292 (J16, volume-weighted).
         let b = blend_fuel_oil(
-            &[comp(546.5, 33.1, 4.6, 150.0, 20.0, 4.4), comp(225.0, 34.6, 4.6, 150.0, 20.0, 4.5)],
+            &[
+                comp(546.5, 33.1, 4.6, 150.0, 20.0, 4.4),
+                comp(225.0, 34.6, 4.6, 150.0, 20.0, 4.5),
+            ],
             6,
             SystemRoundingRule::HalfUp,
         )
         .unwrap();
-        assert!(approx(b.api_60f, dec!(33.534654), dec!(0.0003)), "API was {}", b.api_60f);
-        assert!(approx(b.sulfur_wt_pct, dec!(4.429164), dec!(0.0003)), "S was {}", b.sulfur_wt_pct);
+        assert!(
+            approx(b.api_60f, dec!(33.534654), dec!(0.0003)),
+            "API was {}",
+            b.api_60f
+        );
+        assert!(
+            approx(b.sulfur_wt_pct, dec!(4.429164), dec!(0.0003)),
+            "S was {}",
+            b.sulfur_wt_pct
+        );
         assert_eq!(b.total_volume, dec!(771.5));
     }
 
     #[test]
     fn dto_round_trip_succeeds() {
         let mk = |v: &str, api: &str, s: &str| BlendComponentDTO {
-            volume: v.into(), api_60f: api.into(), viscosity_cst: "45".into(),
-            sulfur_wt_pct: s.into(), water_vol_pct: "0.3".into(), sediment_wt_pct: "0.05".into(),
-            flash_f: "175".into(), pour_f: "25".into(),
+            volume: v.into(),
+            api_60f: api.into(),
+            viscosity_cst: "45".into(),
+            sulfur_wt_pct: s.into(),
+            water_vol_pct: "0.3".into(),
+            sediment_wt_pct: "0.05".into(),
+            flash_f: "175".into(),
+            pour_f: "25".into(),
         };
         let req = BlendRequestDTO {
             components: vec![mk("546.5", "33.1", "4.4"), mk("225", "34.6", "4.5")],
@@ -497,5 +578,52 @@ mod tests {
         assert!(resp.api_60f.is_some());
         assert_eq!(resp.fractions.as_ref().unwrap().len(), 2);
         assert!(resp.trace_json.is_some(), "EXPORT scope must carry a trace");
+    }
+
+    #[test]
+    fn flash_pole_input_errors_without_panic() {
+        // flash_f = -383 °F is the pole of the flash index (T + 383 = 0). It must
+        // return a clean error, never panic across the WASM/Tauri boundary.
+        let req = BlendRequestDTO {
+            components: vec![BlendComponentDTO {
+                volume: "100".into(),
+                api_60f: "33".into(),
+                viscosity_cst: "45".into(),
+                sulfur_wt_pct: "1".into(),
+                water_vol_pct: "0.3".into(),
+                sediment_wt_pct: "0.05".into(),
+                flash_f: "-383".into(),
+                pour_f: "25".into(),
+            }],
+            decimals: 4,
+            rounding_rule: "HALF_UP".into(),
+            calculation_scope: "LIVE".into(),
+        };
+        let resp = req.calculate();
+        assert!(!resp.success, "flash pole must fail cleanly, not panic");
+        assert!(resp.errors.is_some());
+    }
+
+    #[test]
+    fn api_at_neg_offset_errors_without_panic() {
+        // api = -131.5 makes (131.5 + api) = 0 in sg_from_api; guard, don't panic.
+        let req = BlendRequestDTO {
+            components: vec![BlendComponentDTO {
+                volume: "100".into(),
+                api_60f: "-131.5".into(),
+                viscosity_cst: "45".into(),
+                sulfur_wt_pct: "1".into(),
+                water_vol_pct: "0.3".into(),
+                sediment_wt_pct: "0.05".into(),
+                flash_f: "175".into(),
+                pour_f: "25".into(),
+            }],
+            decimals: 4,
+            rounding_rule: "HALF_UP".into(),
+            calculation_scope: "LIVE".into(),
+        };
+        let resp = req.calculate();
+        assert!(!resp.success, "API pole must fail cleanly, not panic");
+        assert!(resp.errors.is_some());
     }
 }

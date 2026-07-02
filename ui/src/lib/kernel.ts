@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, blend_calculate, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, blend_calculate, movement_set_calculate, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -748,6 +748,117 @@ export async function blendFuelOil(components: BlendComponentInput[], decimals =
     flashF: r.flash_f,
     pourF: r.pour_f,
     fractions: r.fractions?.map((f) => ({ volumePct: f.volume_pct, weightPct: f.weight_pct })),
+    errors: r.errors,
+  }
+}
+
+// ---- Paired movement aggregation (opening/closing → set totals) ---------
+
+export interface MovementSnapshotInput {
+  gov: number
+  gsv: number
+  weightAir: number
+}
+export interface MovementTankInput {
+  tankId: string
+  tankName: string
+  productId?: string | null
+  opening: MovementSnapshotInput
+  closing: MovementSnapshotInput
+}
+export interface MovementTankResult {
+  tankId: string
+  tankName: string
+  productId?: string | null
+  govMovement: string
+  gsvMovement: string
+  weightAirMovement: string
+}
+export interface MovementWarning {
+  code: string
+  message: string
+  tankId?: string | null
+}
+export interface MovementSetResult {
+  success: boolean
+  signRule?: string
+  totalGovMovement?: string
+  totalGsvMovement?: string
+  totalWeightAirMovement?: string
+  volumeUnit?: string
+  weightUnit?: string
+  tanks?: MovementTankResult[]
+  warnings?: MovementWarning[]
+  errors?: { code?: string; message?: string }[]
+}
+export interface MovementSetOptions {
+  /** 'CLOSING_MINUS_OPENING' | 'OPENING_MINUS_CLOSING' | 'CUSTOM' — the sign source of truth. */
+  signRule: string
+  /** Required iff signRule === 'CUSTOM': 1 or -1. */
+  customSign?: 1 | -1
+  /** Optional operation-role label (reporting only; the sign comes from signRule). */
+  role?: string
+  volumeUnit?: string
+  weightUnit?: string
+  roundingRule?: string
+  decimals?: number
+  aggregateFromUnrounded?: boolean
+  scope?: string
+}
+
+/** Aggregate paired opening/closing tank measurements into a movement set (kernel). */
+export async function calcMovementSet(
+  tanks: MovementTankInput[],
+  opts: MovementSetOptions,
+): Promise<MovementSetResult> {
+  await ensureReady()
+  const dec = opts.decimals ?? 3
+  const req = {
+    tanks: tanks.map((t) => ({
+      tank_id: t.tankId,
+      tank_name: t.tankName,
+      product_id: t.productId ?? null,
+      opening: { gov: String(t.opening.gov), gsv: String(t.opening.gsv), weight_air: String(t.opening.weightAir) },
+      closing: { gov: String(t.closing.gov), gsv: String(t.closing.gsv), weight_air: String(t.closing.weightAir) },
+    })),
+    volume_unit: opts.volumeUnit ?? 'M3',
+    weight_unit: opts.weightUnit ?? 'MT',
+    movement_sign_rule: opts.signRule,
+    custom_sign: opts.customSign !== undefined ? String(opts.customSign) : null,
+    role: opts.role ?? null,
+    rounding_rule: opts.roundingRule ?? 'HALF_UP',
+    observed_volume_decimals: dec,
+    standard_volume_decimals: dec,
+    weight_decimals: dec,
+    aggregate_from_unrounded: opts.aggregateFromUnrounded ?? false,
+    calculation_scope: opts.scope ?? 'LIVE',
+  }
+  const r = JSON.parse(movement_set_calculate(JSON.stringify(req))) as {
+    success: boolean
+    sign_rule?: string
+    total_gov_movement?: string; total_gsv_movement?: string; total_weight_air_movement?: string
+    volume_unit?: string; weight_unit?: string
+    tanks?: { tank_id: string; tank_name: string; product_id?: string | null; gov_movement: string; gsv_movement: string; weight_air_movement: string }[]
+    warnings?: { code: string; message: string; tank_id?: string | null }[]
+    errors?: { code?: string; message?: string }[]
+  }
+  return {
+    success: r.success,
+    signRule: r.sign_rule,
+    totalGovMovement: r.total_gov_movement,
+    totalGsvMovement: r.total_gsv_movement,
+    totalWeightAirMovement: r.total_weight_air_movement,
+    volumeUnit: r.volume_unit,
+    weightUnit: r.weight_unit,
+    tanks: r.tanks?.map((t) => ({
+      tankId: t.tank_id,
+      tankName: t.tank_name,
+      productId: t.product_id,
+      govMovement: t.gov_movement,
+      gsvMovement: t.gsv_movement,
+      weightAirMovement: t.weight_air_movement,
+    })),
+    warnings: r.warnings?.map((w) => ({ code: w.code, message: w.message, tankId: w.tank_id })),
     errors: r.errors,
   }
 }

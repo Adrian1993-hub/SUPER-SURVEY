@@ -112,9 +112,21 @@ fn save_measurement(
 
     // Persist a full per-tank snapshot per row (the lossless source for hydration).
     for (i, snap) in args.tank_snapshots.iter().enumerate() {
+        // The real tank name lives inside the VmrTank snapshot (`tanque`). Use it so
+        // the denormalized column matches the data; fall back to a positional label
+        // only when the snapshot is missing/blank.
+        let tank_name = serde_json::from_str::<serde_json::Value>(snap)
+            .ok()
+            .as_ref()
+            .and_then(|v| v.get("tanque"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("Tank {}", i + 1));
         db.create_tank_row(&NewTankRow {
             measurement_set_id: set_id.clone(),
-            tank_name: format!("Tank {}", i + 1),
+            tank_name,
             sequence_no: (i + 1) as i64,
             is_non_nominated: false,
             tank_profile_snapshot_json: snap.clone(),
@@ -176,7 +188,9 @@ fn load_job_detail(
         Some(j) => j,
         None => return Ok(None),
     };
-    let sets = db.list_measurement_sets(&job_id).map_err(|e| e.to_string())?;
+    let sets = db
+        .list_measurement_sets(&job_id)
+        .map_err(|e| e.to_string())?;
     let logs = db
         .list_active_calculation_logs(&job_id)
         .map_err(|e| e.to_string())?;
@@ -216,7 +230,9 @@ fn load_measurement_snapshots(
     job_id: String,
 ) -> Result<Vec<String>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let sets = db.list_measurement_sets(&job_id).map_err(|e| e.to_string())?;
+    let sets = db
+        .list_measurement_sets(&job_id)
+        .map_err(|e| e.to_string())?;
     let last = match sets.last() {
         Some(s) => s,
         None => return Ok(vec![]),

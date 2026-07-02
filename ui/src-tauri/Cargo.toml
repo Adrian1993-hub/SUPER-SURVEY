@@ -1,6 +1,6 @@
 [package]
 name = "supersurvey_app"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "SuperSurvey Tauri shell — thin IPC over the calc kernel + SQLite persistence"
 license = "UNLICENSED"

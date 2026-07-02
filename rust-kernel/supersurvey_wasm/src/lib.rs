@@ -15,6 +15,7 @@ use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateReque
 use supersurvey_calc::figures::CustodyFigureRequestDTO;
 use supersurvey_calc::lpg::LpgCustodyRequestDTO;
 use supersurvey_calc::lpg_vapor::LpgVaporRequestDTO;
+use supersurvey_calc::movement::MovementSetRequestDTO;
 use supersurvey_calc::reconcile::ReconciliationRequestDTO;
 use supersurvey_calc::sampling::SamplingRequestDTO;
 use supersurvey_calc::vef::VefRequestDTO;
@@ -214,6 +215,21 @@ pub fn lpg_vapor_correction(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn blend_calculate(request_json: &str) -> String {
     match serde_json::from_str::<BlendRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// Paired movement aggregation (opening/closing → per-tank + set totals). The
+/// **sign comes from `movement_sign_rule`** (CLOSING_MINUS_OPENING /
+/// OPENING_MINUS_CLOSING / CUSTOM), so a persisted set's convention drives the
+/// math; different `product_id`s across tanks raise a soft MIXED_PRODUCT warning.
+/// JSON `MovementSetRequestDTO` -> `MovementSetResponseDTO`. Same error convention
+/// as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn movement_set_calculate(request_json: &str) -> String {
+    match serde_json::from_str::<MovementSetRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

@@ -13,6 +13,7 @@ export const hydrostatic_interpolate: (a: number, b: number) => [number, number]
 export const kernel_version: () => [number, number];
 export const lpg_custody: (a: number, b: number) => [number, number];
 export const lpg_vapor_correction: (a: number, b: number) => [number, number];
+export const movement_set_calculate: (a: number, b: number) => [number, number];
 export const pro_rata: (a: number, b: number) => [number, number];
 export const reconcile_terminal: (a: number, b: number) => [number, number];
 export const sampling_levels: (a: number, b: number) => [number, number];

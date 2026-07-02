@@ -1,0 +1,6 @@
+# Pin the Rust toolchain so CI and every developer build the decimal-exact kernel
+# with the same compiler — reproducibility matters when the output is custody
+# figures. rustup auto-installs this channel on the first cargo invocation.
+[toolchain]
+channel = "1.94.1"
+components = ["rustfmt", "clippy"]

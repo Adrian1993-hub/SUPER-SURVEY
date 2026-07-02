@@ -95,6 +95,16 @@ export function lpg_custody(request_json: string): string;
 export function lpg_vapor_correction(request_json: string): string;
 
 /**
+ * Paired movement aggregation (opening/closing → per-tank + set totals). The
+ * **sign comes from `movement_sign_rule`** (CLOSING_MINUS_OPENING /
+ * OPENING_MINUS_CLOSING / CUSTOM), so a persisted set's convention drives the
+ * math; different `product_id`s across tanks raise a soft MIXED_PRODUCT warning.
+ * JSON `MovementSetRequestDTO` -> `MovementSetResponseDTO`. Same error convention
+ * as `bqs_calculate_row`.
+ */
+export function movement_set_calculate(request_json: string): string;
+
+/**
  * Pro-rata apportionment of a total across parcels (e.g. Bills of Lading), with
  * exact rounding reconciliation. JSON `ProRataRequestDTO` → `ProRataResponseDTO`.
  */
@@ -142,6 +152,7 @@ export interface InitOutput {
     readonly kernel_version: () => [number, number];
     readonly lpg_custody: (a: number, b: number) => [number, number];
     readonly lpg_vapor_correction: (a: number, b: number) => [number, number];
+    readonly movement_set_calculate: (a: number, b: number) => [number, number];
     readonly pro_rata: (a: number, b: number) => [number, number];
     readonly reconcile_terminal: (a: number, b: number) => [number, number];
     readonly sampling_levels: (a: number, b: number) => [number, number];

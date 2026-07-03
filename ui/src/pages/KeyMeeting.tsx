@@ -78,9 +78,9 @@ export function KeyMeeting() {
               {k.items.map((it) => (
                 <div key={it.item} className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/50">
                   {it.ok ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                   ) : (
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
                   )}
                   <span className={it.ok ? '' : 'text-muted-foreground'}>{it.item}</span>
                 </div>

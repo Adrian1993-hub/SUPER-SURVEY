@@ -9,10 +9,11 @@ import { Gauge, Plus, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
 // aplicación al viaje actual los calcula el kernel WASM. Datos demo ficticios
 // (el set da 0.9993, el caso de validación del kernel).
 
-const th = 'border border-border px-1.5 py-1 text-right text-[10px] font-medium text-muted-foreground'
-const thL = 'border border-border px-1.5 py-1 text-left text-[10px] font-medium text-muted-foreground'
-const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdL = 'border border-border px-1.5 py-1 text-left text-[11px]'
+// Grid canónico: .table-dense (index.css); solo modificadores por celda.
+const th = ''
+const thL = 'cell-l'
+const td = ''
+const tdL = 'cell-l'
 
 interface Row {
   label: string
@@ -83,7 +84,7 @@ export function VefPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="table-dense w-full border-collapse">
             <thead>
               <tr>
                 <th className={thL}>Viaje</th>
@@ -102,8 +103,8 @@ export function VefPanel() {
                 const state = r.rejected
                   ? { label: 'Rechazado', cls: 'text-muted-foreground line-through' }
                   : vr?.qualifying
-                    ? { label: 'Califica', cls: 'text-emerald-600' }
-                    : { label: 'Descalificado', cls: 'text-amber-600' }
+                    ? { label: 'Califica', cls: 'text-success' }
+                    : { label: 'Descalificado', cls: 'text-warning' }
                 return (
                   <tr key={i}>
                     <td className="border border-border p-0">
@@ -136,7 +137,7 @@ export function VefPanel() {
                       <button
                         onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))}
                         title="Quitar"
-                        className="px-1 text-muted-foreground hover:text-red-500"
+                        className="px-1 text-muted-foreground hover:text-danger"
                       >
                         <Trash2 className="mx-auto h-3 w-3" />
                       </button>
@@ -181,7 +182,7 @@ export function VefPanel() {
         </div>
 
         {res?.warnings?.length ? (
-          <p className="flex items-center gap-1.5 text-xs text-amber-600">
+          <p className="flex items-center gap-1.5 text-xs text-warning">
             <AlertTriangle className="h-3.5 w-3.5" /> {res.warnings[0]}
           </p>
         ) : null}
@@ -206,7 +207,7 @@ export function VefPanel() {
               <div className="text-xs text-muted-foreground">Ship × (1/VEF)</div>
               <div className="font-mono font-semibold tabular-nums">{app?.vefApplied ?? '—'}</div>
             </div>
-            <div className={Number(app?.difference) === 0 ? '' : 'text-amber-600'}>
+            <div className={Number(app?.difference) === 0 ? '' : 'text-warning'}>
               <div className="text-xs text-muted-foreground">Δ vs outturn</div>
               <div className="font-mono font-semibold tabular-nums">
                 {app ? `${Number(app.difference) > 0 ? '+' : ''}${app.difference} (${app.differencePct}%)` : '—'}
@@ -215,11 +216,11 @@ export function VefPanel() {
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {app && Math.abs(Number(app.differencePct)) <= 0.3 ? (
                 <>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> dentro de lo esperado
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" /> dentro de lo esperado
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> revisar
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning" /> revisar
                 </>
               )}
             </span>

@@ -18,9 +18,10 @@ const blankTank = (): VmrTank => ({
 })
 
 // celdas
-const thBase = 'border border-border px-1.5 py-1 text-[10px] font-medium text-muted-foreground'
-const tdDisp = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdGrey = `${tdDisp} bg-muted/50`
+// Grid canónico: .table-dense (index.css); solo modificadores por celda.
+const thBase = ''
+const tdDisp = ''
+const tdGrey = 'cell-grey'
 
 function NumCell({ value, onChange, step = 0.001 }: { value: number; onChange: (n: number) => void; step?: number }) {
   return (
@@ -40,9 +41,9 @@ function DeltaArrow({ prev, curr }: { prev?: number; curr: number }) {
   if (prev === undefined || Math.abs(curr - prev) < 1e-9)
     return <Minus className="h-3 w-3 shrink-0 text-muted-foreground" />
   return curr > prev ? (
-    <ArrowUp className="h-3 w-3 shrink-0 text-emerald-500" />
+    <ArrowUp className="h-3 w-3 shrink-0 text-success" />
   ) : (
-    <ArrowDown className="h-3 w-3 shrink-0 text-red-500" />
+    <ArrowDown className="h-3 w-3 shrink-0 text-danger" />
   )
 }
 
@@ -75,7 +76,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="table-dense w-full border-collapse">
             <thead>
               <tr>
                 <th className={`${thBase} text-left`}>Tanque</th>
@@ -117,7 +118,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                         value={t.grade}
                         onChange={(e) => onUpdate(i, { grade: e.target.value })}
                         title={oor ? `Densidad ${t.densidad15} kg/L fuera del rango típico de ${t.grade}` : undefined}
-                        className={`w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring ${oor ? 'text-amber-600 ring-1 ring-amber-400/60' : ''}`}
+                        className={`w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring ${oor ? 'text-warning ring-1 ring-warning' : ''}`}
                       />
                     </td>
                     <NumCell value={t.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} />
@@ -151,7 +152,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                     <td className={tdGrey}>{(c ? c.wcf56 : t.wcf56).toFixed(4)}</td>
                     <td className={`${tdGrey} font-semibold`}>{(c ? c.mt : t.mt).toFixed(3)}</td>
                     <td className="border border-border text-center">
-                      <button onClick={() => onRemove(i)} title="Quitar tanque" className="text-muted-foreground hover:text-red-500">
+                      <button onClick={() => onRemove(i)} title="Quitar tanque" className="text-muted-foreground hover:text-danger">
                         <Trash2 className="mx-auto h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -362,10 +363,10 @@ export function Medicion() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas en vivo por el kernel. Celdas blancas = entrada del
-              surveyor. En el cierre, las flechas <ArrowUp className="inline h-3 w-3 text-emerald-500" />/<ArrowDown className="inline h-3 w-3 text-red-500" /> marcan
+              surveyor. En el cierre, las flechas <ArrowUp className="inline h-3 w-3 text-success" />/<ArrowDown className="inline h-3 w-3 text-danger" /> marcan
               cambios de volumen y temperatura vs. apertura (solo referencia del inspector, no salen en el reporte).
             </p>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+            <span className="status-ok inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
               <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · {edition === 'D1250_04' ? 'D1250-04' : 'D1250-80'} · WASM
             </span>
           </div>
@@ -390,13 +391,13 @@ export function Medicion() {
 
               {action !== 'NONE' ? (
                 <div
-                  className={`mt-5 rounded-lg border p-4 ${
-                    action === 'ISSUE_LOP' ? 'border-red-500/30 bg-red-500/10' : 'border-amber-500/30 bg-amber-500/10'
+                  className={`mt-5 rounded-lg border p-4 text-foreground ${
+                    action === 'ISSUE_LOP' ? 'status-bad' : 'status-warn'
                   }`}
                 >
                   <div
                     className={`flex items-center gap-2 font-semibold ${
-                      action === 'ISSUE_LOP' ? 'text-red-600' : 'text-amber-600'
+                      action === 'ISSUE_LOP' ? 'text-danger' : 'text-warning'
                     }`}
                   >
                     <AlertTriangle className="h-4 w-4" />

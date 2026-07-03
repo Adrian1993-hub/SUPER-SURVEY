@@ -37,8 +37,9 @@ const FIELDS: { key: keyof DraftConditionInput; label: string; step?: number }[]
   { key: 'deductibles', label: 'Pesos no-carga Σ (MT)', step: 0.001 },
 ]
 
+// Formulario denso canónico: .input-dense (index.css).
 const lbl = 'text-[11px] text-muted-foreground'
-const inp = 'w-full rounded-md border border-input bg-transparent px-2 py-1 text-right font-mono text-[12px] tabular-nums focus:outline-none focus:ring-1 focus:ring-ring'
+const inp = 'input-dense'
 
 function ConditionForm({ title, c, onChange }: { title: string; c: DraftConditionInput; onChange: (c: DraftConditionInput) => void }) {
   return (
@@ -76,12 +77,12 @@ function ResultRows({ r }: { r: DraftSurveyResult['initial'] }) {
     ['Net Displacement', r?.netDisplacement],
   ]
   return (
-    <table className="w-full border-collapse">
+    <table className="table-dense w-full border-collapse">
       <tbody>
         {rows.map(([k, v], i) => (
           <tr key={k} className={i === rows.length - 1 ? 'bg-muted font-semibold' : ''}>
-            <td className="border border-border px-1.5 py-1 text-left text-[11px] text-muted-foreground">{k}</td>
-            <td className="border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums">{v ?? '—'}</td>
+            <td className="cell-l text-muted-foreground">{k}</td>
+            <td>{v ?? '—'}</td>
           </tr>
         ))}
       </tbody>
@@ -153,7 +154,7 @@ export function DraftSurvey() {
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
                 <FileText className="h-4 w-4" /> PDF
               </Button>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
                 <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · UNECE · WASM
               </span>
             </div>
@@ -216,9 +217,9 @@ export function DraftSurvey() {
               </label>
               <div>
                 <div className={lbl}>Diferencia DS − báscula (MT)</div>
-                <div className={`font-mono text-lg font-semibold tabular-nums ${Math.abs(diffShore) > 0 ? 'text-amber-600' : ''}`}>{isFinite(diffShore) ? `${diffShore > 0 ? '+' : ''}${diffShore.toFixed(3)}` : '—'}</div>
+                <div className={`font-mono text-lg font-semibold tabular-nums ${Math.abs(diffShore) > 0 ? 'text-warning' : ''}`}>{isFinite(diffShore) ? `${diffShore > 0 ? '+' : ''}${diffShore.toFixed(3)}` : '—'}</div>
               </div>
-              {res && !res.success && <p className="text-sm text-red-500">{res.errors?.[0]?.message}</p>}
+              {res && !res.success && <p className="text-sm text-danger">{res.errors?.[0]?.message}</p>}
             </CardContent>
           </Card>
 

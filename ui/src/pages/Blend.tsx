@@ -28,7 +28,8 @@ const FIELDS: { key: keyof Row; label: string; step: number }[] = [
   { key: 'pourF', label: 'Pour °F', step: 1 },
 ]
 
-const inp = 'w-full rounded border border-input bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-ring'
+// Formulario denso canónico: .input-dense (index.css); aquí un punto más compacto.
+const inp = 'input-dense text-[11px]'
 const lbl = 'text-[11px] text-muted-foreground'
 
 export function Blend() {
@@ -78,7 +79,7 @@ export function Blend() {
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
                 <FileText className="h-4 w-4" /> PDF
               </Button>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
                 <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · WASM
               </span>
             </div>
@@ -93,21 +94,21 @@ export function Blend() {
               </Button>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="table-dense w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="px-1.5 py-1 text-left text-[10px] uppercase text-muted-foreground">#</th>
+                    <th className="cell-l th-caps">#</th>
                     {FIELDS.map((f) => (
-                      <th key={f.key} className="px-1.5 py-1 text-right text-[10px] uppercase text-muted-foreground">{f.label}</th>
+                      <th key={f.key} className="th-caps">{f.label}</th>
                     ))}
-                    <th className="px-1.5 py-1 text-right text-[10px] uppercase text-muted-foreground">Vol% / Peso%</th>
+                    <th className="th-caps">Vol% / Peso%</th>
                     <th className="print:hidden" />
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row, i) => (
-                    <tr key={i} className="border-t border-border">
-                      <td className="px-1.5 py-1 text-[11px] font-semibold text-muted-foreground">({i + 1})</td>
+                    <tr key={i}>
+                      <td className="cell-l font-semibold text-muted-foreground">({i + 1})</td>
                       {FIELDS.map((f) => (
                         <td key={f.key} className="px-1 py-1">
                           <input
@@ -123,7 +124,7 @@ export function Blend() {
                         {res?.fractions?.[i] ? `${res.fractions[i].volumePct} / ${res.fractions[i].weightPct}` : '—'}
                       </td>
                       <td className="px-1 py-1 text-center print:hidden">
-                        <button onClick={() => delRow(i)} disabled={rows.length <= 1} className="text-muted-foreground hover:text-red-500 disabled:opacity-30" title="Quitar">
+                        <button onClick={() => delRow(i)} disabled={rows.length <= 1} className="text-muted-foreground hover:text-danger disabled:opacity-30" title="Quitar">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </td>
@@ -152,7 +153,7 @@ export function Blend() {
                   </div>
                 ))}
               </div>
-              {res && !res.success && <p className="text-sm text-red-500">{res.errors?.[0]?.message}</p>}
+              {res && !res.success && <p className="text-sm text-danger">{res.errors?.[0]?.message}</p>}
             </CardContent>
           </Card>
 

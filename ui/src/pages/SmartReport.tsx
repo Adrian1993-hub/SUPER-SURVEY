@@ -18,15 +18,17 @@ import { Ship, FileText, Braces, Layers, FileSpreadsheet } from 'lucide-react'
 
 const f3 = (n: number) => (isFinite(n) ? n.toFixed(3) : '—')
 const f4 = (n: number) => (isFinite(n) ? n.toFixed(4) : '—')
-const th = 'border border-border px-1.5 py-1 text-right text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
-const thL = 'border border-border px-1.5 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
-const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdL = 'border border-border px-1.5 py-1 text-left text-[11px]'
+// Grid canónico: .table-dense (index.css) define borde/padding/tipografía;
+// aquí solo quedan los modificadores por celda.
+const th = 'th-caps'
+const thL = 'cell-l th-caps'
+const td = ''
+const tdL = 'cell-l'
 
 function verdict(action: ComparisonResult['recommendedAction']) {
-  if (action === 'ISSUE_LOP') return { cls: 'text-red-600', label: 'LOP' }
-  if (action === 'ISSUE_NOAD') return { cls: 'text-amber-600', label: 'NOAD' }
-  return { cls: 'text-emerald-600', label: 'Conforme' }
+  if (action === 'ISSUE_LOP') return { cls: 'text-danger', label: 'LOP' }
+  if (action === 'ISSUE_NOAD') return { cls: 'text-warning', label: 'NOAD' }
+  return { cls: 'text-success', label: 'Conforme' }
 }
 
 const toVmr = (t: TemplateTank): VmrTank => ({
@@ -105,7 +107,7 @@ function GradeTable({ label, head, rows, totalMt, totalLabel = 'Total' }: { labe
       <h4 className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
         <Layers className="h-3.5 w-3.5" /> {label}
       </h4>
-      <table className="w-full border-collapse">
+      <table className="table-dense w-full border-collapse">
         <thead>
           <tr>
             {head.map((h, i) => (
@@ -167,7 +169,7 @@ function CustodySummary({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade:
 
   return (
     <Section title="Resumen de custodia (MT aire)">
-      <table className="w-full border-collapse">
+      <table className="table-dense w-full border-collapse">
         <thead>
           <tr>
             <th className={thL}>Grado</th>
@@ -239,7 +241,7 @@ function ProRataSection({ total, spec }: { total: number; spec: NonNullable<Oper
   }, [total, spec])
   return (
     <Section title={spec.label}>
-      <table className="w-full border-collapse">
+      <table className="table-dense w-full border-collapse">
         <thead>
           <tr>
             <th className={thL}>Parcela</th>
@@ -289,7 +291,7 @@ function Certificate({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade: Re
           </>
         )}
       </p>
-      <table className="mt-2 w-72 border-collapse">
+      <table className="table-dense mt-2 w-72 border-collapse">
         <tbody>
           {tpl.grades.map((g) => (
             <tr key={g.grade}>
@@ -359,7 +361,7 @@ function QuantityTable({ tpl }: { tpl: OperationTemplate }) {
             <div key={f.grade} className="print:break-inside-avoid">
               <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{f.label}</h4>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+                <table className="table-dense w-full border-collapse">
                   <thead>
                     <tr>
                       <th className={thL}></th>
@@ -457,7 +459,7 @@ function MasterSummary({ tpl }: { tpl: OperationTemplate }) {
   return (
     <Section title={`Master Summary — reconciliación de viaje (${v.unit})`}>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+        <table className="table-dense w-full border-collapse">
           <thead>
             <tr>
               <th className={thL}>Concepto</th>

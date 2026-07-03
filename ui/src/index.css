@@ -327,6 +327,76 @@
     background-color: color-mix(in oklch, var(--muted) 60%, transparent);
     color: var(--muted-foreground);
   }
+
+  /* -------------------------------------------------------------------------
+     TABLA DENSA — el grid canónico de las hojas de medición/reporte (celdas
+     numéricas compactas, bordes finos, cabecera muted). Un solo lugar define
+     borde/padding/tipografía; las páginas solo marcan variantes por celda:
+       .cell-l    → etiqueta (izquierda, sans)
+       .cell-grey → celda calculada/bloqueada (fondo muted)
+       .cell-in   → celda que envuelve un <input> (sin padding propio)
+     Crítico para impresión: mismos selectores en pantalla y print.
+     ------------------------------------------------------------------------- */
+  .table-dense {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table-dense th {
+    border: 1px solid var(--border);
+    padding: 4px 6px;
+    text-align: right;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .table-dense td {
+    border: 1px solid var(--border);
+    padding: 4px 6px;
+    text-align: right;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .table-dense .cell-l {
+    text-align: left;
+    font-family: 'Geist', system-ui, sans-serif;
+  }
+  .table-dense .cell-grey {
+    background-color: color-mix(in oklch, var(--muted) 50%, transparent);
+  }
+  .table-dense .cell-in {
+    padding: 0;
+  }
+  /* Cabecera estilo documento (Reporte/SmartReport/ROB): mayúsculas + peso. */
+  .table-dense .th-caps {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  /* Input/etiqueta densos de los formularios de operación (Lpg/Blend/Draft/…). */
+  .input-dense {
+    width: 100%;
+    border-radius: calc(var(--radius) - 4px);
+    border: 1px solid var(--input);
+    background-color: transparent;
+    padding: 4px 8px;
+    text-align: right;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .input-dense:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--ring) inset;
+  }
+  .label-dense {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted-foreground);
+  }
 }
 
 /* ===========================================================================

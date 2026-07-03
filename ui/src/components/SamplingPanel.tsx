@@ -22,10 +22,10 @@ const DEMO: SamplingSeedTank[] = [
   { tank: '3S', referenceHeight: 28.771, ullage: 1.6 },
 ]
 
-const th = 'border border-border px-1.5 py-1 text-right text-[10px] font-medium text-muted-foreground'
-const thL = 'border border-border px-1.5 py-1 text-left text-[10px] font-medium text-muted-foreground'
-const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdGrey = `${td} bg-muted/50`
+// Grid canónico: .table-dense (index.css); solo modificadores por celda.
+const th = ''
+const thL = 'cell-l'
+const tdGrey = 'cell-grey'
 
 function NumCell({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
@@ -128,7 +128,7 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
       <CardContent>
         <div className="grid gap-4 lg:grid-cols-[1fr_240px]">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="table-dense w-full border-collapse">
               <thead>
                 <tr>
                   <th className={thL}>Tanque</th>
@@ -156,11 +156,11 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
                       <NumCell value={row.referenceHeight} onChange={(n) => update(i, { referenceHeight: n })} />
                       <NumCell value={row.ullage} onChange={(n) => update(i, { ullage: n })} />
                       <td className={tdGrey}>{c?.innage ?? '—'}</td>
-                      <td className={`${tdGrey} text-emerald-600`}>{c?.upper ?? '—'}</td>
-                      <td className={`${tdGrey} text-amber-600`}>{c?.middle ?? '—'}</td>
-                      <td className={`${tdGrey} text-red-600`}>{c?.lower ?? '—'}</td>
+                      <td className={`${tdGrey} text-success`}>{c?.upper ?? '—'}</td>
+                      <td className={`${tdGrey} text-warning`}>{c?.middle ?? '—'}</td>
+                      <td className={`${tdGrey} text-danger`}>{c?.lower ?? '—'}</td>
                       <td className="border border-border text-center">
-                        <button onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))} title="Quitar" className="text-muted-foreground hover:text-red-500">
+                        <button onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))} title="Quitar" className="text-muted-foreground hover:text-danger">
                           <Trash2 className="mx-auto h-3 w-3" />
                         </button>
                       </td>
@@ -182,9 +182,9 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
             <div className="mb-1 text-center text-xs font-medium text-muted-foreground">{selected ? `Tanque ${selected.tank}` : 'Tanque'}</div>
             {selected ? <TankChart r={selected} /> : <div className="h-[260px]" />}
             <div className="mt-1 flex justify-center gap-3 text-[10px]">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Upper</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Middle</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Lower</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-success" /> Upper</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-warning" /> Middle</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-danger" /> Lower</span>
             </div>
           </div>
         </div>

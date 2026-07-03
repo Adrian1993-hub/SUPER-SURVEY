@@ -19,9 +19,10 @@ import { Ship, FileText, FileSpreadsheet, Braces, CheckCircle2, AlertTriangle } 
 const f3 = (n: number) => n.toFixed(3)
 const f4 = (n: number) => n.toFixed(4)
 
-const th = 'border border-border px-1.5 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
-const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdL = 'border border-border px-1.5 py-1 text-left text-[11px]'
+// Grid canónico: .table-dense (index.css); solo modificadores por celda.
+const th = 'cell-l th-caps'
+const td = ''
+const tdL = 'cell-l'
 
 interface GradeResult {
   surveyMt: number
@@ -73,7 +74,7 @@ function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r:
         <h3 className="text-sm font-bold uppercase tracking-wide">{g.label}</h3>
         <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${v.chip}`}>{v.label}</span>
       </div>
-      <table className="mt-2 w-full border-collapse">
+      <table className="table-dense mt-2 w-full border-collapse">
         <thead>
           <tr>
             <th className={th}>Tanque</th>
@@ -299,7 +300,7 @@ export function RobReport() {
               <section className="flex items-start gap-2 text-sm print:break-inside-avoid">
                 {worstAction === 'NONE' ? (
                   <>
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                     <span>
                       Todos los grados dentro de las capas de tolerancia (
                       {toleranceLayers.map((l) => `${l.name} ±${l.limitPct}%`).join(' · ')}). ROB del survey aceptado como base.

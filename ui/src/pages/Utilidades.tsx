@@ -10,8 +10,8 @@ import { ArrowLeftRight, Beaker, Droplets, Layers, Plus, Trash2, Cpu } from 'luc
 // (999.016 kg/m³), ρ_obs@T↔ρ15 invirtiendo la propia ecuación 54B/54A, y
 // mezcla ponderada por volumen @15 °C. Nada de fórmulas en TypeScript.
 
-const inputCls =
-  'w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-right font-mono text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring'
+// Formulario denso canónico (.input-dense en index.css); aquí algo más alto.
+const inputCls = 'input-dense px-3 py-1.5 text-sm'
 
 function Num({ value, onChange, step = 0.0001 }: { value: string; onChange: (s: string) => void; step?: number }) {
   return <input type="number" step={step} value={value} onChange={(e) => onChange(e.target.value)} className={inputCls} />
@@ -31,7 +31,7 @@ function Out({ label, value, unit, highlight }: { label: string; value?: string;
 
 function ErrorNote({ r }: { r: DensityToolResult | null }) {
   if (!r || r.success || !r.errors?.length) return null
-  return <p className="mt-2 text-xs text-red-500">{r.errors[0].message}</p>
+  return <p className="mt-2 text-xs text-danger">{r.errors[0].message}</p>
 }
 
 // --- Tarjeta 1: API ↔ ρ15 -------------------------------------------------
@@ -235,7 +235,7 @@ function BlendCard() {
                   <button
                     onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))}
                     title="Quitar parcela"
-                    className="text-muted-foreground hover:text-red-500"
+                    className="text-muted-foreground hover:text-danger"
                     disabled={rows.length <= 1}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -278,7 +278,7 @@ export function Utilidades() {
             <p className="text-sm text-muted-foreground">
               Conversiones de densidad del surveyor — método por ecuación, documentado y trazable (sin tablas impresas fijas).
             </p>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+            <span className="inline-flex shrink-0 items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
               <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · WASM
             </span>
           </div>

@@ -19,9 +19,11 @@ import { Ship, FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTr
 const f3 = (n: number) => n.toFixed(3)
 const f4 = (n: number) => n.toFixed(4)
 
-const th = 'border border-border px-1.5 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
-const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdL = 'border border-border px-1.5 py-1 text-left text-[11px]'
+// Grid canónico: .table-dense (index.css) define borde/padding/tipografía;
+// aquí solo quedan los modificadores por celda.
+const th = 'cell-l th-caps'
+const td = ''
+const tdL = 'cell-l'
 
 function SectionTable({ title, section, calc }: { title: string; section: VmrSectionData; calc: (CalcFields | null)[] }) {
   const tot = sectionTotals(section.tanques, calc)
@@ -36,7 +38,7 @@ function SectionTable({ title, section, calc }: { title: string; section: VmrSec
           <span className="font-mono">{section.list.toFixed(2)}</span> · trim {section.trimApplied ? 'aplicado' : 'no aplicado'}
         </div>
       </div>
-      <table className="mt-2 w-full border-collapse">
+      <table className="table-dense mt-2 w-full border-collapse">
         <thead>
           <tr>
             <th className={th}>Tanque</th>
@@ -278,7 +280,7 @@ export function Reporte() {
               {/* Quantity transferred */}
               <section className="print:break-inside-avoid">
                 <h3 className="text-sm font-bold uppercase tracking-wide">Quantity transferred</h3>
-                <table className="mt-2 w-full border-collapse">
+                <table className="table-dense mt-2 w-full border-collapse">
                   <tbody>
                     <tr>
                       <th className={th}>GSV @15 °C (Δ after − before)</th>
@@ -301,7 +303,7 @@ export function Reporte() {
               {/* Comparación de fuentes */}
               <section className="print:break-inside-avoid">
                 <h3 className="text-sm font-bold uppercase tracking-wide">Comparación de fuentes (MT aire)</h3>
-                <table className="mt-2 w-full border-collapse">
+                <table className="table-dense mt-2 w-full border-collapse">
                   <thead>
                     <tr>
                       <th className={th}>Par</th>
@@ -330,7 +332,7 @@ export function Reporte() {
                 <div className="mt-2 flex items-start gap-2 text-sm">
                   {action === 'NONE' ? (
                     <>
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                       <span>
                         Todas las diferencias dentro de las capas de tolerancia (
                         {toleranceLayers.map((l) => `${l.name} ±${l.limitPct}%`).join(' · ')}). No se requiere documento de
@@ -339,7 +341,7 @@ export function Reporte() {
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${action === 'ISSUE_LOP' ? 'text-red-600' : 'text-amber-600'}`} />
+                      <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${action === 'ISSUE_LOP' ? 'text-danger' : 'text-warning'}`} />
                       <span>
                         El peor |Δ%| ({cmp?.worstDeltaPct}%) excede {action === 'ISSUE_LOP' ? 'la capa más amplia' : 'la capa más estricta'} de
                         tolerancia — se {action === 'ISSUE_LOP' ? 'emite Letter of Protest (LOP)' : 'notifica discrepancia aparente (NOAD)'}, adjunta a este

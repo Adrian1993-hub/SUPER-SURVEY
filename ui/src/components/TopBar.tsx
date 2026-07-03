@@ -31,7 +31,7 @@ export function TopBar({ title, activeJob }: TopBarProps) {
           </>
         )}
         <ThemeSwitcher />
-        <Badge variant="outline" className="gap-1.5 border-amber-400/50 bg-amber-400/10 text-amber-500">
+        <Badge variant="outline" className="status-warn gap-1.5">
           <WifiOff className="h-3 w-3" />
           Offline
         </Badge>

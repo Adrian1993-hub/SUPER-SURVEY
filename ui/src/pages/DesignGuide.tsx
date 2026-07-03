@@ -140,9 +140,10 @@ const CUSTODY = [
   ['MT (vac)', '226.612', '225.527', '223.802'],
   ['Long tons', '222.640', '221.572', '219.880'],
 ]
-const th = 'border border-border bg-muted/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
-const td = 'border border-border px-2 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdL = 'border border-border px-2 py-1 text-left text-[11px]'
+// Grid canónico: .table-dense (index.css) — la guía documenta la clase como canon.
+const th = 'cell-grey th-caps'
+const td = ''
+const tdL = 'cell-l'
 
 export function DesignGuide() {
   return (
@@ -260,7 +261,7 @@ export function DesignGuide() {
                 <CardContent className="p-4">
                   <div className="mb-2 text-sm font-semibold">Medición por tanque (ullage → GOV → VCF → GSV → MT)</div>
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
+                    <table className="table-dense w-full border-collapse">
                       <thead><tr>{['Tanque', 'Grado', 'Dens@15', 'T °C', 'TOV', 'GOV', 'VCF', 'GSV@15', 'WCF', 'MT aire'].map((h, i) => <th key={h} className={cn(th, i > 1 && 'text-right', i <= 1 && 'text-left')}>{h}</th>)}</tr></thead>
                       <tbody>
                         {TANKS.map((r) => (
@@ -283,7 +284,7 @@ export function DesignGuide() {
                 <CardContent className="p-4">
                   <div className="mb-2 text-sm font-semibold">Cifra de custodia · multi-unidad</div>
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
+                    <table className="table-dense w-full border-collapse">
                       <thead><tr><th className={cn(th, 'text-left')}>Unidad</th>{['TCV', 'GSV', 'NSV'].map((h) => <th key={h} className={cn(th, 'text-right')}>{h}</th>)}</tr></thead>
                       <tbody>
                         {CUSTODY.map((r) => (

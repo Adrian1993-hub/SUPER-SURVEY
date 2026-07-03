@@ -11,8 +11,9 @@ import { Cpu, FileText, Factory, Ship, Spline, Scale } from 'lucide-react'
 // buque y el B/L → Δ, Δ% y recomendación None/NOAD/LOP. Anclado al reporte real
 // de Barge Tow Loading (CENTENARIO TRADER): Loaded vs B/L = −0.411 %.
 
+// Formulario denso canónico: .input-dense (index.css).
 const lbl = 'text-[11px] text-muted-foreground'
-const inp = 'w-full rounded-md border border-input bg-transparent px-2 py-1 text-right font-mono text-[12px] tabular-nums focus:outline-none focus:ring-1 focus:ring-ring'
+const inp = 'input-dense'
 
 function Field({ label, value, onChange, step = 0.001, disabled }: { label: string; value: number; onChange: (n: number) => void; step?: number; disabled?: boolean }) {
   return (
@@ -24,9 +25,9 @@ function Field({ label, value, onChange, step = 0.001, disabled }: { label: stri
 }
 
 const ACTION: Record<string, { text: string; cls: string }> = {
-  NONE: { text: 'Sin acción — dentro de tolerancia', cls: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' },
-  ISSUE_NOAD: { text: 'NOAD — nota de discrepancia aparente', cls: 'border-amber-500/30 bg-amber-500/10 text-amber-600' },
-  ISSUE_LOP: { text: 'LOP — carta de protesta (formal)', cls: 'border-red-500/30 bg-red-500/10 text-red-600' },
+  NONE: { text: 'Sin acción — dentro de tolerancia', cls: 'status-ok' },
+  ISSUE_NOAD: { text: 'NOAD — nota de discrepancia aparente', cls: 'status-warn' },
+  ISSUE_LOP: { text: 'LOP — carta de protesta (formal)', cls: 'status-bad' },
 }
 
 export function ShipShore() {
@@ -104,7 +105,7 @@ export function ShipShore() {
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
                 <FileText className="h-4 w-4" /> PDF
               </Button>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
                 <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · WASM
               </span>
             </div>
@@ -126,7 +127,7 @@ export function ShipShore() {
               <CardContent className="space-y-2">
                 <div className="flex gap-1 text-[11px]">
                   {(['gauged', 'direct'] as const).map((m) => (
-                    <button key={m} onClick={() => setShoreMode(m)} className={`rounded px-2 py-0.5 ${shoreMode === m ? 'bg-brand text-white' : 'bg-muted text-muted-foreground'}`}>
+                    <button key={m} onClick={() => setShoreMode(m)} className={`rounded px-2 py-0.5 ${shoreMode === m ? 'bg-brand text-brand-foreground' : 'bg-muted text-muted-foreground'}`}>
                       {m === 'gauged' ? 'Por diferencia' : 'Cifra directa'}
                     </button>
                   ))}
@@ -186,29 +187,29 @@ export function ShipShore() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><Scale className="h-4 w-4 text-brand" /> Reconciliación</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <table className="w-full border-collapse">
+              <table className="table-dense w-full border-collapse">
                 <thead>
-                  <tr className="text-[11px] uppercase text-muted-foreground">
-                    <th className="border border-border px-1.5 py-1 text-left">Comparación</th>
-                    <th className="border border-border px-1.5 py-1 text-right">Figura</th>
-                    <th className="border border-border px-1.5 py-1 text-right">Referencia</th>
-                    <th className="border border-border px-1.5 py-1 text-right">Δ</th>
-                    <th className="border border-border px-1.5 py-1 text-right">Δ%</th>
-                    <th className="border border-border px-1.5 py-1 text-center">Tol.</th>
+                  <tr>
+                    <th className="cell-l th-caps">Comparación</th>
+                    <th className="th-caps">Figura</th>
+                    <th className="th-caps">Referencia</th>
+                    <th className="th-caps">Δ</th>
+                    <th className="th-caps">Δ%</th>
+                    <th className="th-caps text-center">Tol.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {res?.variances?.map((v) => (
                     <tr key={v.label}>
-                      <td className="border border-border px-1.5 py-1 text-left text-[12px]">{v.label}</td>
-                      <td className="border border-border px-1.5 py-1 text-right font-mono text-[12px] tabular-nums">{v.figure}</td>
-                      <td className="border border-border px-1.5 py-1 text-right font-mono text-[12px] tabular-nums">{v.reference}</td>
-                      <td className="border border-border px-1.5 py-1 text-right font-mono text-[12px] tabular-nums">{v.delta}</td>
-                      <td className={`border border-border px-1.5 py-1 text-right font-mono text-[12px] font-semibold tabular-nums ${v.withinAll ? '' : 'text-amber-600'}`}>{v.deltaPct} %</td>
-                      <td className={`border border-border px-1.5 py-1 text-center font-semibold ${v.withinAll ? 'text-emerald-600' : 'text-red-500'}`}>{v.withinAll ? '✓' : '✗'}</td>
+                      <td className="cell-l">{v.label}</td>
+                      <td>{v.figure}</td>
+                      <td>{v.reference}</td>
+                      <td>{v.delta}</td>
+                      <td className={`font-semibold ${v.withinAll ? '' : 'text-warning'}`}>{v.deltaPct} %</td>
+                      <td className={`text-center font-semibold ${v.withinAll ? 'text-success' : 'text-danger'}`}>{v.withinAll ? '✓' : '✗'}</td>
                     </tr>
                   )) ?? (
-                    <tr><td colSpan={6} className="border border-border px-1.5 py-2 text-center text-[12px] text-muted-foreground">—</td></tr>
+                    <tr><td colSpan={6} className="cell-l py-2 text-center text-muted-foreground">—</td></tr>
                   )}
                 </tbody>
               </table>
@@ -221,7 +222,7 @@ export function ShipShore() {
                 {action && <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${action.cls}`}>{action.text}</span>}
               </div>
 
-              {res && !res.success && <p className="text-sm text-red-500">{res.errors?.[0]?.message}</p>}
+              {res && !res.success && <p className="text-sm text-danger">{res.errors?.[0]?.message}</p>}
             </CardContent>
           </Card>
 

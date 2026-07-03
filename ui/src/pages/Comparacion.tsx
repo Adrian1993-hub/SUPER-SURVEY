@@ -133,8 +133,8 @@ export function Comparacion() {
                       key={l.name}
                       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${
                         l.within
-                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600'
-                          : 'border-red-500/30 bg-red-500/10 text-red-600'
+                          ? 'status-ok'
+                          : 'status-bad'
                       }`}
                     >
                       {l.name} ±{Number(l.limitPct)}% {l.within ? '✓' : '✗'}
@@ -209,7 +209,7 @@ export function Comparacion() {
                       </TableCell>
                       <TableCell>
                         {p.dentro ? (
-                          <Badge className="gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+                          <Badge className="status-ok gap-1.5 border">
                             <CheckCircle2 className="h-3 w-3" /> Dentro
                           </Badge>
                         ) : (

@@ -20,11 +20,12 @@ const f2 = (n: number) => n.toFixed(2)
 const f3 = (n: number) => n.toFixed(3)
 const f5 = (n: number) => n.toFixed(5)
 
-const th = 'border border-border px-1.5 py-1 text-right text-[10px] font-medium text-muted-foreground'
-const thL = 'border border-border px-1.5 py-1 text-left text-[10px] font-medium text-muted-foreground'
-const td = 'border border-border px-1.5 py-1 text-right font-mono text-[11px] tabular-nums'
-const tdL = 'border border-border px-1.5 py-1 text-left text-[11px]'
-const tdGrey = `${td} bg-muted/50`
+// Grid canónico: .table-dense (index.css); solo modificadores por celda.
+const th = ''
+const thL = 'cell-l'
+const td = ''
+const tdL = 'cell-l'
+const tdGrey = 'cell-grey'
 
 function NumCell({ value, onChange, step = 0.01 }: { value: number; onChange: (n: number) => void; step?: number }) {
   return (
@@ -78,7 +79,7 @@ function SectionTable({
   return (
     <div>
       <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</h4>
-      <table className="w-full border-collapse">
+      <table className="table-dense w-full border-collapse">
         <thead>
           <tr>
             <th className={thL}>Tanque</th>
@@ -359,7 +360,7 @@ export function MedicionMultigrado() {
               <Button variant="outline" className="gap-2" onClick={exportJson}>
                 <Braces className="h-4 w-4" /> JSON técnico
               </Button>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex shrink-0 items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
                 <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · 60 °F · 6B/13 · WASM
               </span>
             </div>
@@ -371,7 +372,7 @@ export function MedicionMultigrado() {
               <CardTitle className="text-base uppercase tracking-wide">Bunker audit — por grado</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="table-dense w-full border-collapse">
                 <thead>
                   <tr>
                     <th className={thL}>Grado</th>

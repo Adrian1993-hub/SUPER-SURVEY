@@ -22,12 +22,11 @@ import { Cpu, FileText, Droplets, Wind, Scale, Thermometer, PenLine } from 'luci
 // to real documents — liquid to the SGS EPIC MADEIRA propane certificate
 // (588.203 MT vac), vapour to API MPMS 17.10.2 Table 6 (ρv = 9.146 kg/m³).
 
+// Formulario denso canónico: .input-dense/.label-dense (index.css).
 const lbl = 'text-[11px] text-muted-foreground'
-const inp =
-  'w-full rounded-md border border-input bg-transparent px-2 py-1 text-right font-mono text-[12px] tabular-nums focus:outline-none focus:ring-1 focus:ring-ring'
-const txt =
-  'w-full rounded-md border border-input bg-transparent px-2 py-1 text-[12px] focus:outline-none focus:ring-1 focus:ring-ring'
-const sel = 'rounded-md border border-input bg-transparent px-2 py-1 text-[12px] focus:outline-none focus:ring-1 focus:ring-ring'
+const inp = 'input-dense'
+const txt = 'input-dense text-left font-sans'
+const sel = 'input-dense w-auto text-left font-sans'
 
 function Field({ label, value, onChange, step = 0.001 }: { label: string; value: number; onChange: (n: number) => void; step?: number }) {
   return (
@@ -140,7 +139,7 @@ export function Lpg() {
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
                 <FileText className="h-4 w-4" /> PDF
               </Button>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
                 <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · WASM
               </span>
             </div>
@@ -249,17 +248,17 @@ export function Lpg() {
                 {/* Liquid figure */}
                 <div>
                   <div className="mb-1 flex items-center gap-2 text-sm font-semibold"><Droplets className="h-4 w-4 text-brand" /> Liquid figure</div>
-                  <table className="w-full border-collapse">
+                  <table className="table-dense w-full border-collapse">
                     <tbody>
                       {liquidRows.map(([k, v]) => (
                         <tr key={k}>
-                          <td className="border border-border px-2 py-1 text-left text-[12px]">{k}</td>
-                          <td className="border border-border px-2 py-1 text-right font-mono text-[12px] font-semibold tabular-nums">{v ?? '—'}</td>
+                          <td className="cell-l">{k}</td>
+                          <td className="font-semibold">{v ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {liquid && !liquid.success && <p className="mt-1 text-[11px] text-red-500">{liquid.errors?.[0]?.message}</p>}
+                  {liquid && !liquid.success && <p className="mt-1 text-[11px] text-danger">{liquid.errors?.[0]?.message}</p>}
                 </div>
 
                 {/* CTL + Vapour */}
@@ -272,7 +271,7 @@ export function Lpg() {
                       <Meta k="Pseudo-Tc (K)" v={ctl?.pseudoTcKelvin} />
                       <Meta k="Pseudo-ω" v={ctl?.pseudoOmega} />
                     </div>
-                    {ctl && !ctl.success && <p className="mt-1 text-[11px] text-red-500">{ctl.errors?.[0]?.message}</p>}
+                    {ctl && !ctl.success && <p className="mt-1 text-[11px] text-danger">{ctl.errors?.[0]?.message}</p>}
                   </div>
                   <div>
                     <div className="mb-1 flex items-center gap-2 text-sm font-semibold"><Wind className="h-4 w-4 text-brand" /> Vapour figure</div>
@@ -281,7 +280,7 @@ export function Lpg() {
                       <Meta k="Vapour density (kg/m³)" v={vapor?.vaporDensityKgM3} />
                       <Meta k="Vapour mass (MT)" v={vapor?.vaporMassMt} strong />
                     </div>
-                    {vapor && !vapor.success && <p className="mt-1 text-[11px] text-red-500">{vapor.errors?.[0]?.message}</p>}
+                    {vapor && !vapor.success && <p className="mt-1 text-[11px] text-danger">{vapor.errors?.[0]?.message}</p>}
                   </div>
                 </div>
               </div>

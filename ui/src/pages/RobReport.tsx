@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
+import { ReportBrandBar, ReportTitle, ReportSignature } from '../components/ReportHeader'
 import { getJob } from '../data/demoJobs'
 import { toleranceLayers } from '../data/vmr'
 import { robData, type RobGrade } from '../data/rob'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { sectionTotals, useComputedRows } from '../lib/useBqsRows'
 import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
-import { Ship, FileText, FileSpreadsheet, Braces, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { FileText, FileSpreadsheet, Braces, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte ROB (Remaining On Board): inventario de búnker por grado calculado por
 // el kernel (misma matemática que BQS) y comparado, grado a grado, contra el ROB
@@ -255,27 +256,10 @@ export function RobReport() {
 
           {/* Documento */}
           <article className="overflow-hidden rounded-xl border bg-card shadow-sm print:rounded-none print:border-0 print:shadow-none">
-            <div className="flex items-center justify-between border-b bg-muted px-8 py-5 print:bg-transparent">
-              <div className="flex items-center gap-3">
-                <div className="bg-brand-gradient flex h-10 w-10 items-center justify-center rounded-md">
-                  <Ship className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">SuperSurvey</div>
-                  <div className="text-xs text-muted-foreground">Empresa Demo · marca configurable</div>
-                </div>
-              </div>
-              <div className="text-right text-xs text-muted-foreground">
-                <div className="font-mono font-semibold">{h.referencia}</div>
-                <div>{h.fecha}</div>
-              </div>
-            </div>
+            <ReportBrandBar referencia={h.referencia} fecha={h.fecha} />
 
             <div className="space-y-6 px-8 py-6">
-              <header className="text-center">
-                <h1 className="text-xl font-bold uppercase tracking-wide">Remaining On Board (ROB) Survey</h1>
-                <div className="text-sm text-muted-foreground">Bunker inventory vs Engine Room Log</div>
-              </header>
+              <ReportTitle title="Remaining On Board (ROB) Survey" subtitle="Bunker inventory vs Engine Room Log" />
 
               <div className="grid gap-x-10 gap-y-1 text-sm sm:grid-cols-2 print:grid-cols-2">
                 <Meta k="Buque" v={h.buque} />
@@ -319,8 +303,8 @@ export function RobReport() {
 
               {/* Firmas */}
               <section className="grid grid-cols-2 gap-6 pt-4 text-sm print:break-inside-avoid">
-                <Signature label="Surveyor" />
-                <Signature label="Chief Engineer" />
+                <ReportSignature label="Surveyor" />
+                <ReportSignature label="Chief Engineer" />
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
@@ -353,11 +337,3 @@ function Summary({ k, v, cls }: { k: string; v: string; cls?: string }) {
   )
 }
 
-function Signature({ label }: { label: string }) {
-  return (
-    <div>
-      <div className="h-12 border-b" />
-      <div className="mt-1 text-center text-muted-foreground">{label}</div>
-    </div>
-  )
-}

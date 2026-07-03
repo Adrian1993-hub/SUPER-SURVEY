@@ -4,13 +4,14 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { JobStepper } from '../components/Stepper'
 import { NextStepBar } from '../components/NextStepBar'
+import { ReportBrandBar, ReportTitle, ReportSignature } from '../components/ReportHeader'
 import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, toleranceLayers, type VmrSectionData } from '../data/vmr'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { useJobMeasurement } from '../lib/jobStore'
 import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
-import { Ship, FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte BQS imprimible: TODA cifra sale del kernel WASM (misma matemática
 // validada que Medición). PDF = imprimir del webview (offline, navegador y
@@ -243,27 +244,10 @@ export function Reporte() {
           {/* Documento */}
           <article className="overflow-hidden rounded-xl border bg-card shadow-sm print:rounded-none print:border-0 print:shadow-none">
             {/* Marca (white-label) */}
-            <div className="flex items-center justify-between border-b bg-muted px-8 py-5 print:bg-transparent">
-              <div className="flex items-center gap-3">
-                <div className="bg-brand-gradient flex h-10 w-10 items-center justify-center rounded-md">
-                  <Ship className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">SuperSurvey</div>
-                  <div className="text-xs text-muted-foreground">Empresa Demo · marca configurable</div>
-                </div>
-              </div>
-              <div className="text-right text-xs text-muted-foreground">
-                <div className="font-mono font-semibold">{h.referencia}</div>
-                <div>{h.fecha}</div>
-              </div>
-            </div>
+            <ReportBrandBar referencia={h.referencia} fecha={h.fecha} />
 
             <div className="space-y-6 px-8 py-6">
-              <header className="text-center">
-                <h1 className="text-xl font-bold uppercase tracking-wide">Bunker Quantity Survey</h1>
-                <div className="text-sm text-muted-foreground">Vessel Measurement Report</div>
-              </header>
+              <ReportTitle title="Bunker Quantity Survey" subtitle="Vessel Measurement Report" />
 
               {/* Meta */}
               <div className="grid gap-x-10 gap-y-1 text-sm sm:grid-cols-2 print:grid-cols-2">
@@ -363,9 +347,9 @@ export function Reporte() {
 
               {/* Firmas */}
               <section className="grid grid-cols-3 gap-6 pt-4 text-sm print:break-inside-avoid">
-                <Signature label="Surveyor" />
-                <Signature label="Master / Chief Engineer" />
-                <Signature label="Por la barcaza" />
+                <ReportSignature label="Surveyor" />
+                <ReportSignature label="Master / Chief Engineer" />
+                <ReportSignature label="Por la barcaza" />
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
@@ -395,11 +379,3 @@ function Meta({ k, v }: { k: string; v: string }) {
   )
 }
 
-function Signature({ label }: { label: string }) {
-  return (
-    <div>
-      <div className="h-12 border-b" />
-      <div className="mt-1 text-center text-muted-foreground">{label}</div>
-    </div>
-  )
-}

@@ -4,12 +4,13 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { VefPanel } from '../components/VefPanel'
 import { SamplingPanel } from '../components/SamplingPanel'
+import { ReportBrandBar, ReportTitle, ReportSignature } from '../components/ReportHeader'
 import { operationTemplates, type OperationTemplate, type TemplateGrade, type TemplateTank } from '../data/reportTemplates'
 import { toleranceLayers, type VmrTank } from '../data/vmr'
 import { compareSources, swDeduction, proRata, custodyFigure, kernelVersion, type ComparisonResult, type ImperialRowInput, type SwResult, type ProRataResult, type CustodyFigureResult, type UnitSet } from '../lib/kernel'
 import { useComputedRows, useImperialRows, type CalcFields, type ImperialCalcFields } from '../lib/useBqsRows'
 import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
-import { Ship, FileText, Braces, Layers, FileSpreadsheet } from 'lucide-react'
+import { FileText, Braces, Layers, FileSpreadsheet } from 'lucide-react'
 
 // Renderer ÚNICO de plantillas inteligentes: lee el descriptor de la operación
 // (data/reportTemplates), arma las secciones declaradas y deja que el kernel WASM
@@ -524,14 +525,6 @@ function Fig({ k, v, highlight }: { k: string; v?: string; highlight?: boolean }
     </div>
   )
 }
-function Signature({ label }: { label: string }) {
-  return (
-    <div>
-      <div className="h-12 border-b" />
-      <div className="mt-1 text-center text-muted-foreground">{label}</div>
-    </div>
-  )
-}
 
 export function SmartReport() {
   const { op } = useParams<{ op: string }>()
@@ -657,27 +650,10 @@ export function SmartReport() {
           </div>
 
           <article className="overflow-hidden rounded-xl border bg-card shadow-sm print:rounded-none print:border-0 print:shadow-none">
-            <div className="flex items-center justify-between border-b bg-muted px-8 py-5 print:bg-transparent">
-              <div className="flex items-center gap-3">
-                <div className="bg-brand-gradient flex h-10 w-10 items-center justify-center rounded-md">
-                  <Ship className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">SuperSurvey</div>
-                  <div className="text-xs text-muted-foreground">Empresa Demo · marca configurable</div>
-                </div>
-              </div>
-              <div className="text-right text-xs text-muted-foreground">
-                <div className="font-mono font-semibold">{tpl.header.referencia}</div>
-                <div>{tpl.header.fecha}</div>
-              </div>
-            </div>
+            <ReportBrandBar referencia={tpl.header.referencia} fecha={tpl.header.fecha} />
 
             <div className="space-y-6 px-8 py-6">
-              <header className="text-center">
-                <h1 className="text-xl font-bold uppercase tracking-wide">{tpl.title}</h1>
-                <div className="text-sm text-muted-foreground">{tpl.subtitle}</div>
-              </header>
+              <ReportTitle title={tpl.title} subtitle={tpl.subtitle} />
 
               {tpl.sections.map((kind) => {
                 switch (kind) {
@@ -737,9 +713,9 @@ export function SmartReport() {
                   case 'signatures':
                     return (
                       <section key="sig" className="grid grid-cols-3 gap-6 pt-4 text-sm print:break-inside-avoid">
-                        <Signature label="Surveyor" />
-                        <Signature label="Master / Capitán" />
-                        <Signature label="Chief Engineer" />
+                        <ReportSignature label="Surveyor" />
+                        <ReportSignature label="Master / Capitán" />
+                        <ReportSignature label="Chief Engineer" />
                       </section>
                     )
                   case 'notes':

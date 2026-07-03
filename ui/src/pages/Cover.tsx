@@ -1,26 +1,26 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Select } from '../components/ui/select'
-import { Button } from '../components/ui/button'
 import { StatusChip } from '../components/ui/status'
 import { Checkbox } from '../components/ui/checkbox'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob, jobDetails } from '../data/demoJobs'
-import { ArrowRight } from 'lucide-react'
 
 export function Cover() {
   const { id } = useParams<{ id: string }>()
   const jobId = id || '1'
   const job = getJob(jobId)
   const d = jobDetails[jobId] ?? jobDetails['1']
-  const navigate = useNavigate()
 
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Cover / Configuración" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-4xl space-y-6">
@@ -95,15 +95,11 @@ export function Cover() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
-            <Button
-              onClick={() => navigate(`/trabajo/${jobId}/perfiles`)}
-              className="gap-2 bg-brand text-brand-foreground hover:brightness-110"
-            >
-              Guardar y continuar
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <NextStepBar
+            to={`/trabajo/${jobId}/perfiles`}
+            label="Perfiles"
+            hint="Los datos del cover (buque, cliente, grados) acompañan al trabajo en todos los reportes."
+          />
         </div>
       </main>
     </div>

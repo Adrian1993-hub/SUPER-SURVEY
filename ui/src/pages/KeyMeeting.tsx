@@ -4,6 +4,8 @@ import { Badge } from '../components/ui/badge'
 import { StatusChip } from '../components/ui/status'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob, keyMeetingData } from '../data/demoJobs'
 import { CheckCircle2, AlertTriangle, PenLine } from 'lucide-react'
 
@@ -31,6 +33,7 @@ export function KeyMeeting() {
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Key Meeting" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-4xl space-y-6">
@@ -94,6 +97,11 @@ export function KeyMeeting() {
               Firmar acta
             </Button>
           </div>
+          <NextStepBar
+            to={`/trabajo/${id || '1'}/medicion`}
+            label="Medición"
+            hint="Acuerdos del key meeting confirmados: tanques nominados, grados y secuencia."
+          />
         </div>
       </main>
     </div>

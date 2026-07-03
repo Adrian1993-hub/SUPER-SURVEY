@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, type VmrTank } from '../data/vmr'
 import { commonGrades, densityOutOfRange } from '../data/grades'
@@ -286,6 +288,7 @@ export function Medicion() {
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Medición" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         {/* Sugerencias de grado (comunes); el campo sigue siendo texto libre */}
@@ -446,6 +449,12 @@ export function Medicion() {
               )}
             </CardContent>
           </Card>
+
+          <NextStepBar
+            to={`/trabajo/${id || '1'}/calculo`}
+            label="Cálculo"
+            hint="Guarda la medición para dejar registro oficial; el trace del cálculo sigue en el próximo paso."
+          />
         </div>
       </main>
     </div>

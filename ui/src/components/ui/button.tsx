@@ -25,6 +25,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: Size
 }
 
+/** Clases del botón para elementos no-<button> (p. ej. <Link> con aspecto de botón). */
+export function buttonVariants({ variant = 'default', size = 'default' }: { variant?: Variant; size?: Size } = {}) {
+  return cn(
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+    variants[variant],
+    sizes[size],
+  )
+}
+
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', ...props }, ref) => (
     <button

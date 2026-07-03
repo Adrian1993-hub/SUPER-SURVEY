@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob } from '../data/demoJobs'
 import { vmrData, BARGE_FACTOR, BDN_FACTOR, toleranceLayers, type VmrSectionData } from '../data/vmr'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
@@ -204,6 +206,7 @@ export function Reporte() {
   return (
     <div className="flex h-full flex-col print:block print:h-auto">
       <TopBar title="Reporte" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6 print:overflow-visible print:p-0">
         <div className="mx-auto max-w-4xl space-y-4 print:max-w-none print:space-y-0">
@@ -371,6 +374,12 @@ export function Reporte() {
               </footer>
             </div>
           </article>
+
+          <NextStepBar
+            to="/trabajos"
+            label="Trabajos"
+            hint="Imprime o exporta el reporte y ciérralo con las firmas; el trabajo queda en la lista."
+          />
         </div>
       </main>
     </div>

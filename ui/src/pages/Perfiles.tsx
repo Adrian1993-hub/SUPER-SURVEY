@@ -9,6 +9,8 @@ import { Label } from '../components/ui/label'
 import { Select } from '../components/ui/select'
 import { Toggle } from '../components/ui/toggle'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob, profileData } from '../data/demoJobs'
 
 export function Perfiles() {
@@ -21,6 +23,7 @@ export function Perfiles() {
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Perfiles" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-4xl">
@@ -147,6 +150,11 @@ export function Perfiles() {
               </Card>
             </TabsContent>
           </Tabs>
+          <NextStepBar
+            to={`/trabajo/${id || '1'}/key-meeting`}
+            label="Key Meeting"
+            hint="Perfiles del buque, parámetros de cálculo y capas de tolerancia definidos."
+          />
         </div>
       </main>
     </div>

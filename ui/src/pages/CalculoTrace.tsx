@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { StatusChip } from '../components/ui/status'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob, calcTraceData } from '../data/demoJobs'
 
 export function CalculoTrace() {
@@ -14,6 +16,7 @@ export function CalculoTrace() {
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Cálculo + Trace" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-3xl space-y-6">
@@ -56,6 +59,12 @@ export function CalculoTrace() {
             Cada cantidad oficial será explicable paso a paso por el kernel (Rust, decimal exacto, sin
             redondeo intermedio). Valores mostrados: demo ilustrativo.
           </p>
+
+          <NextStepBar
+            to={`/trabajo/${jobId}/comparacion`}
+            label="Comparación"
+            hint="Con las cantidades trazadas, compara Vessel / Barge / BDN contra las capas de tolerancia."
+          />
         </div>
       </main>
     </div>

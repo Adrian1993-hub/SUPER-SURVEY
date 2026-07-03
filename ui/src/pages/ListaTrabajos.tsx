@@ -9,6 +9,7 @@ import { jobs } from '../data/demoJobs'
 import { listStoredJobs, createJob, isDesktop, loadMeasurementSnapshots, type StoredJob } from '../lib/ipc'
 import { useJobMeasurement } from '../lib/jobStore'
 import { type VmrTank } from '../data/vmr'
+import { EmptyState } from '../components/EmptyState'
 import { Plus, ChevronRight, Database, X } from 'lucide-react'
 
 const OP_TYPES = ['BUNKER_LOADING', 'BUNKER_DELIVERY', 'CARGO_LOADING', 'CARGO_DISCHARGE', 'LPG_DISCHARGE', 'BLEND']
@@ -115,6 +116,18 @@ export function ListaTrabajos() {
                 </div>
               </form>
             </Card>
+          )}
+
+          {stored.length === 0 && (
+            <EmptyState
+              icon={Database}
+              title="Aún no hay trabajos guardados"
+              desc={
+                isDesktop()
+                  ? 'Crea un trabajo nuevo arriba o guarda una medición: quedará en la base SQLite local de este equipo.'
+                  : 'Crea un trabajo nuevo arriba; en el navegador demo se guarda localmente. La app de escritorio usa SQLite.'
+              }
+            />
           )}
 
           {stored.length > 0 && (

@@ -7,6 +7,8 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Select } from '../components/ui/select'
 import { TopBar } from '../components/TopBar'
+import { JobStepper } from '../components/Stepper'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob } from '../data/demoJobs'
 import { comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, discrepanciaInfo } from '../data/vmr'
 import { compareSources, type ComparisonResult, type RecommendedAction } from '../lib/kernel'
@@ -117,6 +119,7 @@ export function Comparacion() {
   return (
     <div className="flex h-full flex-col">
       <TopBar title="Comparación" activeJob={job} />
+      <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-5xl space-y-6">
@@ -273,6 +276,12 @@ export function Comparacion() {
               </Tabs>
             </CardContent>
           </Card>
+
+          <NextStepBar
+            to={`/trabajo/${id || '1'}/reporte`}
+            label="Reporte"
+            hint="El veredicto (OK / NOAD / LOP) y sus documentos quedan listos; genera el reporte firmable."
+          />
         </div>
       </main>
     </div>

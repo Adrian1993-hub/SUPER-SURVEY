@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Select } from '../components/ui/select'
 import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
+import { StatusChip } from '../components/ui/status'
 import { Checkbox } from '../components/ui/checkbox'
 import { TopBar } from '../components/TopBar'
 import { getJob, jobDetails } from '../data/demoJobs'
@@ -58,9 +58,9 @@ export function Cover() {
                 <Label>Grados</Label>
                 <div className="flex flex-wrap gap-2 pt-1.5">
                   {d.grados.map((g) => (
-                    <Badge key={g} className="border border-blue-200 bg-blue-50 text-blue-700">
+                    <StatusChip key={g} tone="info">
                       {g}
-                    </Badge>
+                    </StatusChip>
                   ))}
                 </div>
               </div>

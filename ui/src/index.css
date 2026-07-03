@@ -297,6 +297,36 @@
     box-shadow: 0 8px 30px -12px color-mix(in oklch, var(--brand) 40%, transparent);
     border-color: color-mix(in oklch, var(--brand) 45%, var(--border));
   }
+
+  /* Superficies de estado (chips, callouts): borde + fondo suave + texto en el
+     tono del token. El fondo usa color-mix porque los modificadores /opacity de
+     Tailwind no aplican sobre var() sin <alpha-value>. Correctas en claro,
+     oscuro e impresión (los tokens cambian por modo). */
+  .status-ok {
+    border-color: color-mix(in oklch, var(--success) 35%, transparent);
+    background-color: color-mix(in oklch, var(--success) 12%, transparent);
+    color: var(--success);
+  }
+  .status-warn {
+    border-color: color-mix(in oklch, var(--warning) 40%, transparent);
+    background-color: color-mix(in oklch, var(--warning) 12%, transparent);
+    color: var(--warning);
+  }
+  .status-bad {
+    border-color: color-mix(in oklch, var(--danger) 40%, transparent);
+    background-color: color-mix(in oklch, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+  .status-info {
+    border-color: color-mix(in oklch, var(--brand) 35%, transparent);
+    background-color: color-mix(in oklch, var(--brand) 10%, transparent);
+    color: var(--brand);
+  }
+  .status-neutral {
+    border-color: var(--border);
+    background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+    color: var(--muted-foreground);
+  }
 }
 
 /* ===========================================================================

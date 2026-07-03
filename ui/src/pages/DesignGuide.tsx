@@ -32,9 +32,9 @@ function Section({ eyebrow, title, desc, children }: { eyebrow: string; title: s
 
 type Status = 'ok' | 'noad' | 'lop'
 const STATUS: Record<Status, { label: string; cls: string; Icon: typeof CheckCircle2 }> = {
-  ok: { label: 'OK · dentro de tolerancia', cls: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600', Icon: CheckCircle2 },
-  noad: { label: 'NOAD · discrepancia aparente', cls: 'border-amber-500/30 bg-amber-500/10 text-amber-600', Icon: AlertTriangle },
-  lop: { label: 'LOP · carta de protesta', cls: 'border-red-500/30 bg-red-500/10 text-red-600', Icon: OctagonAlert },
+  ok: { label: 'OK · dentro de tolerancia', cls: 'status-ok', Icon: CheckCircle2 },
+  noad: { label: 'NOAD · discrepancia aparente', cls: 'status-warn', Icon: AlertTriangle },
+  lop: { label: 'LOP · carta de protesta', cls: 'status-bad', Icon: OctagonAlert },
 }
 function Chip({ kind }: { kind: Status }) {
   const s = STATUS[kind]
@@ -70,7 +70,7 @@ function Stepper() {
                   className={cn(
                     'flex w-full flex-col gap-1 rounded-lg border p-3 text-left transition-all',
                     state === 'active' && 'border-brand bg-brand/5 shadow-sm',
-                    state === 'done' && 'border-emerald-500/40 bg-emerald-500/5',
+                    state === 'done' && 'status-ok',
                     state === 'todo' && 'border-border bg-muted/40 opacity-80 hover:opacity-100',
                   )}
                 >
@@ -78,7 +78,7 @@ function Stepper() {
                     <span className={cn(
                       'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
                       state === 'active' && 'bg-brand text-brand-foreground',
-                      state === 'done' && 'bg-emerald-500 text-white',
+                      state === 'done' && 'bg-success text-success-foreground',
                       state === 'todo' && 'bg-muted text-muted-foreground',
                     )}>
                       {state === 'done' ? <CheckCircle2 className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
@@ -112,6 +112,9 @@ const TOKENS: { name: string; varName: string; note: string }[] = [
   { name: 'brand', varName: '--brand', note: 'marca' },
   { name: 'brand-2', varName: '--brand-2', note: 'marca 2' },
   { name: 'destructive', varName: '--destructive', note: 'peligro' },
+  { name: 'success', varName: '--success', note: 'OK / conforme' },
+  { name: 'warning', varName: '--warning', note: 'atención / NOAD' },
+  { name: 'danger', varName: '--danger', note: 'fuera de tolerancia / LOP' },
 ]
 function Swatch({ name, varName, note }: { name: string; varName: string; note: string }) {
   return (
@@ -237,14 +240,14 @@ export function DesignGuide() {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm uppercase tracking-wide">Callouts de tolerancia</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" /><span>Diferencias dentro de tolerancia (ISO ±0.30% · Contrato ±0.50%). Sin documento.</span>
+                  <div className="status-ok flex items-start gap-2 rounded-md border p-3 text-sm text-foreground">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" /><span>Diferencias dentro de tolerancia (ISO ±0.30% · Contrato ±0.50%). Sin documento.</span>
                   </div>
-                  <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" /><span>El peor |Δ%| excede la capa estricta → se notifica NOAD.</span>
+                  <div className="status-warn flex items-start gap-2 rounded-md border p-3 text-sm text-foreground">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" /><span>El peor |Δ%| excede la capa estricta → se notifica NOAD.</span>
                   </div>
-                  <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm">
-                    <OctagonAlert className="mt-0.5 h-4 w-4 text-red-600" /><span>Δ% &gt; capa más amplia → Letter of Protest (LOP).</span>
+                  <div className="status-bad flex items-start gap-2 rounded-md border p-3 text-sm text-foreground">
+                    <OctagonAlert className="mt-0.5 h-4 w-4 text-danger" /><span>Δ% &gt; capa más amplia → Letter of Protest (LOP).</span>
                   </div>
                 </CardContent>
               </Card>

@@ -133,9 +133,9 @@ interface GradeAudit {
 }
 
 function verdict(action: ComparisonResult['recommendedAction']) {
-  if (action === 'ISSUE_LOP') return { cls: 'text-red-600', chip: 'border-red-500/40 bg-red-500/10 text-red-600', label: 'LOP' }
-  if (action === 'ISSUE_NOAD') return { cls: 'text-amber-600', chip: 'border-amber-500/40 bg-amber-500/10 text-amber-600', label: 'NOAD' }
-  return { cls: 'text-emerald-600', chip: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600', label: 'Conforme' }
+  if (action === 'ISSUE_LOP') return { cls: 'text-danger', chip: 'status-bad', label: 'LOP' }
+  if (action === 'ISSUE_NOAD') return { cls: 'text-warning', chip: 'status-warn', label: 'NOAD' }
+  return { cls: 'text-success', chip: 'status-ok', label: 'Conforme' }
 }
 
 function GradeSection({

@@ -420,7 +420,7 @@ export function Medicion() {
                   </ul>
                   <div
                     className={`mt-2 text-sm font-medium ${
-                      action === 'ISSUE_LOP' ? 'text-red-600' : 'text-amber-600'
+                      action === 'ISSUE_LOP' ? 'text-danger' : 'text-warning'
                     }`}
                   >
                     {action === 'ISSUE_LOP'
@@ -429,15 +429,17 @@ export function Medicion() {
                   </div>
                   <Button
                     onClick={() => navigate(`/trabajo/${id || '1'}/comparacion`)}
-                    className={`mt-3 gap-2 text-white hover:brightness-110 ${
-                      action === 'ISSUE_LOP' ? 'bg-red-600' : 'bg-amber-600'
+                    className={`mt-3 gap-2 hover:brightness-110 ${
+                      action === 'ISSUE_LOP'
+                        ? 'bg-danger text-danger-foreground'
+                        : 'bg-warning text-warning-foreground'
                     }`}
                   >
                     <FileText className="h-4 w-4" /> {action === 'ISSUE_LOP' ? 'Generar LOP' : 'Ver comparación'}
                   </Button>
                 </div>
               ) : (
-                <div className="mt-5 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-600">
+                <div className="status-ok mt-5 flex items-center gap-2 rounded-lg border p-3 text-sm font-medium">
                   <CheckCircle2 className="h-4 w-4" /> Todas las diferencias dentro de tolerancia (±{TOLERANCIA_PCT}% ISO) — no se requiere LOP.
                 </div>
               )}

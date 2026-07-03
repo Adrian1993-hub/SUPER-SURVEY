@@ -13,9 +13,9 @@ import { compareSources, type ComparisonResult, type RecommendedAction } from '.
 import { CheckCircle2, AlertTriangle, FileText, PenLine, ShieldAlert, Cpu } from 'lucide-react'
 
 const toneBox: Record<string, string> = {
-  red: 'border-red-500/30 bg-red-500/10 text-red-600',
-  amber: 'border-amber-500/30 bg-amber-500/10 text-amber-600',
-  emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600',
+  red: 'status-bad',
+  amber: 'status-warn',
+  emerald: 'status-ok',
 }
 
 function recommendation(action: RecommendedAction, worst: number) {

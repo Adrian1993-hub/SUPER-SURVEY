@@ -61,9 +61,9 @@ function TankChart({ r }: { r: SamplingTankResult }) {
   const surfaceY = y(ullage)
   const bottomY = y(rgh)
   const markers: { label: string; depth: number; color: string }[] = [
-    { label: 'U', depth: dips.Upper, color: '#10b981' },
-    { label: 'M', depth: dips.Middle, color: '#f59e0b' },
-    { label: 'L', depth: dips.Lower, color: '#ef4444' },
+    { label: 'U', depth: dips.Upper, color: 'var(--success)' },
+    { label: 'M', depth: dips.Middle, color: 'var(--warning)' },
+    { label: 'L', depth: dips.Lower, color: 'var(--danger)' },
   ]
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-[260px] w-full">

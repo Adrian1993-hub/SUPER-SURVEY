@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
+import { StatusChip } from '../components/ui/status'
 import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { getJob, keyMeetingData } from '../data/demoJobs'
@@ -47,7 +48,7 @@ export function KeyMeeting() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-muted-foreground">Grados:</span>
                 {k.gradosConfirmados.map((g) => (
-                  <Badge key={g} className="border border-blue-200 bg-blue-50 text-blue-700">{g}</Badge>
+                  <StatusChip key={g} tone="info">{g}</StatusChip>
                 ))}
               </div>
               <div className="flex flex-wrap items-center gap-2">

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
+import { StatusChip } from '../components/ui/status'
 import { TopBar } from '../components/TopBar'
 import { getJob, calcTraceData } from '../data/demoJobs'
 
@@ -17,7 +18,7 @@ export function CalculoTrace() {
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="border border-slate-200 bg-slate-50 text-slate-700">{c.tanque}</Badge>
+            <StatusChip tone="neutral">{c.tanque}</StatusChip>
             <Badge variant="outline">{c.engineVersion}</Badge>
             <Badge variant="outline">Tablas {c.tablaAstm}</Badge>
           </div>

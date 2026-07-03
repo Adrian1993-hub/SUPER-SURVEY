@@ -109,7 +109,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                       <input value={t.tanque} onChange={(e) => onUpdate(i, { tanque: e.target.value })} className="w-24 bg-transparent px-1.5 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
                     </td>
                     <td className="border border-border text-center">
-                      <input type="checkbox" checked={t.nominado} onChange={(e) => onUpdate(i, { nominado: e.target.checked })} className="h-3.5 w-3.5 accent-slate-700" />
+                      <input type="checkbox" checked={t.nominado} onChange={(e) => onUpdate(i, { nominado: e.target.checked })} className="h-3.5 w-3.5" />
                     </td>
                     <td className="border border-border p-0">
                       <input

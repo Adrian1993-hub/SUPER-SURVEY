@@ -10,9 +10,10 @@ import {
   ChevronRight, Waves, Palette, Type, FileSpreadsheet, FileText,
 } from 'lucide-react'
 
-// Guía de diseño VIVA, dentro de la app: usa los MISMOS tokens (data-theme) y el
-// ThemeSwitcher real, así que refleja exactamente las 3 pieles (control-room,
-// océano, neón) y sirve de referencia para el pase de diseño / presentación.
+// Guía de diseño VIVA, dentro de la app: usa los MISMOS tokens (data-theme ×
+// data-mode) y el ThemeSwitcher real, así que refleja exactamente las 3 estéticas
+// (océano, control-room, industrial) en claro y oscuro, y sirve de referencia
+// para el pase de diseño / presentación.
 
 const lbl = 'text-[11px] uppercase tracking-wide text-muted-foreground'
 
@@ -326,7 +327,7 @@ export function DesignGuide() {
           </Section>
 
           <footer className="border-t border-border pt-6 text-center text-xs text-muted-foreground">
-            Guía de diseño viva · tokens reales (<code className="font-mono">data-theme</code>) · white-label (logo y colores desde brand.toml)
+            Guía de diseño viva · tokens reales (<code className="font-mono">data-theme × data-mode</code>) · white-label (identidad de fábrica: brand.toml · colores en runtime: brand.json)
           </footer>
         </div>
       </main>

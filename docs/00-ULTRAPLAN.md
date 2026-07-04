@@ -132,9 +132,9 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 | **F5 — Resto de operaciones** | Terminal, STS, **LPG** (custody+COSTALD+vapor), Draft, **Blend**, multigrado, VEF, muestreo, ROB | ✅ completa y ampliada |
 | **F6 — QA + empaque + marca** | ~152 tests vs casos reales; **instaladores CI** (build v0.1.0 ✅); branding final | 🔄 en curso |
 
-- **% del sistema completo hoy:** **~90 %** (actualizado 2026-06-29; el plan original marcaba ~10 % en el día 0).
+- **% del sistema completo hoy:** **~93 %** (actualizado 2026-07-04; el plan original marcaba ~10 % en el día 0).
 - **MVP BQS punta a punta (F1–F4):** ✅ hecho. **Resto de operaciones (F5):** ✅ hecho y ampliado.
-- **Cierre (F6):** en curso — instaladores **v0.1.0** compilados en CI (Win/Mac/Linux); falta **firma de código**, auto-updater (opcional), **QA visual** y los nits de §9.
+- **Cierre (F6):** en curso — instaladores **v0.1.0** compilados en CI (Win/Mac/Linux); **§9 cerrado** (commit `8ac0824`) y **pase de diseño aplicado con QA visual** (matriz 3 estéticas × claro/oscuro, sistema de estado, tablas densas, flujo guiado, 36 capturas + PDF verificados). Falta: firma de código, updater, licencias, requisitos mínimos, análisis IA offline y limpieza white-label.
 
 ---
 
@@ -167,11 +167,11 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 ## 9. Hardening pendiente del kernel (de la auditoría 2026-06-06)
 
 - [x] WCF→MT resuelto: Tabla 56 implementada por ecuación (`astm`), unidad derivada (GSV m³ × WCF t/m³ = MT aire; densidad → MT vacío) y validada contra hoja BQS real (2026-06-09).
-- [ ] `calculate_movement_set` no valida `product_id` entre tanques → puede sumar productos distintos. Añadir chequeo (error o warning).
-- [ ] `MovementRole` (kernel) vs `movement_sign_rule` (schema) son dos fuentes de verdad. Cablearlas; soportar `CUSTOM`.
-- [ ] DTO fija `aggregate_from_unrounded: false` → la política no es seleccionable desde la UI. Exponerla en el DTO.
-- [ ] 4 versiones distintas (Cargo 0.1.1 / lib v0.1 / schema v0.1.3.1 / seed 0.1.3-FINAL). Unificar a una sola fuente.
-- [ ] CI: fijar toolchain (`rust-toolchain.toml`) + caché de dependencias.
+- [x] `calculate_movement_set` valida `product_id` entre tanques → warning `MIXED_PRODUCT` (commit `8ac0824`).
+- [x] `MovementSignRule` unifica el signo (fuente única) con soporte `CUSTOM` explícito; `MovementRole::implied_sign_rule()` las cablea. DTO + export WASM `movement_set_calculate` + wrapper TS (commit `8ac0824`).
+- [x] `aggregate_from_unrounded` expuesto en `MovementSetRequestDTO` (commit `8ac0824`).
+- [x] Versiones de app/crates unificadas a **0.1.1** (persistence, wasm, src-tauri, tauri.conf, package.json); el esquema SQL conserva su pista propia (versiona la BD, no la app) (commit `8ac0824`).
+- [x] `rust-toolchain.toml` en la raíz (pin 1.94.1); caché de cargo ya presente en el workflow de release (commit `8ac0824`).
 
 ---
 
@@ -184,8 +184,8 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 **Siguiente (cierre F6):**
 1. **Publicar** el Release **v0.1.0** (eso crea el tag) tras revisar los instaladores.
 2. **Firma de código** (certificados Win/Mac como secrets) + auto-updater (opcional).
-3. **QA visual** de la app y ajuste fino de temas (requiere correrla).
-4. Cerrar los **nits de §9**: unificar versiones, `rust-toolchain.toml`, chequeo `product_id` entre tanques, `MovementRole`↔`movement_sign_rule`, exponer `aggregate_from_unrounded` en el DTO.
+3. ~~QA visual~~ ✅ hecho: pase de diseño completo + harness `scripts/screenshot-themes.mjs` (36 capturas × 6 combinaciones + PDF de impresión revisados).
+4. ~~Nits de §9~~ ✅ cerrados (ver §9).
 5. **COSTALD cell-exact** (hoja `shore C3`) y refinamientos de Blend (cSt↔SFS, propiedades extra).
 
 Ver `docs/CONTEXT.md` para el estado vivo y cómo retomar.

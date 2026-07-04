@@ -30,8 +30,10 @@ contact_email = ""
 website       = ""
 
 [theme]
-# Tema por defecto. El sistema completo de temas (claro/oscuro + variantes)
-# llega en la fase de diseño.
+# NOTA (fase de diseño, jul-2026): el sistema de temas vive en la app como
+# matriz de tokens OKLCH (3 estéticas × claro/oscuro) en ui/src/index.css;
+# estos hex quedan como identidad de fábrica para materiales de marca.
+# El override de colores en runtime es brand.json (ver docs/packaging.md §5).
 primary_color   = "#0B5FFF"
 secondary_color = "#0A2540"
 accent_color    = "#00B37E"

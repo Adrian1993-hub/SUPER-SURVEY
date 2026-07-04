@@ -1,8 +1,10 @@
 # SuperSurvey — App Flow
 
 > **Flujos de la aplicación.** Cómo se mueve el usuario de principio a fin. Base para el diseño
-> UI/UX (que se hará con el MCP de diseño). Alineado con `02-PRD.md` y `00-ULTRAPLAN §4–§5`.
-> Versión: **v0.1** · 2026-06-09.
+> UI/UX. Alineado con `02-PRD.md` y `00-ULTRAPLAN §4–§5`.
+> Versión: **v0.2** · 2026-07-04 — implementado en la app: stepper del flujo (7 pasos, derivado
+> de la ruta), sidebar agrupada y numerada, barra «Continuar →» en cada etapa y estados vacíos.
+> El gating por estado del trabajo (§4) sigue pendiente (requiere máquina de estados).
 
 ---
 

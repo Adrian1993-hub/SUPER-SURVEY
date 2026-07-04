@@ -1,0 +1,10 @@
+[package]
+name = "supersurvey_keygen"
+version = "0.1.1"
+edition = "2021"
+description = "Herramienta del DUEÑO: genera pares de claves y emite/verifica licencias SuperSurvey. NO se distribuye con la app."
+license = "UNLICENSED"
+
+[dependencies]
+supersurvey_license = { path = "../supersurvey_license", features = ["issuer"] }
+base64 = "0.22"

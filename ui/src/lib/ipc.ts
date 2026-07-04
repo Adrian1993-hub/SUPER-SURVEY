@@ -165,6 +165,25 @@ export async function loadMeasurementSnapshots(jobId: string): Promise<string[]>
   return invoke<string[]>('load_measurement_snapshots', { jobId })
 }
 
+// ---- Licencia (gate suave) -----------------------------------------------
+
+export interface LicenseInfo {
+  /** VALID | EXPIRED | INVALID_SIGNATURE | MALFORMED | MISSING | DEMO_WEB */
+  status: string
+  client?: string | null
+  expires?: string | null
+}
+
+/** Estado de licencia del escritorio; en el navegador siempre DEMO_WEB. */
+export async function licenseStatus(): Promise<LicenseInfo> {
+  if (!isDesktop()) return { status: 'DEMO_WEB' }
+  try {
+    return await invoke<LicenseInfo>('license_status')
+  } catch {
+    return { status: 'MISSING' }
+  }
+}
+
 /** Load one stored job with its sets + official (active) calc logs; null in browser. */
 export async function loadJobDetail(jobId: string): Promise<JobDetail | null> {
   if (!isDesktop()) return null

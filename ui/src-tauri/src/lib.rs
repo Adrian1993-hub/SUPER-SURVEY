@@ -9,6 +9,8 @@
 //! - `calculate_bqs_row`   : pure calc (LIVE/SAVE), returns row + trace.
 //! - `save_bqs_calculation`: calc + persist as an append-only calculation_log.
 
+mod license;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use supersurvey_calc::bqs::{BqsRowRequestDTO, BqsRowResponseDTO};
@@ -253,6 +255,16 @@ fn read_brand_override(app: tauri::AppHandle) -> Result<Option<String>, String> 
     Ok(std::fs::read_to_string(dir.join("brand.json")).ok())
 }
 
+/// Estado de la licencia (`license.key` en el app config dir, junto a
+/// brand.json). Gate SUAVE: la UI muestra «Modo evaluación» si no es VALID.
+#[tauri::command]
+fn license_status(app: tauri::AppHandle) -> Result<license::LicenseInfo, String> {
+    use tauri::Manager;
+    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    let json = std::fs::read_to_string(dir.join("license.key")).ok();
+    Ok(license::evaluate(json.as_deref()))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Offline-first: a local SQLite file next to the app.
@@ -268,7 +280,8 @@ pub fn run() {
             load_job_detail,
             create_job,
             load_measurement_snapshots,
-            read_brand_override
+            read_brand_override,
+            license_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

@@ -1,12 +1,33 @@
-import { WifiOff } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { KeyRound, WifiOff } from 'lucide-react'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { licenseStatus, isDesktop } from '../lib/ipc'
 import type { Job } from '../data/demoJobs'
 
 interface TopBarProps {
   title: string
   activeJob?: Job
+}
+
+/** Chip de licencia (gate SUAVE): solo aparece en escritorio cuando la licencia
+ *  no es válida — licenciado correctamente = interfaz limpia. */
+function LicenseChip() {
+  const [status, setStatus] = useState<string | null>(null)
+  useEffect(() => {
+    if (!isDesktop()) return
+    licenseStatus().then((l) => setStatus(l.status)).catch(() => setStatus(null))
+  }, [])
+  if (!status || status === 'VALID' || status === 'DEMO_WEB') return null
+  const label =
+    status === 'EXPIRED' ? 'Licencia vencida' : status === 'MISSING' ? 'Modo evaluación' : 'Licencia inválida'
+  return (
+    <Badge variant="outline" className="status-warn gap-1.5" title={`Estado de licencia: ${status}`}>
+      <KeyRound className="h-3 w-3" />
+      {label}
+    </Badge>
+  )
 }
 
 export function TopBar({ title, activeJob }: TopBarProps) {
@@ -31,6 +52,7 @@ export function TopBar({ title, activeJob }: TopBarProps) {
           </>
         )}
         <ThemeSwitcher />
+        <LicenseChip />
         <Badge variant="outline" className="status-warn gap-1.5">
           <WifiOff className="h-3 w-3" />
           Offline

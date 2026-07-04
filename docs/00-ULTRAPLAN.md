@@ -13,7 +13,7 @@ defendible y documento firmable — todo offline.**
 
 El programa **no reemplaza** al surveyor: él sigue midiendo tanques, tomando muestras,
 verificando líneas y validando densidades/temperaturas. El programa hace la parte donde hoy
-se pierde tiempo y se cometen errores con Excel/SAT/OGC:
+se pierde tiempo y se cometen errores con Excel/LEGACY/legacy:
 
 1. **Recibe** los datos de campo + los externos (BDN, B/L, terminal).
 2. **Calcula** exacto y con trazabilidad (se ve cómo salió cada número).
@@ -33,14 +33,14 @@ Y debe poder **revenderse con otra marca** (white-label).
 | 2026-06-06 | **Stack:** Rust (kernel) + Tauri + TypeScript + SQLite, offline-first | ✅ |
 | 2026-06-06 | **Repo canónico único:** `super-survey` (Codex-Playroom consolidado aquí) | ✅ |
 | 2026-06-06 | **Operación MVP:** BQS (Bunker Quantity Survey) | ✅ |
-| 2026-06-06 | **Motor de cálculo:** reimplementar estándares (API MPMS) en Rust, validados contra casos reales. **NO** reusar `firogcfn.dll` (caja negra, no portable, no auditable) | ✅ |
+| 2026-06-06 | **Motor de cálculo:** reimplementar estándares (API MPMS) en Rust, validados contra casos reales. **NO** reusar `calcnative.dll` (caja negra, no portable, no auditable) | ✅ |
 | 2026-06-06 | **Caso QA ancla de BQS:** el caso BQS de referencia | ✅ |
 | 2026-06-06 | **White-label desde el día 1** (capa de branding + tema) | ✅ |
 | 2026-06-06 | Prototipo .NET/WPF → archivado en `/reference` (solo referencia) | ✅ |
 | 2026-06-06 | **Nombre del producto = configurable** vía `branding/brand.toml` (white-label). Codename interno: `SuperSurvey`. Renombrar (p. ej. a `YOLO.EXE`) **no toca el motor** | ✅ |
 | 2026-06-06 | **App NO gestiona tablas de calibración** (buque/tierra): son externas. El surveyor obtiene el volumen de la tabla física y **ingresa el volumen**; la app solo **registra la fecha de calibración** de la tabla usada (trazabilidad en el reporte) | ✅ |
-| 2026-06-06 | **Tablas de cálculo ASTM/API** (VCF/WCF/densidad): incluir **TODAS las versiones/revisiones** (vieja/nueva, como SAT); el surveyor elige la aplicable. Implementar por **ecuaciones (API MPMS 11.1)** y validar vs valores de `TABLASASTM.xls`. *(Versiones: en investigación)* | ✅ |
-| 2026-06-06 | **Sin redondeo intermedio:** redondear solo el resultado final (handbook SGS p.62). La política de agregación del kernel (`aggregate_from_unrounded`) debe respetarlo | ✅ |
+| 2026-06-06 | **Tablas de cálculo ASTM/API** (VCF/WCF/densidad): incluir **TODAS las versiones/revisiones** (vieja/nueva, como LEGACY); el surveyor elige la aplicable. Implementar por **ecuaciones (API MPMS 11.1)** y validar vs valores de `TABLASASTM.xls`. *(Versiones: en investigación)* | ✅ |
+| 2026-06-06 | **Sin redondeo intermedio:** redondear solo el resultado final (handbook la inspectora p.62). La política de agregación del kernel (`aggregate_from_unrounded`) debe respetarlo | ✅ |
 | 2026-06-06 | **Convenciones BQS (surveyor):** densidad única por fuente; calcular **MT aire Y vacío** (oficial = aire); **tolerancia en capas configurable** (ISO default + comprador/suplidor/inspección/contrato); **trim Applied/Not Applied** = verificación del inspector (barcazas normalmente no); incluir bloque **"Quantity Transferred"** | ✅ |
 
 ---

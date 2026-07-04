@@ -1,7 +1,7 @@
 //! Terminal / ship-to-shore reconciliation QA.
 //!
 //! Real anchors from `docs/research/operaciones-sts-barge-offhire.md` §2.2 / §3
-//! (Barge Tow Loading, CENTENARIO TRADER): the loaded figure by difference
+//! (Barge Tow Loading, caso real del cliente): the loaded figure by difference
 //! (After − OBQ) and the reported "Loaded vs B/L variance −0.411 %". Geometry is
 //! checked exactly against clean multiples of π.
 

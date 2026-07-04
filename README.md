@@ -9,16 +9,16 @@ Rediseñar la herramienta con:
 - 🎨 **Interfaz moderna y *user-friendly*** con flujos guiados por operación
 - 🌐 **Bilingüe ES/EN**
 - ➕ **3 nuevas operaciones** (por definir)
-- 🧮 **Resultados de cálculo idénticos** a InfoPro (estándares ASTM D1250 / API MPMS, IP, GOST, ANP, OIML)
+- 🧮 **Resultados de cálculo idénticos** al sistema legacy (estándares ASTM D1250 / API MPMS, IP, GOST, ANP, OIML)
 
 ## Estado
 🔍 **Fase de análisis y diseño.** La ingeniería inversa de la herramienta base está
-documentada en [`docs/01-analisis-OGC-InfoPro.md`](docs/01-analisis-OGC-InfoPro.md).
+documentada en [`docs/01-analisis-legacy.md`](docs/01-analisis-legacy.md).
 
 ## Estructura
 ```
 docs/    Análisis de la herramienta base y decisiones de diseño
 ```
 
-> Nota: la herramienta original es propiedad de SGS; este repo contiene el rediseño
+> Nota: la herramienta original es propiedad de la inspectora; este repo contiene el rediseño
 > y la documentación de análisis, no los binarios originales.

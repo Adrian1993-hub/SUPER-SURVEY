@@ -6,8 +6,8 @@
 > moderno + tablas de conversión de peso heredadas). Detalle abajo.
 >
 > Archivos: `LPG_Tablas_58_21_SG…pdf` (tablas impresas 58/21), `TABLASASTM.xls` (suite de tablas
-> ASTM con hojas ocultas), `TOOLS_2.xlsx`, y **`SH100756_LPG_EPIC_MADEIRA.xls`** — reporte real
-> SGS de descarga de **propano** (+ butano) en Vopak Panamá. Este último es el **ancla**.
+> ASTM con hojas ocultas), `TOOLS_2.xlsx`, y **`certificado_LPG_buque-A.xls (anonimizado)`** — reporte real
+> la inspectora de descarga de **propano** (+ butano) en una terminal centroamericana. Este último es el **ancla**.
 
 ---
 
@@ -42,7 +42,7 @@ Sondaje por tanque (ullage, T, presión)              ← gauging (líquido + va
 
 Notas finas (de celdas ocultas del worksheet real):
 - **Presurizado**: hay columnas `PSIG`, `Liq + Vap` y "Volume Manometer" → corrección de vapor para
-  propano presurizado (caso del EPIC MADEIRA; el radar D‑2193 falló y se usó respaldo).
+  propano presurizado (caso del BUQUE-A; el radar D‑2193 falló y se usó respaldo).
 - **Line Capacity for Propane = 140.0 gross bbls** → contenido de línea (encaja con `reconcile`).
 - Long tons salen de **vacío**, no de aire (a diferencia de algunos formatos de productos).
 
@@ -77,9 +77,9 @@ validar contra la rejilla `59E/60e` y el ancla `CTL = 0.95873237`. Las constante
 
 ---
 
-## 4. Anclas reales (EPIC MADEIRA, propano, *ship figures*)
+## 4. Anclas reales (BUQUE-A, propano, *ship figures*)
 
-Certificado SGS (Vopak, descarga propano) — cifras del buque:
+Certificado la inspectora (la terminal, descarga propano) — cifras del buque:
 
 | Magnitud | Valor |
 |---|---|
@@ -104,7 +104,7 @@ Relaciones verificadas: `MT_vac = 1174.058 × 0.501`; `LT = kg_vac / 1016.046908
 | Conversión densidad (API↔rel.density↔ρ15) | ✅ reutiliza `density.rs` |
 | Comparación buque/tierra + Line Capacity | ✅ `reconcile.rs` |
 | S&W / pro‑rata / muestreo / VEF | ✅ kernel existente |
-| **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | 🟡 **Implementado** en `costald.rs`: catálogo de **9 componentes** con ω_SRK/V*/Z_RA **verificados** (`chemicals`/COSTALD, linaje API/DIPPR) + Tc (Yaws); validado vs ejemplo API Handbook (propano 530.30 kg/m³) y ancla SGS (residual ≈9.6e-5). Cell-exact pendiente de `K1..K4` por fluido de `shore (C3)` |
+| **CTL/VCF por COSTALD (API 11.2.4) + catálogo de componentes** | 🟡 **Implementado** en `costald.rs`: catálogo de **9 componentes** con ω_SRK/V*/Z_RA **verificados** (`chemicals`/COSTALD, linaje API/DIPPR) + Tc (Yaws); validado vs ejemplo API Handbook (propano 530.30 kg/m³) y ancla la inspectora (residual ≈9.6e-5). Cell-exact pendiente de `K1..K4` por fluido de `shore (C3)` |
 | Corrección de vapor (presurizados) | ✅ `lpg_vapor.rs` (API MPMS 17.10.2): ρv=(288.15/T)(P/1.01325)(M/23.6451)/Z + total líq.+vapor; validado vs ejemplos del estándar (3.332 / 9.146 kg/m³) |
 | Plantilla de reporte LPG (Certificate of Quantity) + página UI | 🟡 pendiente (motor y unidades listos) |
 
@@ -132,7 +132,7 @@ errónea, sino estructural — ver abajo).
 | 1,3-Butadieno | 0.1934 | 0.0002202 | 0.2712 | 425.37 |
 | 1-Buteno | 0.1921 | 0.0002377 | 0.2736 | 419.59 |
 
-\* Propano/i-Butano usan el `Tc` del worksheet (reproduce el ancla SGS). El resto usa `Tc`
+\* Propano/i-Butano usan el `Tc` del worksheet (reproduce el ancla la inspectora). El resto usa `Tc`
 de Yaws. `rd60`: del worksheet (propano/i-butano) o **derivada por COSTALD** (resto, ✓ vs
 SG60 GPA a ~3 dp). `Z_RA` es el factor de Rackett (informativo, ≠ `Zc`).
 

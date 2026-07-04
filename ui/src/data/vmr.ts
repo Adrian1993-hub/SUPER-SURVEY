@@ -1,4 +1,4 @@
-// Datos DEMO ficticios para la hoja VMR (Vessel Measurement Report) estilo SAT
+// Datos DEMO ficticios para la hoja VMR (Vessel Measurement Report) estilo hoja legacy del cliente
 // y para el panel de comparación multi-unidad. NO son datos reales de clientes/buques.
 // Los nombres de tanque (4 FWD P, SETTLING, etc.) son genéricos del dominio.
 

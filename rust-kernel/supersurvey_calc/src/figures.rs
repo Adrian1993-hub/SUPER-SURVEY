@@ -1,5 +1,5 @@
 //! Multi-unit custody figure assembler — the shared "Summary of Quantities"
-//! backbone used by every cargo report (SGS/Intertek): one standard volume +
+//! backbone used by every cargo report (inspectoras internacionales): one standard volume +
 //! density expanded into all the reported units, at the TCV / GSV / NSV levels.
 //!
 //! Units per level: bbl@60 · gal@60 · m³@60 · L@60 · m³@15 · L@15 · MT(air) ·

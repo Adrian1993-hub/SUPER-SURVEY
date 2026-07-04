@@ -2,7 +2,7 @@
 //! temperature, volume) → fully calculated tank row, mirroring `bqs` for the
 //! US-customary family. String-in / string-out DTO for the WASM/Tauri boundary.
 //!
-//! Chain (matches the SGS imperial worksheet):
+//! Chain (matches the client imperial worksheet):
 //!   GOV_bbl = volume_bbl − free_water_bbl
 //!   GSV_bbl = round(GOV_bbl × VCF_6B, 2)
 //!   MT_air  = round(GSV_bbl × WCF_13, 3)

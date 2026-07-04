@@ -10,7 +10,7 @@
 
 App **offline-first** para cálculo, medición, comparación y reportes de *survey*
 marítimo/petrolero. Convierte la medición física del surveyor en **cantidad calculada,
-comparación defendible y documento firmable**. Alternativa moderna a SAT/OGC. Debe ser
+comparación defendible y documento firmable**. Alternativa moderna a LEGACY/legacy. Debe ser
 **white-label** (revendible con otra marca). Ver `docs/00-ULTRAPLAN.md`.
 
 ## Stack y repo
@@ -32,7 +32,7 @@ scripts/build-wasm.sh           regenera el WASM + glue JS (output commit en ui/
 docs/README.md                  índice de documentación (orden de lectura)
 docs/00-ULTRAPLAN.md            plan maestro = plan de implementación (LEER)
 docs/CONTEXT.md                 este archivo (handoff)
-docs/01-analisis-OGC-InfoPro.md análisis del sistema viejo (OGC/InfoPro)
+docs/01-analisis-legacy.md análisis del sistema viejo (legacy/Legacy)
 docs/02-PRD.md                  PRD (requisitos de producto)
 docs/03-TRD.md                  TRD (requisitos técnicos)
 docs/04-appflow.md              App Flow (flujos punta a punta)
@@ -118,8 +118,8 @@ en la UI vía WASM**: Medición + Comparación + **Guardado** (escritorio) + **R
   4 080.787 + worksheet .NET) con reconciliación contra báscula de tierra ·
   ✅ **Conciliación buque↔tierra** (`reconcile.rs` + página *Buque ↔ Tierra*): medición de tierra por
   diferencia ± **pipeline reconciliation** (contenido de línea) → *Shore Quantity*, conciliada contra la
-  cifra del buque y el B/L (Δ, Δ%, None/NOAD/LOP), anclada al barge CENTENARIO TRADER (Loaded vs B/L −0.411 %).
-**Generalización a formato SGS imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
+  cifra del buque y el B/L (Δ, Δ%, None/NOAD/LOP), anclada al barge BUQUE-B (Loaded vs B/L −0.411 %).
+**Generalización a formato la inspectora imperial:** ✅ **familia US-customary 60 °F** (`astm60`: Tablas 6A/6B VCF
 + 13 WCF, API gravity, ITS-68) **validada celda a celda** contra un worksheet real (`astm60_imperial_tests`,
 `bqs60_tests`), con orquestador imperial + WASM, ✅ **Multigrado** completo (apertura/cierre → *loaded*,
 audit por grado Received-vs-BDN, impresión), y ✅ **VEF** (API MPMS 17.9 / HM49 — `vef.rs`, validado a 0.9993,
@@ -128,7 +128,7 @@ panel en Multigrado). Falta: guardado de filas imperiales; **firma digital**; y 
 buque↔tierra + pipeline) ya implementada (`reconcile.rs`).
 **LPG / NGL** (familia de hidrocarburos ligeros) — 🟢 **en progreso** (`lpg.rs`): ensamblador de
 custodia multi-unidad (m³/L@15 · MT vac/aire · **LT desde vacío** · bbl/gal@60, Table 1) **validado
-celda a celda** vs certificado real (propano EPIC MADEIRA: 588.203/586.847 MT, 578.913 LT, 7396.57 bbl).
+celda a celda** vs certificado real (propano BUQUE-A: 588.203/586.847 MT, 578.913 LT, 7396.57 bbl).
 **Próximo LPG:** CTL/VCF por **COSTALD (API 11.2.4)** + catálogo de componentes (constantes extraídas;
 ancla CTL=0.95873237) y corrección de vapor (presurizados). Veredicto de versión y método completo en
 `docs/research/lpg.md` (motor térmico = 11.2.4 vigente; conversiones de peso = ASTM-IP 58/21 heredadas).

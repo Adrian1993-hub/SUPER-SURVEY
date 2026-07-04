@@ -2,8 +2,8 @@
 //! cargo, per **API MPMS Ch. 17.10.2 / EI HM 55** §7.4.3 (Measurement of
 //! Cargoes On Board Marine Gas Carriers). In a gas carrier the cargo is liquid
 //! plus a vapour space; the custody total is `liquid mass + vapour mass` (the
-//! worksheet's "Liq + Vap" / "Volume Manometer" columns — real anchor: SGS
-//! *EPIC MADEIRA*, propane; see docs/research/lpg.md).
+//! worksheet's "Liq + Vap" / "Volume Manometer" columns — real anchor: client
+//! *vessel A*, propane; see docs/research/lpg.md).
 //!
 //! Vapour density (17.10.2 §7.4.3.2, ideal-gas form; multiply by 1/Z when not
 //! near atmospheric):

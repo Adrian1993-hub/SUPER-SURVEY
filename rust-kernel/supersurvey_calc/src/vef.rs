@@ -1,5 +1,5 @@
 //! Vessel Experience Factor (VEF) — API MPMS Ch. 17.9 / HM49 (2019), Primary
-//! Method. Reverse-validated against a real SGS cargo report (see
+//! Method. Reverse-validated against a real client cargo report (see
 //! docs/research/formato-bqs-imperial-multigrado.md §2 and the QA tests).
 //!
 //! Method (exactly as the worksheet computes it):

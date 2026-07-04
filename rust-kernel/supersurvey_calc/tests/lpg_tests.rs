@@ -1,5 +1,5 @@
-//! LPG custody-assembly QA — anchored cell-by-cell to the SGS *EPIC MADEIRA*
-//! propane discharge certificate (Vopak Panama, ship figures):
+//! LPG custody-assembly QA — anchored cell-by-cell to the client certificate (vessel A)
+//! propane discharge certificate (a Central American terminal, ship figures):
 //!   588 203 kg vac / 586 847 kg air / 1 174 058 L @15 / 1 174.058 m³ @15 /
 //!   578.912921818 long tons / 7 396.57 US bbl / 310 655.94 US gal @60.
 //! (CTL/VCF via API 11.2.4 COSTALD is staged separately — see docs/research/lpg.md.)

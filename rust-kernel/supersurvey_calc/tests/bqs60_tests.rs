@@ -1,4 +1,4 @@
-//! Imperial BQS row orchestrator (DTO) — end-to-end against the SGS worksheet.
+//! Imperial BQS row orchestrator (DTO) — end-to-end against the client worksheet.
 
 use supersurvey_calc::bqs60::ImperialRowRequestDTO;
 

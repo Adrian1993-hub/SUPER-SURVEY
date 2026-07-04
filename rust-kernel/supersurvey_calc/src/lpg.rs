@@ -1,7 +1,7 @@
 //! LPG / NGL custody figures — the light-hydrocarbon family (propane, butane,
 //! propylene, NGL …). Distinct from the product tables (54/6) in three ways the
-//! worksheets make explicit (real anchor: SGS *EPIC MADEIRA*, propane discharge,
-//! Vopak Panama — see docs/research/lpg.md):
+//! worksheets make explicit (real anchor: client certificate (vessel A), propane discharge,
+//! a Central American terminal — see docs/research/lpg.md):
 //!
 //! 1. **Temperature correction (CTL/VCF)** uses **API MPMS Ch 11.2.4 (COSTALD,
 //!    corresponding-states)** with per-component critical constants — NOT Table 54.

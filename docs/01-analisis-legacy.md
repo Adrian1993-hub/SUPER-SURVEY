@@ -1,14 +1,19 @@
-# Análisis funcional y técnico — OGC InfoPro (motor "SAT")
+# Análisis funcional y técnico — el sistema legacy (motor "LEGACY")
+
+> **Nota white-label:** nombres de producto, marcas, buques, terminales y archivos del
+> sistema legacy analizado están **anonimizados** en todo el repositorio; los datos técnicos
+> (arquitectura, conteos, cifras) se conservan tal cual.
+
 
 > Documento de ingeniería inversa y descubrimiento. Base para el rediseño moderno.
-> Fuente: decompilación de los ensamblados .NET + inspección de la base de datos `SAT.db`.
+> Fuente: decompilación de los ensamblados .NET + inspección de la base de datos `LEGACY.db`.
 
 ---
 
 ## 1. Resumen ejecutivo
 
-**OGC InfoPro** es la marca/despliegue de **SGS – Oil, Gas & Chemicals** sobre un
-producto base cuyo nombre interno es **SAT** (`SAT.exe`). Es una **herramienta de
+**el sistema legacy** es la marca/despliegue de **una inspectora internacional (división Oil, Gas & Chemicals)** sobre un
+producto base cuyo nombre interno es **LEGACY** (`LEGACY.exe`). Es una **herramienta de
 escritorio para inspección de cantidad y calidad de cargas de petróleo y derivados**
 (marine cargo inspection / quantity surveying).
 
@@ -18,7 +23,7 @@ por temperatura y conversión a peso según múltiples estándares (ASTM D1250 /
 IP, GOST, ANP, OIML…) → factores de experiencia del buque (VEF), OBQ/ROB, cuña (wedge)
 → muestreo/calidad → bitácora de tiempos → certificados y reportes finales en Excel/PDF/Word.
 
-La instalación analizada corresponde a un despliegue real de OGC InfoPro
+La instalación analizada corresponde a un despliegue real de el sistema legacy
 *(datos de la instalación e inspector omitidos por confidencialidad).*
 
 ---
@@ -30,13 +35,13 @@ La instalación analizada corresponde a un despliegue real de OGC InfoPro
 | Runtime | **.NET Framework 4.8** (PE32 x86) |
 | UI | **WPF** con **FirstFloor.ModernUI** + **MVVM Light** (GalaSoft) + Xaml.Behaviors |
 | Patrón | MVVM con **Rulesets + Engines + Factories** (motor de reglas por tipo de operación) |
-| Datos | **Entity Framework 6** sobre **SQLite** (`SAT.db`, 156 tablas) |
-| Motor de cálculo | **`firogcfn.dll` (NATIVO C/C++)** — **523 funciones** vía P/Invoke (tablas ASTM/API) |
+| Datos | **Entity Framework 6** sobre **SQLite** (`LEGACY.db`, 156 tablas) |
+| Motor de cálculo | **`calcnative.dll` (NATIVO C/C++)** — **523 funciones** vía P/Invoke (tablas ASTM/API) |
 | Unidades | UnitsNet + `UnitsOfMeasurement.dll` (manejo formal de unidades) |
 | Reportes | **Aspose.Cells / Aspose.Words / Aspose.Pdf** — rellena plantillas `.xlsx` y exporta a Excel/PDF/Word |
 | Logs | log4net | Mapeo | AutoMapper + ValueInjecter | JSON | Newtonsoft |
 
-**Dato clave:** el corazón del cálculo es **nativo** (`firogcfn.dll`), no .NET. Las 523
+**Dato clave:** el corazón del cálculo es **nativo** (`calcnative.dll`), no .NET. Las 523
 funciones P/Invoke son la librería de tablas de medición de petróleo (conversión de
 unidades, VCF, densidad, peso, redondeos normativos). El código C# solo **orquesta**
 qué función nativa llamar según producto/estándar/operación.
@@ -47,19 +52,19 @@ qué función nativa llamar según producto/estándar/operación.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  UI  (WPF, 133 ViewModels = pantallas)   SAT.exe             │
+│  UI  (WPF, 133 ViewModels = pantallas)   LEGACY.exe             │
 │  ModernUI + MVVM Light                                       │
 ├─────────────────────────────────────────────────────────────┤
-│  BusinessLogic  (SAT.exe)                                    │
+│  BusinessLogic  (LEGACY.exe)                                    │
 │   • Rulesets.*    → comportamiento por tipo de operación     │
 │   • Engines.*     → orquestación de cálculo y UI             │
 │   • Factories.*   → fabricación de rulesets                  │
 │   • Calculations.* → VCF/densidad/intraconversión por norma  │
 ├─────────────────────────────────────────────────────────────┤
-│  Helpers: FirogcfnImport.cs  ──P/Invoke──►  firogcfn.dll     │
+│  Helpers: CalcnativeImport.cs  ──P/Invoke──►  calcnative.dll     │
 │           CalculationsHelper, TemperatureHelper, LookupTables│
 ├─────────────────────────────────────────────────────────────┤
-│  Datos:  SAT.Data.dll (EF6) ──►  SAT.db (SQLite)            │
+│  Datos:  LEGACY.Data.dll (EF6) ──►  LEGACY.db (SQLite)            │
 │  Reportes: Aspose ──►  ReportLayouts/*.xlsx + Templates/*.xlsx│
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -129,7 +134,7 @@ Ejemplos de familias de reglas: `ShipToShipOperation`, `PipelineTransferOperatio
 Predomina **ASTM D1250-08 / -19 — API MPMS Ch. 11.5**, con **Table 6B** (productos
 refinados) y **6A** (crudo); y legado **D1250-80** (tablas 1, 4, 11, 13, 56).
 
-### 6.3 `firogcfn.dll` — 523 funciones nativas (catálogo)
+### 6.3 `calcnative.dll` — 523 funciones nativas (catálogo)
 - **`tab11*` (299)** → **API MPMS Ch. 11.1 / 11.5** (implementación moderna; variantes
   `…vac` / `…air` para peso en vacío/aire).
 - **`tab1*` (99)** → **Table 1**: conversión de unidades (barriles ↔ litros ↔ m³ ↔ galones
@@ -161,7 +166,7 @@ Regular 91, AV GAS), destilados (Jet A, ULSD), búnkers (HSFO, VLSFO, LSMGO, MGO
 
 ---
 
-## 7. Modelo de datos (`SAT.db`, 156 tablas — por área)
+## 7. Modelo de datos (`LEGACY.db`, 156 tablas — por área)
 
 - **Job/Config:** `Jobs`, `JobCustomers`, `JobHasInputState`, `ConfigParameters`,
   `ConfigShip/Shore/ReportParameters`, `ConfigMovement`, `ConfigShipBunker*`,
@@ -230,8 +235,8 @@ Time Log, NOAD, LOP, Summaries, MARPOL Annex II, Wall Wash, plantillas por clien
 ## 11. Implicaciones para la nueva versión
 
 - **Plataforma elegida:** escritorio **offline**, UI moderna, **bilingüe ES/EN**.
-- **Estrategia de cálculo (decisión clave):** reutilizar `firogcfn.dll` vía wrapper para
-  **garantizar números idénticos** a InfoPro, o reimplementar las tablas desde la norma
+- **Estrategia de cálculo (decisión clave):** reutilizar `calcnative.dll` vía wrapper para
+  **garantizar números idénticos** al sistema legacy, o reimplementar las tablas desde la norma
   (más esfuerzo + validación) si se quiere multiplataforma puro.
 - **Rediseño de flujos:** convertir las 133 pantallas en **asistentes guiados por operación**
   (wizard por tipo: Loading / Discharge / STS / Bunker / Pipeline…), con validación en vivo.
@@ -241,8 +246,8 @@ Time Log, NOAD, LOP, Summaries, MARPOL Annex II, Wall Wash, plantillas por clien
 ---
 
 ### Apéndice — métricas de la decompilación
-- Ensamblados .NET decompilados: `SAT.exe` (1879 .cs), `SAT.Data` (237), `Core` (204),
-  `SAT.Core` (51), `SAT.DataUpdate` (22), `DataTableLibrary` (17), `DynamicUnitsTree` (15),
+- Ensamblados .NET decompilados: `LEGACY.exe` (1879 .cs), `LEGACY.Data` (237), `Core` (204),
+  `LEGACY.Core` (51), `LEGACY.DataUpdate` (22), `DataTableLibrary` (17), `DynamicUnitsTree` (15),
   `EnumHelper` (6), `UnitsOfMeasurement` (19).
-- `firogcfn.dll`: nativo, **523** funciones expuestas (P/Invoke en `FirogcfnImport.cs`).
-- `SAT.db`: 156 tablas.
+- `calcnative.dll`: nativo, **523** funciones expuestas (P/Invoke en `CalcnativeImport.cs`).
+- `LEGACY.db`: 156 tablas.

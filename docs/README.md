@@ -6,7 +6,7 @@ Orden de lectura sugerido y propósito de cada documento.
 |---|---|---|---|
 | 0 | [`CONTEXT.md`](CONTEXT.md) | **Léeme primero.** Handoff / estado vivo entre sesiones. | vivo |
 | 1 | [`00-ULTRAPLAN.md`](00-ULTRAPLAN.md) | Plan maestro: visión, Decision Log, arquitectura, **plan de implementación** por fases. | v(maestro) |
-| 2 | [`01-analisis-OGC-InfoPro.md`](01-analisis-OGC-InfoPro.md) | Ingeniería inversa del sistema legacy (SAT/OGC). Insumo de scope. | — |
+| 2 | [`01-analisis-legacy.md`](01-analisis-legacy.md) | Ingeniería inversa del sistema legacy (LEGACY/legacy). Insumo de scope. | — |
 | 3 | [`02-PRD.md`](02-PRD.md) | **PRD** — qué construimos y para quién (requisitos de producto). | v0.1 |
 | 4 | [`03-TRD.md`](03-TRD.md) | **TRD** — cómo (arquitectura, kernel, IPC, seguridad, CI). | v0.1 |
 | 5 | [`04-appflow.md`](04-appflow.md) | **App Flow** — flujos de punta a punta (base para UI/UX). | v0.1 |

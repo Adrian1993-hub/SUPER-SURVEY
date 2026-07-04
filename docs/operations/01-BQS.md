@@ -5,7 +5,7 @@
 > firma** y cuándo se emite **NOAD/LOP/SOF**.
 >
 > **Estado: v0.2 — basada en un BQS REAL** (campo + reporte emitido, 2 grados VLSFO+LSMGO,
-> barge→vessel) **+ análisis de ISO 13739:2020, manual SGS "OGC" Nivel 1 y el set de tablas
+> barge→vessel) **+ análisis de ISO 13739:2020, manual de la inspectora (Nivel 1) y el set de tablas
 > ASTM**. Lo **confirmado** va ✅; lo que falta confirmar, ⚠️. *(Sin datos de cliente embebidos:
 > los números reales viven en los vectores QA, fuera de git hasta confirmar privacidad del repo.)*
 > Actualizado: 2026-06-06.
@@ -87,14 +87,14 @@ Tanque → Densidad → Nivel (modo U/S/G) → Temp → TOV
 ```
 
 **Fórmulas confirmadas:**
-- `GOV = TOV − FW`  (para tanques de buque/barcaza; en la forma SGS general
+- `GOV = TOV − FW`  (para tanques de buque/barcaza; en la forma la inspectora general
   `GSV = {[(TOV − FW) × CTSh] ± FRA} × CTL`, los términos CTSh y FRA = 0). ✅
 - `GSV = GOV × VCF` — **VCF = Tabla 54B** (densidad@15 + T observada → factor a 15 °C). ✅
 - `MT(vacío) = GSV × densidad@15`. ✅
 - `MT(aire)  = GSV × WCF`, con **WCF = Tabla 56 ≈ densidad@15 − 0.0011** (flotabilidad del aire;
   confirmado en celda real `=-0.0011`). ✅
 - **Densidad de cálculo = la del supplier.** ✅
-- **SIN redondeo intermedio**: se redondea **solo el resultado final** (manual SGS p.62). ✅
+- **SIN redondeo intermedio**: se redondea **solo el resultado final** (manual la inspectora p.62). ✅
 - **Cifra oficial de la diferencia = MT en AIRE** (las diferencias del Summary se reportan en
   aire). ✅  El BDN declara MT en **vacío** y densidad en **aire**.
 
@@ -137,14 +137,14 @@ MT vacío, WCF(T56), **MT aire**. Diferencias reportadas: **B−A**, **C−A**, 
 
 ---
 
-## 7. Conjunto de documentos (✅ del Excel real + UI OGC)
+## 7. Conjunto de documentos (✅ del Excel real + UI legacy)
 
 **Hojas del field report real:** `CLIENT Cover Page` · `Pre Survey Acknowledgment` ·
 `Pre Bunker Information` · **`Summary` / `VMR` / `BMR` por grado (×3)** · `Sample Receipt Form` ·
 `Sample Checklist` · `Time Log` · `Statement of Fact` · `SOF for Disputes` ·
 `Gauging Tickets OPENING` / `CLOSING` · `Vessel Non Cargo Declaration` ·
 `Barge Non Cargo Declaration` · `Receipt of FOBAS Documents`.
-**Reportes en la UI OGC (menú):** Time Log, Quality Report, Letter of Protest, NOAD, Quantity
+**Reportes en la UI legacy (menú):** Time Log, Quality Report, Letter of Protest, NOAD, Quantity
 Certificate, Pipeline Data, Pipeline Reconciliation, Delivery/Receipt Measurement & Quantity,
 Vessel Cargo Tank Data, Sample Report/Receipt, Bunker Survey, General Notes, Custom Reports.
 
@@ -200,7 +200,7 @@ de forma significativa; **precintos rotos**.
   completo, (3a) Lab parcial (si se pide), (4) Surveyor retained, (5) **MARPOL Anexo VI** —
   **+ 5 del supplier** en el manifold de la barcaza.
 - **Precintos:** *cap seal + tag seal* por botella, numerados, tamper-evident (ISO 13739 §3.17);
-  los precintos SGS no se entregan a terceros (manual §2.6).
+  los precintos la inspectora no se entregan a terceros (manual §2.6).
 - **"Level Sampling Calculations"** (hoja aparte) = **posicional**, NO calcula masa/volumen:
   da la profundidad del muestreador para spot samples — `Upper = Ullage + Innage/6`,
   `Middle = Ullage + Innage/2`, `Lower = Ullage + 5·Innage/6`.

@@ -16,7 +16,7 @@ function ensureReady(): Promise<void> {
   return ready
 }
 
-/** Friendly inputs for one BQS tank row. Defaults mirror the SAT worksheet. */
+/** Friendly inputs for one BQS tank row. Defaults mirror the client legacy worksheet. */
 export interface BqsRowInput {
   density15: number // kg/L @ 15 °C
   temperature: number // °C

@@ -26,7 +26,7 @@
 | `research/tanques…` | Entidad `Tank` **+ `CalibrationTable` versionada** con entries interpolables. | Se adopta `Tank` (polimórfica con `is_bunker` y tipo), **pero NO** se almacena la tabla de calibración. Solo `calibration_table_date` + `calibration_ref`. El **volumen es ingresado**. |
 | `research/key-meeting…` | Entidad `KeyMeeting` parametrizada por tipo de operación + reglas de validación. | Se adopta como `key_meetings` (+ secciones), MVP ligero, post-MVP completa. |
 | `research/logbook…` | Captura de ROB del logbook y comparación con sounding físico. | Se adopta como `logbook_robs` + comparación en `tank_readings`. |
-| `01-analisis` (SAT.db, 156 tablas) | Modelo legacy muy completo (Job/Vessel/Shore/Barge/OBQ/ROB/VEF/Sample/Reports…). | Se **simplifica** a las áreas necesarias por fase; nombres en `snake_case`. |
+| `01-analisis` (LEGACY.db, 156 tablas) | Modelo legacy muy completo (Job/Vessel/Shore/Barge/OBQ/ROB/VEF/Sample/Reports…). | Se **simplifica** a las áreas necesarias por fase; nombres en `snake_case`. |
 
 ---
 
@@ -250,7 +250,7 @@ job_customers 1───* jobs *───1 vessels 1───* tanks
 
 ---
 
-## 6. Mapeo legacy (SAT.db 156 tablas → SuperSurvey)
+## 6. Mapeo legacy (LEGACY.db 156 tablas → SuperSurvey)
 
 | Área legacy (`01-analisis §7`) | SuperSurvey |
 |---|---|

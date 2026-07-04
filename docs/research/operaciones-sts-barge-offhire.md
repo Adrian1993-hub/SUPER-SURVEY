@@ -6,7 +6,7 @@
 >
 > 1. `…STS_Mother_Load_MT_AS_SUWAYQ…pdf` — STS, buque madre **cargando** (crudo), 22 págs.
 > 2. `…STS_Mother_Discharge_MT_KUFRA…pdf` — STS, buque madre **descargando** (NAPO crude), 33 págs.
-> 3. `…BargeTow_Loading_BARGES…pdf` — carga de **barcaza** (CENTENARIO TRADER, MGO DMA), 16 págs.
+> 3. `…BargeTow_Loading_BARGES…pdf` — carga de **barcaza** (BUQUE-B, MGO DMA), 16 págs.
 > 4. `…BUDVA…OFF_HIRE_CERTIFICATE…docx` — **certificado de off‑hire** (redelivery) — la salida.
 > 5. `…Bunker_Survey_OFF_HIRE_MV_SEA_BREEZE…xlsx` — hoja de **off‑hire** (cálculo + certificado).
 
@@ -62,7 +62,7 @@ la salida como "Statement" en ese caso.
 
 ---
 
-## 3. Estructura por operación (secciones del reporte SGS)
+## 3. Estructura por operación (secciones del reporte la inspectora)
 
 ### STS Mother **Discharge** (KUFRA, 33 págs) — la más completa
 Summary · **Bill of Lading** · Time Log · LOP · Quantity Certificate · **Shuttle Quantity** ·
@@ -76,7 +76,7 @@ Summary · Time Log · LOP · Quantity Certificate · **Shuttle Quantity** · Ul
 **OBQ Tank Inspection** · Previous Cargoes · Non Cargo Tank Report · Ullage After Loading · **Ship
 Quantity at Loading** · **VEF** · Sample · Bunker Survey · Voyage Analysis · Certificate of Quantity.
 
-### Barge Tow **Loading** (CENTENARIO TRADER, 16 págs)
+### Barge Tow **Loading** (BUQUE-B, 16 págs)
 Summary · **Bill of Lading Quantity** + Certificate · Time Log · LOP · Quantity Certificate ·
 **Pipeline Reconciliation** · **Shore Measurement** + **Shore Quantity** · **OBQ Before Loading** ·
 Ullage After Loading · **Barge Quantity Report**. Compara **Loaded vs B/L** (varianza −0.411 %).
@@ -125,7 +125,7 @@ plantillas de reporte (STS/Barge/Off‑Hire) sobre el motor existente, y por úl
 
 ## 6. Refuerzo: Master Summary, multi-unidad y otra empresa (Intertek) + ISO 13739
 
-Más referencias (2ª tanda) — **AXIOS STAR** aparece en SGS *y* Intertek (misma nave, distinta
+Más referencias (2ª tanda) — **AXIOS STAR** aparece en la inspectora *y* Intertek (misma nave, distinta
 empresa): el layout es **universal**.
 
 ### 6.1 Master Summary (rollup ejecutivo) — `AXIOS_STAR_MASTER_SUMMARY`

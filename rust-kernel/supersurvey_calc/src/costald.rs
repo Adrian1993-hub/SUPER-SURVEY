@@ -3,7 +3,7 @@
 //!
 //! Distinct from the petroleum product tables (54/6): the thermal expansion of
 //! light hydrocarbons near ambient is large and non-linear, so the worksheet
-//! (real anchor: SGS *EPIC MADEIRA*, propane discharge, Vopak Panama — see
+//! (real anchor: client certificate (vessel A), propane discharge, a Central American terminal — see
 //! docs/research/lpg.md) corrects volume by the corresponding-states method
 //! rather than by an ASTM α-equation.
 //!
@@ -125,7 +125,7 @@ impl FromStr for CtlReference {
 ///
 /// `omega_srk`, `vstar_m3_mol` and `z_ra` are the verified COSTALD parameters
 /// (chemicals `COSTALD Parameters.tsv`, lineage API/DIPPR). `tc_kelvin` is the
-/// GPA TP-27 worksheet value for propane / i-butane (validated against the SGS
+/// GPA TP-27 worksheet value for propane / i-butane (validated against the client
 /// anchor) and the Yaws critical-property value for the rest. `zc` / `pc_bar`
 /// are worksheet-provenance quantities used only for the `h2` cross-check — the
 /// worksheet's `Pc` basis (5.0 / 3.86) is NOT the SI critical pressure, so they
@@ -176,7 +176,7 @@ impl LpgComponent {
     pub fn constants(self) -> LpgComponentConstants {
         match self {
             // propane / i-butane: Tc, rd60, Zc, Pc(basis) from the GPA TP-27
-            // worksheet (validated by the SGS anchor); ω_SRK/V*/Z_RA verified.
+            // worksheet (validated by the client anchor); ω_SRK/V*/Z_RA verified.
             LpgComponent::Propane => LpgComponentConstants {
                 tc_kelvin: dec!(369.78),
                 omega_srk: dec!(0.1532),
@@ -716,9 +716,9 @@ mod tests {
     }
 
     #[test]
-    fn ctl_reproduces_epic_madeira_anchor() {
+    fn ctl_reproduces_client_vessel_anchor() {
         // Generic COSTALD (universal a..h) computes CTL = 0.95882797… for propane
-        // @ 83.7 °F; the SGS worksheet (per-fluid K1..K4 saturation polynomial)
+        // @ 83.7 °F; the client worksheet (per-fluid K1..K4 saturation polynomial)
         // reports 0.9587323707. Residual ≈ 9.6e-5 (~0.01%) — the documented gap
         // between generic COSTALD and the bespoke polynomial. Closing it to cell-
         // exactness needs the per-component K1..K4 from the `shore (C3)` sheet;
@@ -747,7 +747,7 @@ mod tests {
         // → CTL = 1.138020 (the standard's Table 54E / API 11.2.4 algorithm).
         // Generic COSTALD gives 1.138142 — residual ~1.2e-4 (structural, the
         // per-fluid K1..K4 gap), confirming the engine against a refrigerated
-        // temperature and a different source than the EPIC MADEIRA worksheet.
+        // temperature and a different source than the vessel A worksheet.
         let c = costald_ctl(
             dec!(0.509),
             &celsius(dec!(-39.6)),

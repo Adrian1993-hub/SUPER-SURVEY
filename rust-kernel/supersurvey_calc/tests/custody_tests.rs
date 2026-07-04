@@ -1,4 +1,4 @@
-//! Custody helpers QA — S&W deduction + pro-rata, validated against a real SGS
+//! Custody helpers QA — S&W deduction + pro-rata, validated against a real client
 //! STS report (KUFRA, S&W 0.761 %).
 
 use rust_decimal::Decimal;

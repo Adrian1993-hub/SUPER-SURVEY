@@ -140,7 +140,7 @@ const bargeTow: OperationTemplate = {
   sections: ['meta', 'gradeInventory', 'custodySummary', 'vef', 'signatures', 'notes'],
   header: {
     referencia: 'BARGE DEMO-0650',
-    buque: 'BARGE CENTENARIO (demo)',
+    buque: 'BARCAZA DEMO-02',
     contraparte: 'Shore (B/L)',
     puerto: 'PATSA, Demo',
     surveyor: 'Surveyor Demo',
@@ -212,7 +212,7 @@ const cargoVoyage: OperationTemplate = {
     referencia: 'VOYAGE DEMO-12652',
     buque: 'MT DEMO-STAR',
     contraparte: 'Shore (load) / Shore (discharge)',
-    puerto: 'VOPAK Demo → Demo Discharge',
+    puerto: 'Terminal Demo → Demo Discharge',
     surveyor: 'Surveyor Demo',
     fecha: '05–07 mar 2026',
     metodo: 'ASTM D1250 (6B/13) — multi-unidad',

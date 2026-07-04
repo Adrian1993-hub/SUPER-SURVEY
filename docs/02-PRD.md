@@ -14,7 +14,7 @@ defendible y documento firmable — todo offline.**
 
 No reemplaza al surveyor: él sigue midiendo tanques, tomando muestras, verificando líneas y
 validando densidades/temperaturas. SuperSurvey hace la parte donde hoy se pierde tiempo y se
-cometen errores con Excel / SAT / OGC InfoPro:
+cometen errores con Excel / LEGACY / el sistema legacy:
 
 1. **Recibe** datos de campo + externos (BDN, B/L, terminal, logbook).
 2. **Calcula** exacto y con trazabilidad (se ve cómo salió cada número).
@@ -33,7 +33,7 @@ El surveyor de cantidad hoy trabaja con dos malas opciones:
 | Herramienta | Dolor |
 |---|---|
 | **Excel artesanal** | Frágil, sin trazabilidad, errores de fórmula/redondeo, no estandarizado, no firmable de forma defendible. |
-| **SAT / OGC InfoPro** (legacy, ver `01-analisis`) | UI anticuada (~133 pantallas), flujos rígidos, entrada manual intensiva sin validación en vivo, motor de cálculo en DLL nativa **caja negra** (no auditable, atada a Windows x86), curva de aprendizaje alta. |
+| **LEGACY / el sistema legacy** (legacy, ver `01-analisis`) | UI anticuada (~133 pantallas), flujos rígidos, entrada manual intensiva sin validación en vivo, motor de cálculo en DLL nativa **caja negra** (no auditable, atada a Windows x86), curva de aprendizaje alta. |
 
 **Consecuencia:** tiempo perdido, errores, discrepancias mal documentadas y reportes que no
 siempre resisten una disputa comercial (NOAD/LOP, P&I, custody transfer).
@@ -57,7 +57,7 @@ siempre resisten una disputa comercial (NOAD/LOP, P&I, custody transfer).
 |---|---|---|
 | O1 | **Exactitud normativa** | El cálculo reproduce el número de un reporte real conocido dentro de tolerancia (caso QA ancla). 0 discrepancias inexplicables. |
 | O2 | **Trazabilidad** | El 100% de las cantidades se explican paso a paso (trace con UUID + versión del motor). |
-| O3 | **Velocidad de campo** | Reducir el tiempo de captura+cálculo+reporte de una operación vs. Excel/SAT (objetivo: ≥40% menos). |
+| O3 | **Velocidad de campo** | Reducir el tiempo de captura+cálculo+reporte de una operación vs. Excel/LEGACY (objetivo: ≥40% menos). |
 | O4 | **Reportes firmables** | Generar VMR/BMR/Shore/Summary/SOF/NOAD/LOP en PDF/XLSX con calidad de impresión. |
 | O5 | **Offline real** | Toda la operación (captura→cálculo→reporte) funciona sin red. |
 | O6 | **White-label** | Cambiar marca (nombre, logo, colores, pie de reporte) sin recompilar el motor. |
@@ -91,7 +91,7 @@ siempre resisten una disputa comercial (NOAD/LOP, P&I, custody transfer).
   tabla usada (trazabilidad). *(Decisión bloqueada — `00-ULTRAPLAN §2`.)*
 - **No es cloud/multiusuario en el MVP** (offline-first; sincronización es futuro, fuera de alcance).
 - **No hace contabilidad/facturación** ni gestión de flota.
-- **No reusa `firogcfn.dll`** (caja negra). El motor se reimplementa en Rust desde la norma.
+- **No reusa `calcnative.dll`** (caja negra). El motor se reimplementa en Rust desde la norma.
 
 ---
 

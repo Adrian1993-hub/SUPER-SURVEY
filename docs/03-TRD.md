@@ -72,7 +72,7 @@ branding/        # brand.toml + temas
 
 ### 4.1 Requisitos
 - **TR-CALC-1:** Aritmética **decimal** (`rust_decimal`) en toda la cadena. Prohibido `f64` en cálculo oficial.
-- **TR-CALC-2:** **Implementar por ecuaciones** (API MPMS Ch. 11.1) VCF/WCF/densidad; **NO** reusar `firogcfn.dll`.
+- **TR-CALC-2:** **Implementar por ecuaciones** (API MPMS Ch. 11.1) VCF/WCF/densidad; **NO** reusar `calcnative.dll`.
 - **TR-CALC-3:** Soportar **todas las versiones/revisiones** de tablas ASTM/API (D1250-80 / -04/07/08/19; Tablas 6A/6B/6C/6D/6E, 24, 53/54, 56, 59/60, etc.); el surveyor elige la aplicable. Validar contra valores de `TABLASASTM.xls`. *(Set exacto de versiones: en investigación.)*
 - **TR-CALC-4:** **Sin redondeo intermedio**; redondear solo el resultado final. `aggregate_from_unrounded` debe respetarlo y ser **seleccionable** desde el DTO/UI.
 - **TR-CALC-5:** **Trace** estructurado por cantidad: cada paso (entrada, tabla/versión, factor, salida) con UUID y versión del motor.

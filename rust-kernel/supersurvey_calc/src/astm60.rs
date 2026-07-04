@@ -3,7 +3,7 @@
 //! by equation. Density is entered as **API gravity @ 60 °F**.
 //!
 //! Sibling of `astm` (metric 54A/54B/56, 15 °C). Reverse-engineered and validated
-//! cell-by-cell against a real SGS imperial BQS worksheet (see
+//! cell-by-cell against a real client imperial BQS worksheet (see
 //! docs/research/formato-bqs-imperial-multigrado.md). Same equation form as the
 //! metric tables — only the base temperature, the °F K-constants, the API→density
 //! route and the WCF (barrels) differ.

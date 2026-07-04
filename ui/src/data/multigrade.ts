@@ -1,8 +1,8 @@
-// Datos DEMO para un BQS IMPERIAL MULTIGRADO (estilo SGS): por GRADO, una
+// Datos DEMO para un BQS IMPERIAL MULTIGRADO (estilo inspectora internacional): por GRADO, una
 // medición de APERTURA y una de CIERRE (Loaded = cierre − apertura), más las
 // cifras de auditoría (Nominado / BDN). Unidades US: API @60 °F, °C de campo, m³.
 //
-// El grado VLSFO es el CASO DE VALIDACIÓN: replica tanque a tanque la hoja SGS
+// El grado VLSFO es el CASO DE VALIDACIÓN: replica tanque a tanque la hoja real del cliente
 // analizada (docs/research/formato-bqs-imperial-multigrado.md) con nombres
 // anonimizados — el kernel debe reproducir Loaded ≈ 590.874 MT (hoja real).
 // LSMGO es demo libre. NO son datos de clientes.
@@ -55,7 +55,7 @@ export const multigradeDemo: MultigradeData = {
       label: 'VLSFO — Tabla 6B (fuel oils)',
       nominatedMt: 595.0,
       bdnMt: 590.46,
-      // Caso de validación: misma física que la hoja SGS (8 tanques).
+      // Caso de validación: misma física que la hoja real del cliente (8 tanques).
       opening: [
         { tank: '1S', api: 15.18, tempC: 29.0, volumeM3: 10.48 },
         { tank: '1P', api: 12.55, tempC: 39.0, volumeM3: 0.3 },

@@ -19,7 +19,7 @@ import { Cpu, FileText, Droplets, Wind, Scale, Thermometer, PenLine } from 'luci
 // Rust calc kernel (WASM): liquid custody assembly (lpg_custody) + COSTALD CTL
 // (API 11.2.4, costald_ctl) + vapour-space correction (API 17.10.2,
 // lpg_vapor_correction). Total = liquid mass + vapour mass. Defaults are anchored
-// to real documents — liquid to the SGS EPIC MADEIRA propane certificate
+// to real documents — liquid to the client propane certificate (vessel A)
 // (588.203 MT vac), vapour to API MPMS 17.10.2 Table 6 (ρv = 9.146 kg/m³).
 
 // Formulario denso canónico: .input-dense/.label-dense (index.css).
@@ -51,9 +51,9 @@ const compLabel = (c: string) => c.replace(/_/g, ' ').toLowerCase().replace(/^./
 
 export function Lpg() {
   // Certificate header (free text)
-  const [vessel, setVessel] = useState('MT EPIC MADEIRA')
+  const [vessel, setVessel] = useState('MT DEMO-LPG')
   const [cargoName, setCargoName] = useState('Propane (C3)')
-  const [port, setPort] = useState('Vopak, Panama')
+  const [port, setPort] = useState('Terminal Demo, Panamá')
   const [docDate, setDocDate] = useState('2026-06-14')
   const [surveyor, setSurveyor] = useState('')
 
@@ -311,7 +311,7 @@ export function Lpg() {
             Cadena LPG completa en el kernel Rust/WASM: <strong>custodia líquida</strong> (LT desde vacío; bbl/gal vía ASTM-IP Table 1),
             <strong> CTL líquido por COSTALD (API MPMS 11.2.4)</strong> y <strong>corrección de vapor (API MPMS 17.10.2)</strong>:
             ρv = (288.15/T)(P/1.01325)(M/23.6451)/Z; <strong>Total = masa líquida + masa de vapor</strong>. Valores por defecto anclados a
-            documentos reales — líquido al certificado SGS <em>EPIC MADEIRA</em> (588.203 MT vac) y vapor a API 17.10.2 Tabla 6 (ρv = 9.146 kg/m³).
+            documentos reales — líquido al certificado real del cliente (<em>buque A</em>) (588.203 MT vac) y vapor a API 17.10.2 Tabla 6 (ρv = 9.146 kg/m³).
           </p>
         </div>
       </main>

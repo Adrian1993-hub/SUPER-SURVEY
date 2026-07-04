@@ -1,6 +1,6 @@
 //! QA for the US-customary 60 °F family (Table 6A/6B VCF + Table 13 WCF).
 //!
-//! Anchors are the COMPUTED values from a real SGS imperial BQS worksheet,
+//! Anchors are the COMPUTED values from a real client imperial BQS worksheet,
 //! read out of its hidden calculation columns (Z–AH). The worksheet itself runs
 //! the same equations by `EXP(...)`, so the kernel must reproduce them to 5 dp
 //! (allowing the documented ±1-in-last-place table variance, since our Decimal

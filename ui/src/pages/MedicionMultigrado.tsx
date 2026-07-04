@@ -10,7 +10,7 @@ import { VefPanel } from '../components/VefPanel'
 import { SamplingPanel } from '../components/SamplingPanel'
 import { Cpu, Layers, Droplets, AlertTriangle, CheckCircle2, FileText, Braces } from 'lucide-react'
 
-// BQS IMPERIAL MULTIGRADO completo (estilo SGS): por GRADO, apertura + cierre
+// BQS IMPERIAL MULTIGRADO completo (estilo inspectora internacional): por GRADO, apertura + cierre
 // (Loaded = cierre − apertura) y AUDIT (Received vs BDN, veredicto del kernel;
 // Nominado como referencia). Unidades US: API @60 °F, barriles, Tablas 6B/13.
 // TODO cálculo por fila y todo veredicto sale del kernel WASM — nada en TS,
@@ -152,7 +152,7 @@ function GradeSection({
   const closeCalc = useImperialRows(toRows(g.closing))
   const openTot = totalsOf(openCalc)
   const closeTot = totalsOf(closeCalc)
-  // Loaded = cierre − apertura (resta de totales, como la hoja SGS).
+  // Loaded = cierre − apertura (resta de totales, como la hoja real del cliente).
   const loaded = {
     gsvBbl: closeTot.gsvBbl - openTot.gsvBbl,
     mtAir: closeTot.mtAir - openTot.mtAir,
@@ -424,7 +424,7 @@ export function MedicionMultigrado() {
           <p className="text-xs text-muted-foreground print:hidden">
             Celdas blancas = entrada del surveyor (API@60, °C, m³). Celdas <span className="rounded bg-muted/50 px-1">grises</span> ={' '}
             kernel imperial (API→ρ60, ITS-68, VCF 6B por banda de API, WCF Tabla 13). Loaded = cierre − apertura. El veredicto por
-            grado (Received vs BDN) usa las capas de tolerancia del kernel. VLSFO replica el caso de validación de la hoja SGS.
+            grado (Received vs BDN) usa las capas de tolerancia del kernel. VLSFO replica el caso de validación de la hoja real del cliente.
           </p>
         </div>
       </main>

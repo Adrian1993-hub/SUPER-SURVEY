@@ -9,7 +9,7 @@ import { Cpu, FileText, Factory, Ship, Spline, Scale } from 'lucide-react'
 // medición de tierra por diferencia (|cierre − apertura|) ± contenido de línea
 // (pipeline reconciliation) → Cantidad de tierra; se concilia contra la cifra del
 // buque y el B/L → Δ, Δ% y recomendación None/NOAD/LOP. Anclado al reporte real
-// de Barge Tow Loading (CENTENARIO TRADER): Loaded vs B/L = −0.411 %.
+// de Barge Tow Loading (caso real de remolque de barcazas): Loaded vs B/L = −0.411 %.
 
 // Formulario denso canónico: .input-dense (index.css).
 const lbl = 'text-[11px] text-muted-foreground'

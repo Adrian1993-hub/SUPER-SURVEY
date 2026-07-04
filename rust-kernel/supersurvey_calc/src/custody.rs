@@ -4,7 +4,7 @@
 //!   of Lading) proportionally, reconciling the rounding residual so the parts
 //!   sum back to the total EXACTLY.
 //!
-//! Both are pure `Decimal` and validated against a real SGS STS report (see
+//! Both are pure `Decimal` and validated against a real client STS report (see
 //! docs/research/operaciones-sts-barge-offhire.md). String-in/out DTOs for the
 //! WASM/Tauri boundary.
 

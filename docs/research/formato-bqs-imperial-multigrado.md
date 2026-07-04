@@ -4,8 +4,8 @@
 > usar números en cualquier salida). Sirve para **generalizar** el kernel/app a formatos que hoy
 > no cubrimos. Verificado **celda a celda, incluidas hojas y columnas ocultas**.
 >
-> 1. `TORM_DAPHNE … BQS … PANEXPORT.xlsm` — BQS SGS, **imperial (barriles/°F/API)**, **multigrado**.
-> 2. `… Discharge ELKA DELPHI CHEVRON …pdf` — **descarga de carga** SGS (52 págs, 4 grados).
+> 1. `TORM_DAPHNE … BQS … PANEXPORT.xlsm` — BQS la inspectora, **imperial (barriles/°F/API)**, **multigrado**.
+> 2. `… Discharge ELKA DELPHI CHEVRON …pdf` — **descarga de carga** la inspectora (52 págs, 4 grados).
 
 ---
 
@@ -72,7 +72,7 @@ La hoja calcula el VCF **por ecuación** (no por tabla impresa), exactamente nue
 
 ## 2. ELKA DELPHI — descarga de carga (familia de operación más amplia)
 
-Informe SGS de **52 páginas**, **multigrado** (MOGAS PREMIUM 95, MOGAS REGULAR 91, ULSD, JET A),
+Informe la inspectora de **52 páginas**, **multigrado** (MOGAS PREMIUM 95, MOGAS REGULAR 91, ULSD, JET A),
 imperial. Sus secciones marcan operaciones **más allá del BQS**:
 
 `Summary Report (Discharge)` por grado · `Time Log` · `Letter of Protest` · `Quantity Certificate`

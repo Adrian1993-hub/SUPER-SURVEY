@@ -74,24 +74,38 @@ jobs:
         working-directory: ui
         run: npm ci
 
+      # Updater: si el secret TAURI_SIGNING_PRIVATE_KEY existe, se firman los
+      # artefactos y se genera latest.json (createUpdaterArtifacts se inyecta por
+      # --config para que el build siga funcionando SIN el secret).
+      - name: Detect updater signing key
+        id: upd
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then
+            echo 'args=--config {"bundle":{"createUpdaterArtifacts":true}}' >> "$GITHUB_OUTPUT"
+          else
+            echo 'args=' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build + package (tauri-action)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Signing / notarization / updater are OFF by default: passing EMPTY Apple
-          # cert secrets makes macOS `security import` fail (codesign). To enable,
-          # add the repo secrets and UNCOMMENT these — see docs/packaging.md §3.
-          # (Leaving them commented = valid unsigned bundles on all 3 platforms.)
+          # Firma del UPDATER (activa solo si el secret existe — docs/actualizaciones.md).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Firma/notarización APPLE: OFF por defecto (pasar secrets VACÍOS rompe
+          # `security import`). Para activar, añadir secrets y descomentar —
+          # ver docs/packaging.md §3.
           # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           # APPLE_ID: ${{ secrets.APPLE_ID }}
           # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: ui
+          args: ${{ steps.upd.outputs.args }}
           # Tag-push uses the pushed tag; manual dispatch uses the `version` input
           # so tauri-action creates that tag + release (the CI token can; the dev
           # sandbox cannot push tags).

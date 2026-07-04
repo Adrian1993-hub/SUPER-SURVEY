@@ -42,5 +42,13 @@
         "depends": []
       }
     }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDczMDc2RTdGMzQyMkI0OTkKUldTWnRDSTBmMjRIY3htZ1RINW5YN01pOGVxVzhWOU5kZW5iKzNZQjc2VTVxd3FBZ0FoUitZNXAK",
+      "endpoints": [
+        "https://github.com/Adrian1993-hub/SUPER-SURVEY/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

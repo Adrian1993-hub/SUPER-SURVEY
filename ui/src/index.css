@@ -258,6 +258,23 @@
   --sidebar-ring: oklch(0.46 0.08 225);
 }
 
+/* Fuente + densidad configurables desde /configuracion (persistidas como
+   data-font / data-density en <html>; bootstrap anti-flash en index.html).
+   El mono (cifras) no cambia. */
+:root {
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --dense-pad-y: 4px;
+  --dense-pad-x: 6px;
+}
+[data-font='system'] {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+[data-density='compact'] {
+  --dense-pad-y: 2px;
+  --dense-pad-x: 4px;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -343,7 +360,7 @@
   }
   .table-dense th {
     border: 1px solid var(--border);
-    padding: 4px 6px;
+    padding: var(--dense-pad-y) var(--dense-pad-x);
     text-align: right;
     font-size: 10px;
     font-weight: 500;
@@ -351,11 +368,11 @@
   }
   .table-dense td {
     border: 1px solid var(--border);
-    padding: 4px 6px;
+    padding: var(--dense-pad-y) var(--dense-pad-x);
     text-align: right;
-    font-family: 'Geist Mono', monospace;
-    font-size: 11px;
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    font-size: 11px;
   }
   .table-dense .cell-l {
     text-align: left;

@@ -43,8 +43,10 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['Geist', 'system-ui', 'sans-serif'],
-        mono: ['"Geist Mono"', 'monospace'],
+        // Vía CSS var para que Configuración pueda cambiar la fuente en runtime
+        // (ver [data-font] en index.css). El mono se conserva para cifras.
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)'],
       },
     },
   },

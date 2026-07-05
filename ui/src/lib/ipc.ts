@@ -165,6 +165,49 @@ export async function loadMeasurementSnapshots(jobId: string): Promise<string[]>
   return invoke<string[]>('load_measurement_snapshots', { jobId })
 }
 
+// ---- Actualizaciones -----------------------------------------------------
+
+export interface UpdateCheck {
+  /** web | uptodate | available | unavailable */
+  state: 'web' | 'uptodate' | 'available' | 'unavailable'
+  version?: string
+  notes?: string
+  message?: string
+  /** Presente si state==='available': descarga, instala y reinicia. */
+  run?: () => Promise<void>
+}
+
+/** Busca una actualización (escritorio). Usa el plugin updater de Tauri si está
+ *  presente en el build empaquetado; el import va marcado @vite-ignore para no
+ *  romper el bundle actual y encenderse solo cuando el plugin exista. */
+export async function checkForUpdates(): Promise<UpdateCheck> {
+  if (!isDesktop()) return { state: 'web' }
+  try {
+    // Especificadores en variable: tsc no los resuelve estáticamente (los
+    // plugins aún no están en node_modules) y vite no los pre-empaqueta; se
+    // resuelven en runtime dentro de la app empaquetada con el plugin instalado.
+    const updaterMod = '@tauri-apps/plugin-updater'
+    const processMod = '@tauri-apps/plugin-process'
+    const updater = (await import(/* @vite-ignore */ updaterMod)) as {
+      check: () => Promise<null | { version: string; body?: string; downloadAndInstall: () => Promise<void> }>
+    }
+    const update = await updater.check()
+    if (!update) return { state: 'uptodate' }
+    return {
+      state: 'available',
+      version: update.version,
+      notes: update.body ?? undefined,
+      run: async () => {
+        await update.downloadAndInstall()
+        const proc = (await import(/* @vite-ignore */ processMod)) as { relaunch: () => Promise<void> }
+        await proc.relaunch()
+      },
+    }
+  } catch (e) {
+    return { state: 'unavailable', message: String(e) }
+  }
+}
+
 // ---- Licencia (gate suave) -----------------------------------------------
 
 export interface LicenseInfo {

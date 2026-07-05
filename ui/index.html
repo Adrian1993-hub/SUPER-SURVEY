@@ -9,10 +9,13 @@
       // instalaciones previas a la matriz: sin 'ss-mode' guardado, ocean era la
       // única piel clara → ocean hereda light, el resto dark.
       try {
+        var r = document.documentElement
         var t = localStorage.getItem('ss-theme') || 'control-room'
         var m = localStorage.getItem('ss-mode') || (t === 'ocean' ? 'light' : 'dark')
-        document.documentElement.setAttribute('data-theme', t)
-        document.documentElement.setAttribute('data-mode', m === 'light' ? 'light' : 'dark')
+        r.setAttribute('data-theme', t)
+        r.setAttribute('data-mode', m === 'light' ? 'light' : 'dark')
+        r.setAttribute('data-font', localStorage.getItem('ss-font') || 'geist')
+        r.setAttribute('data-density', localStorage.getItem('ss-density') || 'comfortable')
       } catch (e) {
         document.documentElement.setAttribute('data-theme', 'control-room')
         document.documentElement.setAttribute('data-mode', 'dark')

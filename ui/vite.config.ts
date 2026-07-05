@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
+
+const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')) as { version: string }
 
 // base '/' (absoluta): Tauri v2 sirve frontendDist por su protocolo propio desde
 // la raíz (la base relativa era una necesidad de Tauri v1/file://), y con './'
@@ -13,6 +16,9 @@ import path from 'node:path'
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   base: '/',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     alias: [
       { find: '@', replacement: path.resolve(__dirname, './src') },

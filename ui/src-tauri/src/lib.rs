@@ -265,6 +265,48 @@ fn license_status(app: tauri::AppHandle) -> Result<license::LicenseInfo, String>
     Ok(license::evaluate(json.as_deref()))
 }
 
+/// Pasarela ÚNICA de cálculo para el escritorio (anti-RE, F3): la UI llama por
+/// nombre y el binario NATIVO ejecuta el kernel — el build desktop no incluye
+/// el `.wasm` (la matemática no viaja en un artefacto extraíble). Mismo contrato
+/// string-in/string-out que los exports WASM de la demo web; los errores de
+/// cálculo van DENTRO de la respuesta (success:false), igual que en WASM.
+#[tauri::command]
+fn kernel_call(fn_name: String, request_json: String) -> Result<String, String> {
+    use supersurvey_calc as calc;
+    fn run<T, F>(json: &str, calculate: F) -> Result<String, String>
+    where
+        T: serde::de::DeserializeOwned,
+        F: Fn(&T) -> String,
+    {
+        let req: T = serde_json::from_str(json).map_err(|e| format!("invalid request JSON: {e}"))?;
+        Ok(calculate(&req))
+    }
+    fn out<R: Serialize>(resp: &R) -> String {
+        serde_json::to_string(resp).unwrap_or_else(|e| format!("{{\"success\":false,\"errors\":[{{\"code\":\"IPC_BOUNDARY\",\"message\":\"serialize failed: {e}\"}}]}}"))
+    }
+    match fn_name.as_str() {
+        "bqs_calculate_row" => run(&request_json, |r: &calc::bqs::BqsRowRequestDTO| out(&r.calculate())),
+        "bqs_calculate_row_imperial" => run(&request_json, |r: &calc::bqs60::ImperialRowRequestDTO| out(&r.calculate())),
+        "compare_sources" => run(&request_json, |r: &calc::comparison::ComparisonRequestDTO| out(&r.compare())),
+        "density_tool" => run(&request_json, |r: &calc::density::DensityToolRequestDTO| out(&r.calculate())),
+        "vef_calculate" => run(&request_json, |r: &calc::vef::VefRequestDTO| out(&r.calculate())),
+        "sw_deduction" => run(&request_json, |r: &calc::custody::SwRequestDTO| out(&r.calculate())),
+        "pro_rata" => run(&request_json, |r: &calc::custody::ProRataRequestDTO| out(&r.calculate())),
+        "sampling_levels" => run(&request_json, |r: &calc::sampling::SamplingRequestDTO| out(&r.calculate())),
+        "custody_figure" => run(&request_json, |r: &calc::figures::CustodyFigureRequestDTO| out(&r.calculate())),
+        "draft_survey" => run(&request_json, |r: &calc::draft::DraftSurveyRequestDTO| out(&r.calculate())),
+        "hydrostatic_interpolate" => run(&request_json, |r: &calc::draft::HydrostaticInterpolateRequestDTO| out(&r.calculate())),
+        "reconcile_terminal" => run(&request_json, |r: &calc::reconcile::ReconciliationRequestDTO| out(&r.calculate())),
+        "lpg_custody" => run(&request_json, |r: &calc::lpg::LpgCustodyRequestDTO| out(&r.calculate())),
+        "costald_ctl" => run(&request_json, |r: &calc::costald::CostaldCtlRequestDTO| out(&r.calculate())),
+        "lpg_vapor_correction" => run(&request_json, |r: &calc::lpg_vapor::LpgVaporRequestDTO| out(&r.calculate())),
+        "blend_calculate" => run(&request_json, |r: &calc::blend::BlendRequestDTO| out(&r.calculate())),
+        "movement_set_calculate" => run(&request_json, |r: &calc::movement::MovementSetRequestDTO| out(&r.calculate())),
+        "kernel_version" => Ok(calc::KERNEL_VERSION.to_string()),
+        other => Err(format!("unknown kernel function: {other}")),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Offline-first: a local SQLite file next to the app.
@@ -281,7 +323,8 @@ pub fn run() {
             create_job,
             load_measurement_snapshots,
             read_brand_override,
-            license_status
+            license_status,
+            kernel_call
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

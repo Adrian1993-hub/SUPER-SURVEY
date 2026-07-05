@@ -21,3 +21,12 @@ serde_json = "1"
 supersurvey_calc = { path = "../../rust-kernel/supersurvey_calc" }
 supersurvey_persistence = { path = "../../rust-kernel/supersurvey_persistence" }
 supersurvey_license = { path = "../../tools/supersurvey_license" }
+
+# Perfil release endurecido (anti-RE, F3): menos símbolos y debug info en el
+# ejecutable distribuido. Ver docs/seguridad.md.
+[profile.release]
+panic = "abort"
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "s"

@@ -16,6 +16,37 @@ function ensureReady(): Promise<void> {
   return ready
 }
 
+// ---- Enrutador de kernel (anti-RE, F3) ------------------------------------
+// ESCRITORIO: cada cálculo va por IPC al binario nativo (comando `kernel_call`);
+// el bundle desktop no incluye el .wasm (vite --mode desktop lo stubbea).
+// WEB (demo): mismo contrato contra el kernel WASM local.
+
+type KernelFnName =
+  | 'bqs_calculate_row' | 'bqs_calculate_row_imperial' | 'compare_sources' | 'density_tool'
+  | 'vef_calculate' | 'sw_deduction' | 'pro_rata' | 'sampling_levels' | 'custody_figure'
+  | 'draft_survey' | 'hydrostatic_interpolate' | 'reconcile_terminal' | 'lpg_custody'
+  | 'costald_ctl' | 'lpg_vapor_correction' | 'blend_calculate' | 'movement_set_calculate'
+  | 'kernel_version'
+
+const WASM_FNS: Record<KernelFnName, (json: string) => string> = {
+  bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool,
+  vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure,
+  draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody,
+  costald_ctl, lpg_vapor_correction, blend_calculate, movement_set_calculate,
+  kernel_version: () => kernel_version(),
+}
+
+const inDesktop = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+
+async function callKernel(fn: KernelFnName, requestJson: string): Promise<string> {
+  if (inDesktop()) {
+    const { invoke } = await import('@tauri-apps/api/core')
+    return invoke<string>('kernel_call', { fnName: fn, requestJson })
+  }
+  await ensureReady()
+  return WASM_FNS[fn](requestJson)
+}
+
 /** Friendly inputs for one BQS tank row. Defaults mirror the client legacy worksheet. */
 export interface BqsRowInput {
   density15: number // kg/L @ 15 °C
@@ -89,7 +120,7 @@ interface RawResponse {
 /** Compute one BQS tank row with the WASM kernel. */
 export async function calcBqsRow(input: BqsRowInput): Promise<BqsRowResult> {
   await ensureReady()
-  const raw = bqs_calculate_row(JSON.stringify(bqsRowRequest(input)))
+  const raw = await callKernel('bqs_calculate_row', JSON.stringify(bqsRowRequest(input)))
   const r = JSON.parse(raw) as RawResponse
   return {
     success: r.success,
@@ -168,7 +199,7 @@ export async function calcImperialRow(input: ImperialRowInput): Promise<Imperial
     gsv_decimals: 2,
     weight_decimals: 3,
   }
-  const r = JSON.parse(bqs_calculate_row_imperial(JSON.stringify(req))) as RawImperialResponse
+  const r = JSON.parse(await callKernel('bqs_calculate_row_imperial', JSON.stringify(req))) as RawImperialResponse
   return {
     success: r.success,
     vcf: r.vcf,
@@ -295,7 +326,7 @@ export async function calcVef(input: VefInput): Promise<VefResult> {
     qualifying_band_pct: String(input.qualifyingBandPct ?? 0.3),
     calculation_scope: input.scope ?? 'LIVE',
   }
-  const r = JSON.parse(vef_calculate(JSON.stringify(req))) as RawVefResponse
+  const r = JSON.parse(await callKernel('vef_calculate', JSON.stringify(req))) as RawVefResponse
   return {
     success: r.success,
     voyageCount: r.voyage_count,
@@ -343,7 +374,7 @@ export interface SwResult {
 export async function swDeduction(grossValue: number, swPct: number, decimals = 3): Promise<SwResult> {
   await ensureReady()
   const req = { gross_value: String(grossValue), sw_pct: String(swPct), decimals, rounding_rule: 'HALF_UP', calculation_scope: 'LIVE' }
-  const r = JSON.parse(sw_deduction(JSON.stringify(req))) as { success: boolean; gross?: string; sw?: string; net?: string; errors?: { code?: string; message?: string }[] }
+  const r = JSON.parse(await callKernel('sw_deduction', JSON.stringify(req))) as { success: boolean; gross?: string; sw?: string; net?: string; errors?: { code?: string; message?: string }[] }
   return { success: r.success, gross: r.gross, sw: r.sw, net: r.net, errors: r.errors }
 }
 
@@ -370,7 +401,7 @@ export async function proRata(total: number, parcels: { label: string; weight: n
     rounding_rule: 'HALF_UP',
     calculation_scope: 'LIVE',
   }
-  const r = JSON.parse(pro_rata(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('pro_rata', JSON.stringify(req))) as {
     success: boolean
     total?: string
     parcels?: ProRataParcelResult[]
@@ -413,7 +444,7 @@ export async function samplingLevels(tanks: SamplingTankInput[], decimals = 3): 
     decimals,
     rounding_rule: 'HALF_UP',
   }
-  const r = JSON.parse(sampling_levels(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('sampling_levels', JSON.stringify(req))) as {
     success: boolean
     tanks?: {
       tank: string; reference_height: string; ullage: string
@@ -484,7 +515,7 @@ export async function custodyFigure(input: CustodyFigureInput): Promise<CustodyF
     sw_pct: input.swPct !== undefined ? String(input.swPct) : undefined,
     free_water_value: input.freeWater !== undefined ? String(input.freeWater) : undefined,
   }
-  const r = JSON.parse(custody_figure(JSON.stringify(req))) as CustodyFigureResult
+  const r = JSON.parse(await callKernel('custody_figure', JSON.stringify(req))) as CustodyFigureResult
   return r
 }
 
@@ -526,7 +557,7 @@ export async function lpgCustody(input: LpgCustodyInput): Promise<LpgCustodyResu
     rounding_rule: 'HALF_UP',
     calculation_scope: 'LIVE',
   }
-  const r = JSON.parse(lpg_custody(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('lpg_custody', JSON.stringify(req))) as {
     success: boolean
     litres_15?: string; m3_15?: string; mt_vacuum?: string; mt_air?: string
     long_tons?: string; bbl_60?: string; gal_60?: string; m3_60?: string
@@ -592,7 +623,7 @@ export async function costaldCtl(input: CostaldCtlInput): Promise<CostaldCtlResu
     rounding_rule: 'HALF_UP',
     calculation_scope: input.scope ?? 'LIVE',
   }
-  const r = JSON.parse(costald_ctl(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('costald_ctl', JSON.stringify(req))) as {
     success: boolean
     ctl?: string; ctl_unrounded?: string; interpolation_s?: string
     pseudo_tc_kelvin?: string; pseudo_omega?: string
@@ -662,7 +693,7 @@ export async function lpgVaporCorrection(input: LpgVaporInput): Promise<LpgVapor
     rounding_rule: 'HALF_UP',
     calculation_scope: input.scope ?? 'LIVE',
   }
-  const r = JSON.parse(lpg_vapor_correction(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('lpg_vapor_correction', JSON.stringify(req))) as {
     success: boolean
     pressure_bar_abs?: string; vapor_density_kg_m3?: string
     vapor_mass_kg?: string; vapor_mass_mt?: string; total_mass_mt?: string
@@ -728,7 +759,7 @@ export async function blendFuelOil(components: BlendComponentInput[], decimals =
     rounding_rule: 'HALF_UP',
     calculation_scope: 'LIVE',
   }
-  const r = JSON.parse(blend_calculate(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('blend_calculate', JSON.stringify(req))) as {
     success: boolean
     total_volume?: string; api_60f?: string; sg_60?: string; viscosity_cst?: string
     sulfur_wt_pct?: string; water_vol_pct?: string; sediment_wt_pct?: string
@@ -833,7 +864,7 @@ export async function calcMovementSet(
     aggregate_from_unrounded: opts.aggregateFromUnrounded ?? false,
     calculation_scope: opts.scope ?? 'LIVE',
   }
-  const r = JSON.parse(movement_set_calculate(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('movement_set_calculate', JSON.stringify(req))) as {
     success: boolean
     sign_rule?: string
     total_gov_movement?: string; total_gsv_movement?: string; total_weight_air_movement?: string
@@ -929,7 +960,7 @@ const fromDraftCond = (r?: RawDraftCond): DraftConditionResult | undefined =>
 export async function draftSurvey(initial: DraftConditionInput, final: DraftConditionInput, operation: 'LOAD' | 'DISCHARGE'): Promise<DraftSurveyResult> {
   await ensureReady()
   const req = { initial: draftDto(initial), final: draftDto(final), operation, decimals: 3 }
-  const r = JSON.parse(draft_survey(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('draft_survey', JSON.stringify(req))) as {
     success: boolean; initial?: RawDraftCond; final?: RawDraftCond; cargo?: string; errors?: { code?: string; message?: string }[]
   }
   return { success: r.success, initial: fromDraftCond(r.initial), final: fromDraftCond(r.final), cargo: r.cargo, errors: r.errors }
@@ -959,7 +990,7 @@ export async function hydrostaticInterpolate(rows: HydrostaticRowInput[], draft:
     draft: String(draft),
     decimals: 3,
   }
-  const r = JSON.parse(hydrostatic_interpolate(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('hydrostatic_interpolate', JSON.stringify(req))) as {
     success: boolean; displacement?: string; tpc?: string; lcf?: string; mtc_per_metre?: string; errors?: { code?: string; message?: string }[]
   }
   return { success: r.success, displacement: r.displacement, tpc: r.tpc, lcf: r.lcf, mtcPerMetre: r.mtc_per_metre, errors: r.errors }
@@ -970,7 +1001,7 @@ let cachedVersion: string | null = null
 export async function kernelVersion(): Promise<string> {
   if (cachedVersion) return cachedVersion
   await ensureReady()
-  cachedVersion = kernel_version()
+  cachedVersion = await callKernel('kernel_version', '')
   return cachedVersion
 }
 
@@ -1127,7 +1158,7 @@ export async function reconcileTerminal(input: ReconciliationInput): Promise<Rec
     rounding_rule: input.roundingRule ?? 'HALF_UP',
     calculation_scope: input.scope ?? 'LIVE',
   }
-  const r = JSON.parse(reconcile_terminal(JSON.stringify(req))) as {
+  const r = JSON.parse(await callKernel('reconcile_terminal', JSON.stringify(req))) as {
     success: boolean
     unit?: string
     shore_movement?: string
@@ -1228,7 +1259,7 @@ export async function densityTool(input: DensityToolInput): Promise<DensityToolR
     })),
     calculation_scope: input.scope ?? 'LIVE',
   }
-  const r = JSON.parse(density_tool(JSON.stringify(req))) as RawDensityResponse
+  const r = JSON.parse(await callKernel('density_tool', JSON.stringify(req))) as RawDensityResponse
   return {
     success: r.success,
     operation: r.operation,
@@ -1259,7 +1290,7 @@ export async function compareSources(input: CompareInput): Promise<ComparisonRes
     rounding_rule: input.roundingRule ?? 'HALF_UP',
     weight_decimals: input.weightDecimals ?? 3,
   }
-  const r = JSON.parse(compare_sources(JSON.stringify(req))) as RawCompareResponse
+  const r = JSON.parse(await callKernel('compare_sources', JSON.stringify(req))) as RawCompareResponse
   return {
     success: r.success,
     unit: r.unit,

@@ -287,6 +287,17 @@
   input[type='radio'] {
     accent-color: var(--primary);
   }
+  /* Sin spinners en inputs numéricos: en las celdas densas roban ~16px y truncan
+     el valor ("13.2" → "13."); la captura es por teclado de todos modos. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 /* ===========================================================================

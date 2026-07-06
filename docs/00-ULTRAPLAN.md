@@ -130,11 +130,11 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 | **F3 — UI BQS de punta a punta** | Cover, Profiles, grid pareado, live summary | ✅ completa |
 | **F4 — Report engine + white-label** | VMR/BMR/Summary/SOF → PDF/XLSX con branding + branding runtime | ✅ completa |
 | **F5 — Resto de operaciones** | Terminal, STS, **LPG** (custody+COSTALD+vapor), Draft, **Blend**, multigrado, VEF, muestreo, ROB | ✅ completa y ampliada |
-| **F6 — QA + empaque + marca** | ~152 tests vs casos reales; **instaladores CI** (build v0.1.0 ✅); branding final | 🔄 en curso |
+| **F6 — QA + empaque + marca** | ~152 tests vs casos reales; **instaladores CI** (build v0.1.0 ✅); pase de diseño + licencias + updater + seguridad | ✅ prácticamente completa |
 
-- **% del sistema completo hoy:** **~93 %** (actualizado 2026-07-04; el plan original marcaba ~10 % en el día 0).
+- **% del sistema completo hoy:** **~97 %** (actualizado 2026-07-04; el plan original marcaba ~10 % en el día 0).
 - **MVP BQS punta a punta (F1–F4):** ✅ hecho. **Resto de operaciones (F5):** ✅ hecho y ampliado.
-- **Cierre (F6):** en curso — instaladores **v0.1.0** compilados en CI (Win/Mac/Linux); **§9 cerrado** (commit `8ac0824`) y **pase de diseño aplicado con QA visual** (matriz 3 estéticas × claro/oscuro, sistema de estado, tablas densas, flujo guiado, 36 capturas + PDF verificados). Falta: firma de código, updater, licencias, requisitos mínimos, análisis IA offline y limpieza white-label.
+- **Cierre (F6):** casi completo. Hecho: **§9 cerrado** (`8ac0824`); **pase de diseño** completo con QA visual (matriz 3 estéticas × claro/oscuro, sistema de estado tokenizado, tablas/inputs densos canónicos, flujo guiado con stepper, chrome de reporte compartido, módulo **Configuración** + **Acerca de**); **licencias** Ed25519 (keygen aparte + validación suave); **updater** firmado (config + CI + runbook); **seguridad** (cálculo desktop por IPC sin WASM extraíble, perfil release endurecido, audits) y **limpieza white-label** (rastros OGC/SAT anonimizados); **docs**: guía de usuario, requisitos mínimos medidos, análisis IA offline (F8). **Pendiente real:** publicar el release firmado, firma de código Win/Mac (certificados propios), e integrar el plugin runtime del updater (4 pasos, requieren entorno desktop — `docs/actualizaciones.md`).
 
 ---
 

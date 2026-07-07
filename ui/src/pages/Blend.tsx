@@ -160,7 +160,7 @@ export function Blend() {
 
           <p className="text-xs text-muted-foreground">
             Reglas de mezcla en el kernel Rust/WASM: <strong>API</strong> por mezcla de densidades (SG=141.5/(131.5+API)),
-            <strong> viscosidad por Refutas</strong> (14.534·ln(ln(ν+0.8))+10.975), <strong>flash/pour por índices de mezcla</strong>
+            <strong> viscosidad por Refutas</strong> (14.534·ln(ln(ν+0.8))+10.975), <strong>flash/pour por índices de mezcla</strong>{' '}
             no lineales, y azufre/agua/sedimento lineales por volumen. Anclado al <em>Fuel Oil Blend Program</em> real
             (vol 546.5/225, API 33.1/34.6 → 33.5347; azufre 4.4/4.5 → 4.4292). Refutas es canónicamente por peso; aquí por volumen
             (convención de la hoja). Conversor cSt↔SFS y propiedades extra: pendientes.

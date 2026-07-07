@@ -320,11 +320,26 @@ export function Lpg() {
   )
 }
 
+/** Los intermedios del kernel llegan con precisión decimal completa (20+
+ *  dígitos); para DISPLAY se recortan a 8 significativos — el valor exacto
+ *  queda en el title (hover) y en el JSON técnico. */
+function fmtMeta(v?: string): string | undefined {
+  if (v === undefined) return undefined
+  const n = Number(v)
+  if (!Number.isFinite(n)) return v
+  return String(parseFloat(n.toPrecision(8)))
+}
+
 function Meta({ k, v, strong }: { k: string; v?: string; strong?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <span className="text-muted-foreground">{k}</span>
-      <span className={`font-mono tabular-nums ${strong ? 'text-sm font-bold text-brand' : 'font-medium'}`}>{v ?? '—'}</span>
+      <span className="whitespace-nowrap text-muted-foreground">{k}</span>
+      <span
+        title={v}
+        className={`truncate font-mono tabular-nums ${strong ? 'text-sm font-bold text-brand' : 'font-medium'}`}
+      >
+        {fmtMeta(v) ?? '—'}
+      </span>
     </div>
   )
 }

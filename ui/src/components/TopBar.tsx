@@ -49,8 +49,8 @@ function DemoChip() {
 export function TopBar({ title, activeJob }: TopBarProps) {
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b bg-background/80 px-6 backdrop-blur print:hidden">
-      <div className="flex items-center gap-3">
-        <h2 className="text-lg font-medium">{title}</h2>
+      <div className="flex min-w-0 items-center gap-3">
+        <h2 className="whitespace-nowrap text-lg font-medium">{title}</h2>
         <DemoChip />
       </div>
 

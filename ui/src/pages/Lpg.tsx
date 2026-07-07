@@ -14,6 +14,7 @@ import {
   type PressureUnit,
 } from '../lib/kernel'
 import { Cpu, FileText, Droplets, Wind, Scale, Thermometer, PenLine } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // Certificate of Quantity (LPG / NGL gas carriers). Everything is computed by the
 // Rust calc kernel (WASM): liquid custody assembly (lpg_custody) + COSTALD CTL
@@ -32,7 +33,7 @@ function Field({ label, value, onChange, step = 0.001 }: { label: string; value:
   return (
     <label className="flex flex-col gap-0.5">
       <span className={lbl}>{label}</span>
-      <input type="number" step={step} value={Number.isFinite(value) ? value : 0} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} className={inp} />
+      <input type="number" step={step} value={Number.isFinite(value) ? value : 0} onChange={(e) => onChange(parseDec(e.target.value))} className={inp} />
     </label>
   )
 }

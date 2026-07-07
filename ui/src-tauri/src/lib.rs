@@ -307,13 +307,63 @@ fn kernel_call(fn_name: String, request_json: String) -> Result<String, String> 
     }
 }
 
+/// Respaldo automático de la BD: si la versión de la app cambió desde la última
+/// ejecución (marcador `last_version.txt`), copia `supersurvey.db` a `backups/`
+/// ANTES de abrirla (retención: 3 más recientes). Falla en silencio: un respaldo
+/// imposible nunca debe impedir arrancar la app.
+fn backup_on_version_change(data_dir: &std::path::Path, db_path: &std::path::Path) {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+    let marker = data_dir.join("last_version.txt");
+    let last = std::fs::read_to_string(&marker).unwrap_or_default();
+    let last = last.trim();
+    if last == VERSION || !db_path.exists() {
+        let _ = std::fs::write(&marker, VERSION);
+        return;
+    }
+    let backups = data_dir.join("backups");
+    let _ = std::fs::create_dir_all(&backups);
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let from = if last.is_empty() { "prev".to_string() } else { last.replace(['/', '\\'], "_") };
+    let dest = backups.join(format!("supersurvey-v{from}-{stamp}.db"));
+    if std::fs::copy(db_path, &dest).is_ok() {
+        // Retención: conservar solo los 3 respaldos más recientes (el timestamp
+        // en el nombre hace que el orden lexicográfico sea cronológico).
+        if let Ok(entries) = std::fs::read_dir(&backups) {
+            let mut files: Vec<_> = entries
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|x| x == "db"))
+                .collect();
+            files.sort();
+            while files.len() > 3 {
+                let _ = std::fs::remove_file(files.remove(0));
+            }
+        }
+        let _ = std::fs::write(&marker, VERSION);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Offline-first: a local SQLite file next to the app.
-    let db = Database::open("supersurvey.db").expect("failed to open SuperSurvey database");
-
     tauri::Builder::default()
-        .manage(AppState { db: Mutex::new(db) })
+        // Offline-first. La BD vive en el APP DATA DIR del usuario (siempre
+        // escribible) — nunca en el cwd: instalada en Program Files, el cwd no
+        // es escribible y una ruta relativa dispersaría los datos según desde
+        // dónde se lance la app.
+        .setup(|app| {
+            use tauri::Manager;
+            let data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&data_dir)?;
+            let db_path = data_dir.join("supersurvey.db");
+            backup_on_version_change(&data_dir, &db_path);
+            let db = Database::open(&db_path)
+                .map_err(|e| format!("no se pudo abrir la base de datos en {}: {e}", db_path.display()))?;
+            app.manage(AppState { db: Mutex::new(db) });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             calculate_bqs_row,
             save_bqs_calculation,

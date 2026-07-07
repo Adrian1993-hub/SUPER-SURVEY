@@ -9,6 +9,7 @@ import { useImperialRows, type ImperialCalcFields } from '../lib/useBqsRows'
 import { VefPanel } from '../components/VefPanel'
 import { SamplingPanel } from '../components/SamplingPanel'
 import { Cpu, Layers, Droplets, AlertTriangle, CheckCircle2, FileText, Braces } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // BQS IMPERIAL MULTIGRADO completo (estilo inspectora internacional): por GRADO, apertura + cierre
 // (Loaded = cierre − apertura) y AUDIT (Received vs BDN, veredicto del kernel;
@@ -34,7 +35,7 @@ function NumCell({ value, onChange, step = 0.01 }: { value: number; onChange: (n
         type="number"
         step={step}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onChange={(e) => onChange(parseDec(e.target.value))}
         className="w-full bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
       />
     </td>

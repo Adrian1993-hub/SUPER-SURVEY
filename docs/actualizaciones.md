@@ -51,7 +51,8 @@ tramo que no se pudo compilar/probar en el sandbox.
 GitHub Releases conserva todas las versiones: des-publicar (o borrar) el release
 malo hace que `releases/latest` apunte al anterior; los clientes afectados
 reinstalan el instalador previo (los datos viven en SQLite del usuario, no se
-tocan). El updater no tiene downgrade automático — el rollback es re-publicar.
+tocan; además la app respalda la BD automáticamente en `backups/` al detectar
+cambio de versión — retención 3). El updater no tiene downgrade automático — el rollback es re-publicar.
 
 ## Seguridad
 

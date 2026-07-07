@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { calcVef, type VefResult, type VefVoyageInput } from '../lib/kernel'
 import { Gauge, Plus, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // Vessel Experience Factor (API MPMS 17.9 / HM49) — parte de la operación de
 // carga/descarga multigrado. Historial de viajes editable; el VEF y su
@@ -38,7 +39,7 @@ function Num({ value, onChange, w = 'w-24' }: { value: number; onChange: (n: num
     <input
       type="number"
       value={value}
-      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      onChange={(e) => onChange(parseDec(e.target.value))}
       className={`${w} bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring`}
     />
   )

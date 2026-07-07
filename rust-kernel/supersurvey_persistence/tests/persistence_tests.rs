@@ -293,3 +293,13 @@ fn non_live_log_without_trace_is_rejected_by_schema_check() {
     });
     assert!(bad.is_err(), "non-LIVE log without trace must be rejected");
 }
+
+#[test]
+fn migrations_baseline_sets_user_version_1() {
+    let db = supersurvey_persistence::Database::open_in_memory().unwrap();
+    let v: i64 = db
+        .connection()
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(v, 1, "el esquema base debe sellar user_version=1");
+}

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { samplingLevels, type SamplingTankResult } from '../lib/kernel'
 import { Beaker, Plus, Trash2 } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // Calculador de niveles de muestreo (API MPMS 8.1 / ISO 3170): a partir de la
 // altura de referencia (RGH) y el ullage de cada tanque, el kernel da las cotas
@@ -34,7 +35,7 @@ function NumCell({ value, onChange }: { value: number; onChange: (n: number) => 
         type="number"
         step={0.001}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onChange={(e) => onChange(parseDec(e.target.value))}
         className="w-20 bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
       />
     </td>

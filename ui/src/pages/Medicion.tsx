@@ -13,6 +13,7 @@ import { isDesktop, saveMeasurement } from '../lib/ipc'
 import { useJobMeasurement } from '../lib/jobStore'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save, RotateCcw } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 const blankTank = (): VmrTank => ({
   tanque: 'NUEVO', nominado: false, grade: 'VLSFO', densidad15: 0, tablesRefHeight: 0, measRefHeight: 0,
@@ -32,7 +33,7 @@ function NumCell({ value, onChange, step = 0.001 }: { value: number; onChange: (
         type="number"
         step={step}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onChange={(e) => onChange(parseDec(e.target.value))}
         className="w-full bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
       />
     </td>
@@ -135,7 +136,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                     {/* Temp con flecha en cierre */}
                     <td className="border border-border p-0">
                       <div className="flex items-center justify-end gap-1 pr-1">
-                        <input type="number" step={0.1} value={t.temp} onChange={(e) => onUpdate(i, { temp: parseFloat(e.target.value) || 0 })} className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                        <input type="number" step={0.1} value={t.temp} onChange={(e) => onUpdate(i, { temp: parseDec(e.target.value) })} className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
                         {prev && <DeltaArrow prev={p?.temp} curr={t.temp} />}
                       </div>
                     </td>

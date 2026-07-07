@@ -402,6 +402,21 @@
     font-weight: 600;
   }
 
+  /* Señal de desborde horizontal (Selective Attention): sombras laterales que
+     solo aparecen cuando hay columnas fuera de vista. Patrón clásico de
+     scroll-shadows: las capas `local` tapan la sombra al llegar al borde. */
+  .overflow-x-auto:has(> .table-dense) {
+    background-image:
+      linear-gradient(90deg, var(--background) 45%, transparent),
+      linear-gradient(270deg, var(--background) 45%, transparent),
+      radial-gradient(farthest-side at 0 50%, color-mix(in oklch, var(--foreground) 24%, transparent), transparent),
+      radial-gradient(farthest-side at 100% 50%, color-mix(in oklch, var(--foreground) 24%, transparent), transparent);
+    background-position: left center, right center, left center, right center;
+    background-size: 28px 100%, 28px 100%, 12px 100%, 12px 100%;
+    background-repeat: no-repeat;
+    background-attachment: local, local, scroll, scroll;
+  }
+
   /* Input/etiqueta densos de los formularios de operación (Lpg/Blend/Draft/…). */
   .input-dense {
     width: 100%;

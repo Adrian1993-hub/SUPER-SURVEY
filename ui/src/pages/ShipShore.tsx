@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { reconcileTerminal, kernelVersion, type ReconciliationResult, type TerminalOperation } from '../lib/kernel'
 import { Cpu, FileText, Factory, Ship, Spline, Scale } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // Conciliación buque↔tierra (terminal/cargo). Todo lo calcula el kernel WASM:
 // medición de tierra por diferencia (|cierre − apertura|) ± contenido de línea
@@ -19,7 +20,7 @@ function Field({ label, value, onChange, step = 0.001, disabled }: { label: stri
   return (
     <label className="flex flex-col gap-0.5">
       <span className={lbl}>{label}</span>
-      <input type="number" step={step} value={Number.isFinite(value) ? value : 0} disabled={disabled} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} className={`${inp} ${disabled ? 'opacity-40' : ''}`} />
+      <input type="number" step={step} value={Number.isFinite(value) ? value : 0} disabled={disabled} onChange={(e) => onChange(parseDec(e.target.value))} className={`${inp} ${disabled ? 'opacity-40' : ''}`} />
     </label>
   )
 }

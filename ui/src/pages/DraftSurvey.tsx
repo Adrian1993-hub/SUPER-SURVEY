@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { draftSurvey, hydrostaticInterpolate, kernelVersion, type DraftConditionInput, type DraftSurveyResult, type HydrostaticRowInput } from '../lib/kernel'
 import { Cpu, Anchor, FileText, Ship, TableProperties } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // Parse CSV "draft,displacement,tpc,lcf,mtc" (una fila por línea).
 function parseHydroTable(csv: string): HydrostaticRowInput[] {
@@ -55,7 +56,7 @@ function ConditionForm({ title, c, onChange }: { title: string; c: DraftConditio
               type="number"
               step={f.step ?? 0.001}
               value={c[f.key] ?? 0}
-              onChange={(e) => onChange({ ...c, [f.key]: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => onChange({ ...c, [f.key]: parseDec(e.target.value) })}
               className={inp}
             />
           </label>
@@ -213,7 +214,7 @@ export function DraftSurvey() {
               </div>
               <label className="flex flex-col gap-0.5">
                 <span className={lbl}>Báscula de tierra (MT) — Σ camiones</span>
-                <input type="number" step={0.001} value={shoreScale} onChange={(e) => setShoreScale(parseFloat(e.target.value) || 0)} className={`${inp} w-40`} />
+                <input type="number" step={0.001} value={shoreScale} onChange={(e) => setShoreScale(parseDec(e.target.value))} className={`${inp} w-40`} />
               </label>
               <div>
                 <div className={lbl}>Diferencia DS − báscula (MT)</div>

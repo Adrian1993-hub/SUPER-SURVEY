@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './App'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './theme/ThemeProvider'
 import { loadBrandOverride } from './lib/brand'
 
@@ -12,7 +13,9 @@ void loadBrandOverride()
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </ThemeProvider>
   </React.StrictMode>,
 )

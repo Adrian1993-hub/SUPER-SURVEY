@@ -27,6 +27,33 @@ fn new_id() -> String {
     Uuid::new_v4().to_string()
 }
 
+/// Migraciones versionadas vía `PRAGMA user_version`.
+///
+/// v1 = esquema base (SCHEMA_SQL es idempotente: `CREATE TABLE IF NOT EXISTS`).
+/// Para evolucionar el esquema en instalaciones existentes, añadir entradas
+/// `(versión, sql)` ESTRICTAMENTE crecientes; cada una corre en su transacción
+/// y sella `user_version`. Nunca editar una migración ya publicada.
+const MIGRATIONS: &[(i64, &str)] = &[
+    // (2, "ALTER TABLE jobs ADD COLUMN ejemplo TEXT;"),
+];
+
+fn run_migrations(conn: &Connection) -> Result<()> {
+    let mut current: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+    if current == 0 {
+        conn.execute_batch("PRAGMA user_version = 1;")?;
+        current = 1;
+    }
+    for (version, sql) in MIGRATIONS {
+        if *version > current {
+            conn.execute_batch(&format!(
+                "BEGIN;\n{sql}\nPRAGMA user_version = {version};\nCOMMIT;"
+            ))?;
+            current = *version;
+        }
+    }
+    Ok(())
+}
+
 /// An open SuperSurvey database (the hardened schema applied, FKs enforced).
 pub struct Database {
     conn: Connection,
@@ -46,6 +73,7 @@ impl Database {
     fn init(conn: Connection) -> Result<Self> {
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
         conn.execute_batch(SCHEMA_SQL)?;
+        run_migrations(&conn)?;
         Ok(Self { conn })
     }
 

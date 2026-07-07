@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { KeyRound, WifiOff } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { FlaskConical, KeyRound, WifiOff } from 'lucide-react'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
+import { StatusChip } from './ui/status'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { licenseStatus, isDesktop } from '../lib/ipc'
-import type { Job } from '../data/demoJobs'
+import { jobs, type Job } from '../data/demoJobs'
 
 interface TopBarProps {
   title: string
@@ -30,10 +32,27 @@ function LicenseChip() {
   )
 }
 
+/** Chip «Datos demo» (Paradox of the Active User): visible solo cuando la ruta
+ *  apunta a uno de los trabajos de EJEMPLO — evita confundir cifras ficticias
+ *  con un trabajo real. Los trabajos guardados (UUID) no lo muestran. */
+function DemoChip() {
+  const { pathname } = useLocation()
+  const id = pathname.match(/\/trabajo\/([^/]+)/)?.[1]
+  if (!id || !jobs.some((j) => j.id === id)) return null
+  return (
+    <StatusChip tone="info" title="Este trabajo es un ejemplo con datos ficticios">
+      <FlaskConical className="h-3 w-3" /> Datos demo
+    </StatusChip>
+  )
+}
+
 export function TopBar({ title, activeJob }: TopBarProps) {
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b bg-background/80 px-6 backdrop-blur print:hidden">
-      <h2 className="text-lg font-medium">{title}</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="text-lg font-medium">{title}</h2>
+        <DemoChip />
+      </div>
 
       <div className="flex items-center gap-4">
         {activeJob && (

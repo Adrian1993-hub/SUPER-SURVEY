@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { blendFuelOil, kernelVersion, type BlendComponentInput, type BlendResult } from '../lib/kernel'
 import { Cpu, FileText, Beaker, Plus, Trash2, Scale } from 'lucide-react'
+import { parseDec } from '../lib/num'
 
 // Fuel-oil blend (commingling). Todo lo calcula el kernel WASM (blend.rs):
 // API por mezcla de densidades, viscosidad por Refutas, flash/pour por índices
@@ -115,7 +116,7 @@ export function Blend() {
                             type="number"
                             step={f.step}
                             value={Number.isFinite(row[f.key]) ? row[f.key] : 0}
-                            onChange={(e) => set(i, f.key, parseFloat(e.target.value) || 0)}
+                            onChange={(e) => set(i, f.key, parseDec(e.target.value))}
                             className={inp}
                           />
                         </td>

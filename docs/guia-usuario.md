@@ -96,7 +96,9 @@ auditoría.
 ## 9. Privacidad y datos
 
 Todo se guarda en una base **SQLite local** en tu equipo; los registros de
-cálculo son **solo-anexar** (trazabilidad). No hay telemetría ni envío de datos.
+cálculo son **solo-anexar** (trazabilidad). Al actualizar de versión, la app
+crea un **respaldo automático** de la base (`backups/`, se conservan los 3 más
+recientes) antes de tocarla. No hay telemetría ni envío de datos.
 Requisitos del equipo: `docs/requisitos-minimos.md`.
 
 ---

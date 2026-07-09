@@ -7,6 +7,7 @@ import { StatusChip } from './ui/status'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { licenseStatus, isDesktop } from '../lib/ipc'
 import { jobs, type Job } from '../data/demoJobs'
+import { useT } from '../i18n/LanguageProvider'
 
 interface TopBarProps {
   title: string
@@ -16,6 +17,7 @@ interface TopBarProps {
 /** Chip de licencia (gate SUAVE): solo aparece en escritorio cuando la licencia
  *  no es válida — licenciado correctamente = interfaz limpia. */
 function LicenseChip() {
+  const t = useT()
   const [status, setStatus] = useState<string | null>(null)
   useEffect(() => {
     if (!isDesktop()) return
@@ -23,9 +25,9 @@ function LicenseChip() {
   }, [])
   if (!status || status === 'VALID' || status === 'DEMO_WEB') return null
   const label =
-    status === 'EXPIRED' ? 'Licencia vencida' : status === 'MISSING' ? 'Modo evaluación' : 'Licencia inválida'
+    status === 'EXPIRED' ? t('license.expired') : status === 'MISSING' ? t('license.evalMode') : t('license.invalid')
   return (
-    <Badge variant="outline" className="status-warn gap-1.5" title={`Estado de licencia: ${status}`}>
+    <Badge variant="outline" className="status-warn gap-1.5" title={t('license.statusTitle', { status })}>
       <KeyRound className="h-3 w-3" />
       {label}
     </Badge>
@@ -36,17 +38,19 @@ function LicenseChip() {
  *  apunta a uno de los trabajos de EJEMPLO — evita confundir cifras ficticias
  *  con un trabajo real. Los trabajos guardados (UUID) no lo muestran. */
 function DemoChip() {
+  const t = useT()
   const { pathname } = useLocation()
   const id = pathname.match(/\/trabajo\/([^/]+)/)?.[1]
   if (!id || !jobs.some((j) => j.id === id)) return null
   return (
-    <StatusChip tone="info" title="Este trabajo es un ejemplo con datos ficticios">
-      <FlaskConical className="h-3 w-3" /> Datos demo
+    <StatusChip tone="info" title={t('topbar.demoDataTitle')}>
+      <FlaskConical className="h-3 w-3" /> {t('topbar.demoData')}
     </StatusChip>
   )
 }
 
 export function TopBar({ title, activeJob }: TopBarProps) {
+  const t = useT()
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b bg-background/80 px-6 backdrop-blur print:hidden">
       <div className="flex min-w-0 items-center gap-3">
@@ -58,13 +62,13 @@ export function TopBar({ title, activeJob }: TopBarProps) {
         {activeJob && (
           <>
             <div className="hidden items-center gap-3 text-sm xl:flex">
-              <span className="text-muted-foreground">Nº</span>
+              <span className="text-muted-foreground">{t('topbar.number')}</span>
               <span className="font-mono font-medium">{activeJob.numero}</span>
               <Separator orientation="vertical" className="h-4" />
-              <span className="text-muted-foreground">Buque</span>
+              <span className="text-muted-foreground">{t('topbar.vessel')}</span>
               <span className="font-medium">{activeJob.buque}</span>
               <Separator orientation="vertical" className="h-4" />
-              <span className="text-muted-foreground">Cliente</span>
+              <span className="text-muted-foreground">{t('topbar.client')}</span>
               <span className="max-w-[180px] truncate font-medium">{activeJob.cliente}</span>
             </div>
             <Separator orientation="vertical" className="h-6" />
@@ -74,7 +78,7 @@ export function TopBar({ title, activeJob }: TopBarProps) {
         <LicenseChip />
         <Badge variant="outline" className="status-warn gap-1.5">
           <WifiOff className="h-3 w-3" />
-          Offline
+          {t('common.offline')}
         </Badge>
       </div>
     </header>

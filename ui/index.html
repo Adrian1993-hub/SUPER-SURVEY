@@ -16,6 +16,10 @@
         r.setAttribute('data-mode', m === 'light' ? 'light' : 'dark')
         r.setAttribute('data-font', localStorage.getItem('ss-font') || 'geist')
         r.setAttribute('data-density', localStorage.getItem('ss-density') || 'comfortable')
+        // Idioma guardado (o inglés si el navegador es 'en-*'); por defecto español.
+        var lg = localStorage.getItem('ss-lang')
+        if (lg !== 'es' && lg !== 'en') lg = (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'es'
+        r.setAttribute('lang', lg)
       } catch (e) {
         document.documentElement.setAttribute('data-theme', 'control-room')
         document.documentElement.setAttribute('data-mode', 'dark')

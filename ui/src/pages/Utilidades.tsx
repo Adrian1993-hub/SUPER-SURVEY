@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import { TopBar } from '../components/TopBar'
 import { densityTool, kernelVersion, type DensityToolResult } from '../lib/kernel'
 import { ArrowLeftRight, Beaker, Droplets, Layers, Plus, Trash2, Cpu } from 'lucide-react'
+import { useT } from '../i18n/LanguageProvider'
 
 // Utilidades de densidad del surveyor — TODO calcula el kernel WASM (método
 // documentado en rust-kernel/.../density.rs): API↔ρ15 vía SG60/60 y agua@60°F
@@ -37,6 +38,7 @@ function ErrorNote({ r }: { r: DensityToolResult | null }) {
 // --- Tarjeta 1: API ↔ ρ15 -------------------------------------------------
 
 function ApiCard() {
+  const t = useT()
   const [toApi, setToApi] = useState(false) // false: API→ρ15, true: ρ15→API
   const [value, setValue] = useState('17.7')
   const [res, setRes] = useState<DensityToolResult | null>(null)
@@ -57,19 +59,19 @@ function ApiCard() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Droplets className="h-4 w-4 text-brand" /> API ↔ densidad @15 °C
+          <Droplets className="h-4 w-4 text-brand" /> {t('tools.api.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-end gap-3">
           <div className="flex-1">
-            <label className="text-xs text-muted-foreground">{toApi ? 'Densidad @15 °C (kg/L)' : 'API gravity @60 °F'}</label>
+            <label className="text-xs text-muted-foreground">{toApi ? t('tools.api.inputRho') : t('tools.api.inputApi')}</label>
             <Num value={value} onChange={setValue} step={toApi ? 0.0001 : 0.1} />
           </div>
           <Button
             variant="outline"
             size="icon"
-            title="Invertir dirección"
+            title={t('tools.invert')}
             onClick={() => {
               // al invertir, arrastra el resultado como nueva entrada si existe
               const next = toApi ? res?.api : res?.rho15KgL
@@ -96,10 +98,7 @@ function ApiCard() {
           )}
         </div>
         <ErrorNote r={res} />
-        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          Vía SG 60/60 °F y agua @60 °F = 999.016 kg/m³ (convención API MPMS); el salto 60 °F→15 °C usa la expansión térmica del
-          propio producto (ecuación 54B).
-        </p>
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{t('tools.api.note')}</p>
       </CardContent>
     </Card>
   )
@@ -108,6 +107,7 @@ function ApiCard() {
 // --- Tarjeta 2: ρ observada @ T → ρ15 --------------------------------------
 
 function LabCard() {
+  const t = useT()
   const [toObserved, setToObserved] = useState(false) // false: obs→ρ15
   const [value, setValue] = useState('0.9440')
   const [temp, setTemp] = useState('20')
@@ -115,10 +115,10 @@ function LabCard() {
 
   useEffect(() => {
     const n = parseFloat(value)
-    const t = parseFloat(temp)
-    if (!isFinite(n) || !isFinite(t)) return setRes(null)
+    const tC = parseFloat(temp)
+    if (!isFinite(n) || !isFinite(tC)) return setRes(null)
     let cancelled = false
-    densityTool({ operation: toObserved ? 'RHO15_TO_OBSERVED' : 'OBSERVED_TO_RHO15', value: n, temperature: t })
+    densityTool({ operation: toObserved ? 'RHO15_TO_OBSERVED' : 'OBSERVED_TO_RHO15', value: n, temperature: tC })
       .then((r) => !cancelled && setRes(r))
       .catch(() => !cancelled && setRes(null))
     return () => {
@@ -130,23 +130,23 @@ function LabCard() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Beaker className="h-4 w-4 text-brand" /> Densidad de laboratorio (ρ @ T ↔ ρ15)
+          <Beaker className="h-4 w-4 text-brand" /> {t('tools.lab.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-end gap-3">
           <div className="flex-1">
-            <label className="text-xs text-muted-foreground">{toObserved ? 'ρ15 (kg/L)' : 'ρ observada (kg/L)'}</label>
+            <label className="text-xs text-muted-foreground">{toObserved ? t('tools.lab.inputRho15') : t('tools.lab.inputObserved')}</label>
             <Num value={value} onChange={setValue} />
           </div>
           <div className="w-28">
-            <label className="text-xs text-muted-foreground">T observación (°C)</label>
+            <label className="text-xs text-muted-foreground">{t('tools.lab.tempLabel')}</label>
             <Num value={temp} onChange={setTemp} step={0.25} />
           </div>
           <Button
             variant="outline"
             size="icon"
-            title="Invertir dirección"
+            title={t('tools.invert')}
             onClick={() => {
               const next = toObserved ? res?.observedKgL : res?.rho15KgL
               setToObserved(!toObserved)
@@ -158,17 +158,14 @@ function LabCard() {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {toObserved ? (
-            <Out label={`ρ observada @ ${temp || '—'} °C`} value={res?.success ? res.observedKgL : undefined} unit="kg/L" highlight />
+            <Out label={t('tools.lab.observedAt', { temp: temp || '—' })} value={res?.success ? res.observedKgL : undefined} unit="kg/L" highlight />
           ) : (
             <Out label="ρ15" value={res?.success ? res.rho15KgL : undefined} unit="kg/L" highlight />
           )}
           <Out label="ρ15" value={res?.success ? res.rho15KgM3 : undefined} unit="kg/m³" />
         </div>
         <ErrorNote r={res} />
-        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          Para certificados de laboratorio reportados a 20 °C (u otra T): el motor de cálculo resuelve ρ15 invirtiendo ρ_obs = ρ15 ×
-          VCF(ρ15, T) — la misma 54B de la hoja, sin factores fijos.
-        </p>
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{t('tools.lab.note')}</p>
       </CardContent>
     </Card>
   )
@@ -182,6 +179,7 @@ interface ParcelRow {
 }
 
 function BlendCard() {
+  const t = useT()
   const [rows, setRows] = useState<ParcelRow[]>([
     { volume: '350.600', density15: '0.9534' },
     { volume: '1050.843', density15: '0.9475' },
@@ -208,16 +206,16 @@ function BlendCard() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Layers className="h-4 w-4 text-brand" /> Densidad de mezcla (ROB + recibido)
+          <Layers className="h-4 w-4 text-brand" /> {t('tools.blend.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <table className="w-full">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="pb-1">Parcela</th>
-              <th className="pb-1 text-right">Volumen @15 °C (m³)</th>
-              <th className="pb-1 text-right">ρ15 (kg/L)</th>
+              <th className="pb-1">{t('tools.blend.parcel')}</th>
+              <th className="pb-1 text-right">{t('tools.blend.volume')}</th>
+              <th className="pb-1 text-right">{t('tools.blend.rho15')}</th>
               <th />
             </tr>
           </thead>
@@ -234,7 +232,7 @@ function BlendCard() {
                 <td className="py-1 text-center">
                   <button
                     onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))}
-                    title="Quitar parcela"
+                    title={t('tools.blend.removeParcel')}
                     className="text-muted-foreground hover:text-danger"
                     disabled={rows.length <= 1}
                   >
@@ -246,24 +244,22 @@ function BlendCard() {
           </tbody>
         </table>
         <Button variant="outline" size="sm" className="mt-2 gap-1" onClick={() => setRows((p) => [...p, { volume: '', density15: '' }])}>
-          <Plus className="h-3.5 w-3.5" /> Añadir parcela
+          <Plus className="h-3.5 w-3.5" /> {t('tools.blend.addParcel')}
         </Button>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <Out label="ρ15 mezcla" value={res?.success ? res.rho15KgL : undefined} unit="kg/L" highlight />
-          <Out label="Volumen total" value={res?.success ? res.totalVolumeM3 : undefined} unit="m³" />
-          <Out label="MT (vacío)" value={res?.success ? res.totalMtVacuum : undefined} unit="MT" />
+          <Out label={t('tools.blend.outRho')} value={res?.success ? res.rho15KgL : undefined} unit="kg/L" highlight />
+          <Out label={t('tools.blend.outVolume')} value={res?.success ? res.totalVolumeM3 : undefined} unit="m³" />
+          <Out label={t('tools.blend.outMt')} value={res?.success ? res.totalMtVacuum : undefined} unit="MT" />
         </div>
         <ErrorNote r={res} />
-        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          Ponderada por volumen @15 °C (conserva la masa; mezcla ideal — el papeleo de búnker ignora la contracción real). Útil
-          para la densidad resultante tras recibir sobre un remanente.
-        </p>
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{t('tools.blend.note')}</p>
       </CardContent>
     </Card>
   )
 }
 
 export function Utilidades() {
+  const t = useT()
   const [kver, setKver] = useState('')
   useEffect(() => {
     kernelVersion().then(setKver).catch(() => setKver(''))
@@ -271,15 +267,13 @@ export function Utilidades() {
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Utilidades" />
+      <TopBar title={t('nav.tools')} />
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-5xl space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground">
-              Conversiones de densidad del surveyor — método por ecuación, documentado y trazable (sin tablas impresas fijas).
-            </p>
+            <p className="text-sm text-muted-foreground">{t('tools.intro')}</p>
             <span className="inline-flex shrink-0 items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-              <Cpu className="h-3.5 w-3.5" /> Motor de cálculo · ASTM{kver ? ` · v${kver}` : ''}
+              <Cpu className="h-3.5 w-3.5" /> {t('about.engine')} · ASTM{kver ? ` · v${kver}` : ''}
             </span>
           </div>
           <div className="grid gap-5 lg:grid-cols-2">

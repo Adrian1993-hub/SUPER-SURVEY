@@ -10,6 +10,7 @@ import { listStoredJobs, createJob, isDesktop, loadMeasurementSnapshots, type St
 import { useJobMeasurement } from '../lib/jobStore'
 import { type VmrTank } from '../data/vmr'
 import { EmptyState } from '../components/EmptyState'
+import { useT } from '../i18n/LanguageProvider'
 import { Plus, ChevronRight, Database, X } from 'lucide-react'
 
 const OP_TYPES = ['BUNKER_LOADING', 'BUNKER_DELIVERY', 'CARGO_LOADING', 'CARGO_DISCHARGE', 'LPG_DISCHARGE', 'BLEND']
@@ -17,6 +18,7 @@ const inputCls = 'w-full rounded-md border border-input bg-transparent px-2 py-1
 
 export function ListaTrabajos() {
   const navigate = useNavigate()
+  const t = useT()
   const [stored, setStored] = useState<StoredJob[]>([])
   const [showForm, setShowForm] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -71,15 +73,15 @@ export function ListaTrabajos() {
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Lista de trabajos" />
+      <TopBar title={t('jobs.title')} />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-7xl space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Lista de trabajos</h1>
+            <h1 className="text-3xl font-bold">{t('jobs.title')}</h1>
             <Button onClick={() => setShowForm((s) => !s)} className="bg-brand text-brand-foreground hover:brightness-110">
               {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {showForm ? 'Cancelar' : 'Nuevo trabajo'}
+              {showForm ? t('common.cancel') : t('jobs.new')}
             </Button>
           </div>
 
@@ -87,31 +89,31 @@ export function ListaTrabajos() {
             <Card>
               <form onSubmit={onCreate} className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[11px] text-muted-foreground">Referencia *</span>
+                  <span className="text-[11px] text-muted-foreground">{t('jobs.ref')} *</span>
                   <input autoFocus value={form.jobRef} onChange={(e) => setField('jobRef', e.target.value)} placeholder="BQS-2026-0143" className={inputCls} />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[11px] text-muted-foreground">Operación</span>
+                  <span className="text-[11px] text-muted-foreground">{t('jobs.operation')}</span>
                   <select value={form.operationType} onChange={(e) => setField('operationType', e.target.value)} className={inputCls}>
-                    {OP_TYPES.map((t) => (
-                      <option key={t} value={t}>{t.replace(/_/g, ' ').toLowerCase()}</option>
+                    {OP_TYPES.map((op) => (
+                      <option key={op} value={op}>{op.replace(/_/g, ' ').toLowerCase()}</option>
                     ))}
                   </select>
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[11px] text-muted-foreground">Cliente</span>
-                  <input value={form.clientRef} onChange={(e) => setField('clientRef', e.target.value)} placeholder="Cliente" className={inputCls} />
+                  <span className="text-[11px] text-muted-foreground">{t('topbar.client')}</span>
+                  <input value={form.clientRef} onChange={(e) => setField('clientRef', e.target.value)} placeholder={t('topbar.client')} className={inputCls} />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[11px] text-muted-foreground">Puerto</span>
-                  <input value={form.portName} onChange={(e) => setField('portName', e.target.value)} placeholder="Puerto" className={inputCls} />
+                  <span className="text-[11px] text-muted-foreground">{t('jobs.port')}</span>
+                  <input value={form.portName} onChange={(e) => setField('portName', e.target.value)} placeholder={t('jobs.port')} className={inputCls} />
                 </label>
                 <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-4">
                   <Button type="submit" disabled={busy || !form.jobRef.trim()} className="gap-2">
-                    <Plus className="h-4 w-4" /> {busy ? 'Creando…' : 'Crear trabajo'}
+                    <Plus className="h-4 w-4" /> {busy ? t('jobs.creating') : t('jobs.create')}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    {isDesktop() ? 'Se guarda en SQLite local (escritorio).' : 'Se guarda en este navegador (demo).'}
+                    {isDesktop() ? t('jobs.savedDesktop') : t('jobs.savedWeb')}
                   </span>
                 </div>
               </form>
@@ -121,30 +123,26 @@ export function ListaTrabajos() {
           {stored.length === 0 && (
             <EmptyState
               icon={Database}
-              title="Aún no hay trabajos guardados"
-              desc={
-                isDesktop()
-                  ? 'Crea un trabajo nuevo arriba o guarda una medición: quedará en la base SQLite local de este equipo.'
-                  : 'Crea un trabajo nuevo arriba; en el navegador demo se guarda localmente. La app de escritorio usa SQLite.'
-              }
+              title={t('jobs.emptyTitle')}
+              desc={isDesktop() ? t('jobs.emptyDesktop') : t('jobs.emptyWeb')}
             />
           )}
 
           {stored.length > 0 && (
             <div>
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <Database className="h-4 w-4 text-brand" /> Trabajos guardados {isDesktop() ? '(SQLite local)' : '(este navegador)'}
+                <Database className="h-4 w-4 text-brand" /> {t('jobs.savedHeader')} {isDesktop() ? t('jobs.savedSqlite') : t('jobs.savedBrowser')}
               </div>
               <Card>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-right font-mono">Nº / Ref</TableHead>
-                      <TableHead className="w-[140px]">Operación</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Puerto</TableHead>
-                      <TableHead className="w-[120px] text-right font-mono">Creado</TableHead>
-                      <TableHead className="w-[110px] text-right font-mono">Cálculos</TableHead>
+                      <TableHead className="text-right font-mono">{t('jobs.colNumRef')}</TableHead>
+                      <TableHead className="w-[140px]">{t('jobs.operation')}</TableHead>
+                      <TableHead>{t('topbar.client')}</TableHead>
+                      <TableHead>{t('jobs.port')}</TableHead>
+                      <TableHead className="w-[120px] text-right font-mono">{t('jobs.created')}</TableHead>
+                      <TableHead className="w-[110px] text-right font-mono">{t('jobs.calcs')}</TableHead>
                       <TableHead className="w-[50px]" />
                     </TableRow>
                   </TableHeader>
@@ -174,18 +172,18 @@ export function ListaTrabajos() {
           )}
 
           <div>
-            {stored.length > 0 && <div className="mb-2 text-sm font-semibold text-muted-foreground">Trabajos de ejemplo (demo)</div>}
+            {stored.length > 0 && <div className="mb-2 text-sm font-semibold text-muted-foreground">{t('jobs.demoJobs')}</div>}
             <Card>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[140px] text-right font-mono">Nº</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="w-[100px]">Operación</TableHead>
-                    <TableHead>Buque</TableHead>
-                    <TableHead>Puerto</TableHead>
-                    <TableHead className="w-[120px] text-right font-mono">Fecha</TableHead>
-                    <TableHead className="w-[140px]">Estado</TableHead>
+                    <TableHead className="w-[140px] text-right font-mono">{t('topbar.number')}</TableHead>
+                    <TableHead>{t('topbar.client')}</TableHead>
+                    <TableHead className="w-[100px]">{t('jobs.operation')}</TableHead>
+                    <TableHead>{t('topbar.vessel')}</TableHead>
+                    <TableHead>{t('jobs.port')}</TableHead>
+                    <TableHead className="w-[120px] text-right font-mono">{t('jobs.date')}</TableHead>
+                    <TableHead className="w-[140px]">{t('common.status')}</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>

@@ -4,6 +4,7 @@ import './index.css'
 import { App } from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './theme/ThemeProvider'
+import { LanguageProvider } from './i18n/LanguageProvider'
 import { loadBrandOverride } from './lib/brand'
 
 // Apply a runtime branding override (brand.json) if present — restyle without a
@@ -13,9 +14,11 @@ void loadBrandOverride()
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </LanguageProvider>
     </ThemeProvider>
   </React.StrictMode>,
 )

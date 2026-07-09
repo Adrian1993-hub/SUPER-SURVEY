@@ -11,17 +11,20 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n/LanguageProvider'
+import type { TKey } from '@/i18n/dict'
 
 /** El flujo principal de un trabajo, en orden. Única fuente para el stepper y
- *  la numeración de la sidebar — si cambia el flujo, cambia aquí. */
-export const JOB_FLOW: { path: string; label: string; icon: LucideIcon }[] = [
-  { path: 'cover', label: 'Cover', icon: ClipboardList },
-  { path: 'perfiles', label: 'Perfiles', icon: SlidersHorizontal },
-  { path: 'key-meeting', label: 'Key Meeting', icon: Users },
-  { path: 'medicion', label: 'Medición', icon: Gauge },
-  { path: 'calculo', label: 'Cálculo', icon: Calculator },
-  { path: 'comparacion', label: 'Comparación', icon: Scale },
-  { path: 'reporte', label: 'Reporte', icon: FileCheck2 },
+ *  la numeración de la sidebar — si cambia el flujo, cambia aquí. La etiqueta se
+ *  resuelve por i18n (tkey); `label` queda como respaldo en español. */
+export const JOB_FLOW: { path: string; label: string; tkey: TKey; icon: LucideIcon }[] = [
+  { path: 'cover', label: 'Cover', tkey: 'flow.cover', icon: ClipboardList },
+  { path: 'perfiles', label: 'Perfiles', tkey: 'flow.perfiles', icon: SlidersHorizontal },
+  { path: 'key-meeting', label: 'Key Meeting', tkey: 'flow.keyMeeting', icon: Users },
+  { path: 'medicion', label: 'Medición', tkey: 'flow.medicion', icon: Gauge },
+  { path: 'calculo', label: 'Cálculo', tkey: 'flow.calculo', icon: Calculator },
+  { path: 'comparacion', label: 'Comparación', tkey: 'flow.comparacion', icon: Scale },
+  { path: 'reporte', label: 'Reporte', tkey: 'flow.reporte', icon: FileCheck2 },
 ]
 
 /** Stepper compacto del trabajo: se renderiza bajo el TopBar en las 7 etapas del
@@ -29,6 +32,7 @@ export const JOB_FLOW: { path: string; label: string; icon: LucideIcon }[] = [
  *  estados): los pasos anteriores al actual se muestran como completados. */
 export function JobStepper() {
   const location = useLocation()
+  const t = useT()
   const m = location.pathname.match(/\/trabajo\/([^/]+)\/([^/]+)/)
   if (!m) return null
   const [, jobId, stage] = m
@@ -37,7 +41,7 @@ export function JobStepper() {
 
   return (
     <nav
-      aria-label="Progreso del trabajo"
+      aria-label={t('stepper.aria')}
       className="flex shrink-0 items-center gap-1 overflow-x-auto border-b bg-background/60 px-6 py-2 print:hidden"
     >
       {JOB_FLOW.map((s, i) => {

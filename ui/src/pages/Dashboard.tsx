@@ -9,9 +9,11 @@ import { BarsCompare } from '../components/charts/BarsCompare'
 import { FillBar } from '../components/charts/FillBar'
 import { jobs, comparacionData, medicionData, profileData } from '../data/demoJobs'
 import { Briefcase, Gauge, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react'
+import { useT } from '../i18n/LanguageProvider'
 
 export function Dashboard() {
   const navigate = useNavigate()
+  const t = useT()
   const activos = jobs.filter((j) => j.estado === 'En progreso').length
   const firmados = jobs.filter((j) => j.estado === 'Firmado').length
   const comp = comparacionData['1']
@@ -22,31 +24,29 @@ export function Dashboard() {
   const caps = profileData['1'].tanques
 
   const kpis = [
-    { label: 'Trabajos activos', value: activos, decimals: 0, unit: '', icon: Briefcase },
-    { label: 'MT calculadas (últ.)', value: mt, decimals: 1, unit: 'MT', icon: Gauge },
-    { label: 'Discrepancias abiertas', value: discrepancias, decimals: 0, unit: '', icon: AlertTriangle },
-    { label: 'Trabajos firmados', value: firmados, decimals: 0, unit: '', icon: CheckCircle2 },
+    { label: t('dash.kpiActive'), value: activos, decimals: 0, unit: '', icon: Briefcase },
+    { label: t('dash.kpiMt'), value: mt, decimals: 1, unit: 'MT', icon: Gauge },
+    { label: t('dash.kpiDiscrep'), value: discrepancias, decimals: 0, unit: '', icon: AlertTriangle },
+    { label: t('dash.kpiSigned'), value: firmados, decimals: 0, unit: '', icon: CheckCircle2 },
   ]
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Dashboard" />
+      <TopBar title={t('nav.dashboard')} />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-7xl space-y-6">
           {/* Hero */}
           <div className="bg-brand-gradient relative animate-rise overflow-hidden rounded-xl p-6 text-white shadow-lg">
             <div className="relative z-10">
-              <div className="text-sm opacity-80">Bienvenido a</div>
+              <div className="text-sm opacity-80">{t('dash.welcome')}</div>
               <h1 className="text-3xl font-bold tracking-tight">SuperSurvey</h1>
-              <p className="mt-1 max-w-xl text-sm opacity-90">
-                Medición → cantidad calculada → comparación defendible → documento firmable. Todo offline.
-              </p>
+              <p className="mt-1 max-w-xl text-sm opacity-90">{t('dash.tagline')}</p>
               <Link
                 to="/trabajos"
                 className="mt-4 inline-flex items-center gap-2 rounded-md bg-white/15 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/25"
               >
-                Ver trabajos <ArrowRight className="h-4 w-4" />
+                {t('dash.viewJobs')} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
             <Gauge className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 opacity-10" />
@@ -76,7 +76,7 @@ export function Dashboard() {
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="animate-rise lg:col-span-2">
               <CardHeader>
-                <CardTitle>Cantidad por fuente · {jobs[0].numero}</CardTitle>
+                <CardTitle>{t('dash.qtyBySource')} · {jobs[0].numero}</CardTitle>
               </CardHeader>
               <CardContent>
                 <BarsCompare items={comp.fuentes.map((f, i) => ({ label: f.nombre, value: f.total, highlight: i === 0 }))} />
@@ -84,11 +84,11 @@ export function Dashboard() {
             </Card>
             <Card className="animate-rise">
               <CardHeader>
-                <CardTitle>Tolerancia</CardTitle>
+                <CardTitle>{t('dash.tolerance')}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2">
-                <Donut value={dentro / comp.comparaciones.length} label={`${dentro}/${comp.comparaciones.length}`} sublabel="dentro" />
-                <div className="text-sm text-muted-foreground">{discrepancias} fuera de tolerancia</div>
+                <Donut value={dentro / comp.comparaciones.length} label={`${dentro}/${comp.comparaciones.length}`} sublabel={t('dash.within')} />
+                <div className="text-sm text-muted-foreground">{t('dash.outOfTol', { n: discrepancias })}</div>
               </CardContent>
             </Card>
           </div>
@@ -97,21 +97,21 @@ export function Dashboard() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="animate-rise">
               <CardHeader>
-                <CardTitle>Llenado por tanque (cierre)</CardTitle>
+                <CardTitle>{t('dash.fillByTank')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {tanques.map((t, i) => {
+                {tanques.map((tk, i) => {
                   const cap = caps[i]?.capacidad ?? 100
-                  const pct = (t.cierre.volTabla / cap) * 100
+                  const pct = (tk.cierre.volTabla / cap) * 100
                   return (
-                    <div key={t.tanque}>
+                    <div key={tk.tanque}>
                       <div className="mb-1 flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t.tanque}</span>
+                        <span className="text-muted-foreground">{tk.tanque}</span>
                         <span className="font-mono tabular-nums">
-                          {t.cierre.volTabla.toFixed(1)} / {cap.toFixed(0)} m³
+                          {tk.cierre.volTabla.toFixed(1)} / {cap.toFixed(0)} m³
                         </span>
                       </div>
-                      <FillBar pct={pct} gradient={t.fueraTolerance} />
+                      <FillBar pct={pct} gradient={tk.fueraTolerance} />
                     </div>
                   )
                 })}
@@ -120,15 +120,15 @@ export function Dashboard() {
 
             <Card className="animate-rise">
               <CardHeader>
-                <CardTitle>Trabajos recientes</CardTitle>
+                <CardTitle>{t('dash.recentJobs')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nº</TableHead>
-                      <TableHead>Buque</TableHead>
-                      <TableHead>Estado</TableHead>
+                      <TableHead>{t('topbar.number')}</TableHead>
+                      <TableHead>{t('topbar.vessel')}</TableHead>
+                      <TableHead>{t('common.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

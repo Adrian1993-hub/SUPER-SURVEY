@@ -14,6 +14,7 @@ import {
 } from '../theme/ThemeProvider'
 import { kernelVersion } from '../lib/kernel'
 import { licenseStatus, checkForUpdates, isDesktop, type UpdateCheck } from '../lib/ipc'
+import { useT, useI18n, LANGS, LANG_LABELS } from '../i18n/LanguageProvider'
 import {
   Palette,
   Sun,
@@ -26,6 +27,7 @@ import {
   BookOpen,
   Cpu,
   Check,
+  Languages,
 } from 'lucide-react'
 
 /** Fila de opciones tipo "segmented cards": una tarjeta por opción, activa resaltada. */
@@ -85,6 +87,7 @@ function Section({ icon: Icon, title, desc, children }: { icon: typeof Palette; 
 // ---- Actualizaciones ------------------------------------------------------
 
 function UpdatesCard() {
+  const t = useT()
   const [check, setCheck] = useState<UpdateCheck | null>(null)
   const [busy, setBusy] = useState(false)
   const [installing, setInstalling] = useState(false)
@@ -96,33 +99,24 @@ function UpdatesCard() {
   }
 
   return (
-    <Section icon={RefreshCw} title="Actualizaciones" desc="Offline-first: el chequeo nunca es obligatorio; la app funciona sin red.">
+    <Section icon={RefreshCw} title={t('updates.title')} desc={t('updates.desc')}>
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={onCheck} disabled={busy || installing} className="gap-2">
-          <RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} /> Buscar actualizaciones
+          <RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} /> {t('updates.check')}
         </Button>
-        <span className="text-xs text-muted-foreground">Canal: GitHub Releases (estable)</span>
+        <span className="text-xs text-muted-foreground">{t('updates.channel')}</span>
       </div>
 
-      {check?.state === 'web' && (
-        <p className="text-xs text-muted-foreground">
-          Estás en la demo del navegador. Las actualizaciones se gestionan en la app de escritorio.
-        </p>
-      )}
+      {check?.state === 'web' && <p className="text-xs text-muted-foreground">{t('updates.web')}</p>}
       {check?.state === 'uptodate' && (
         <div className="status-ok flex items-center gap-2 rounded-md border p-2 text-sm">
-          <Check className="h-4 w-4" /> Estás en la última versión.
+          <Check className="h-4 w-4" /> {t('updates.uptodate')}
         </div>
       )}
-      {check?.state === 'unavailable' && (
-        <p className="text-xs text-muted-foreground">
-          Comprobación no disponible en esta compilación (se habilita en la app empaquetada firmada). Ver la guía de
-          actualización más abajo.
-        </p>
-      )}
+      {check?.state === 'unavailable' && <p className="text-xs text-muted-foreground">{t('updates.unavailable')}</p>}
       {check?.state === 'available' && (
         <div className="status-info space-y-2 rounded-md border p-3 text-sm">
-          <div className="font-medium">Actualización disponible: v{check.version}</div>
+          <div className="font-medium">{t('updates.available', { version: check.version ?? '' })}</div>
           {check.notes && <p className="text-xs text-muted-foreground">{check.notes}</p>}
           <Button
             size="sm"
@@ -136,7 +130,7 @@ function UpdatesCard() {
               }
             }}
           >
-            {installing ? 'Instalando…' : 'Descargar e instalar'}
+            {installing ? t('updates.installing') : t('updates.install')}
           </Button>
         </div>
       )}
@@ -147,6 +141,7 @@ function UpdatesCard() {
 // ---- Acerca de ------------------------------------------------------------
 
 function AboutCard() {
+  const t = useT()
   const [kver, setKver] = useState('')
   const [lic, setLic] = useState<string>('—')
   useEffect(() => {
@@ -162,36 +157,33 @@ function AboutCard() {
   )
 
   return (
-    <Section icon={Info} title="Acerca de SuperSurvey">
+    <Section icon={Info} title={t('about.title')}>
       <div className="flex items-center gap-3">
         <div className="bg-brand-gradient flex h-11 w-11 items-center justify-center rounded-lg shadow">
           <ShieldCheck className="h-6 w-6 text-white" />
         </div>
         <div>
           <div className="text-lg font-bold">SuperSurvey</div>
-          <div className="text-xs text-muted-foreground">
-            Inspección de cantidad de carga y búnker — offline-first, decimal-exacta.
-          </div>
+          <div className="text-xs text-muted-foreground">{t('about.tagline')}</div>
         </div>
       </div>
 
       <div className="text-sm">
-        {row('Versión de la app', <span className="font-mono">v{__APP_VERSION__}</span>)}
-        {row('Motor de cálculo', <span className="font-mono">{kver ? `v${kver}` : '…'}</span>)}
-        {row('Licencia', <StatusChip tone={lic === 'VALID' ? 'ok' : lic === 'DEMO_WEB' ? 'info' : 'warn'}>{lic}</StatusChip>)}
-        {row('Estándares', 'ASTM D1250 · API MPMS · COSTALD 11.2.4')}
-        {row('Privacidad', 'Sin telemetría · datos en SQLite local')}
+        {row(t('about.appVersion'), <span className="font-mono">v{__APP_VERSION__}</span>)}
+        {row(t('about.engine'), <span className="font-mono">{kver ? `v${kver}` : '…'}</span>)}
+        {row(t('about.license'), <StatusChip tone={lic === 'VALID' ? 'ok' : lic === 'DEMO_WEB' ? 'info' : 'warn'}>{lic}</StatusChip>)}
+        {row(t('about.standards'), 'ASTM D1250 · API MPMS · COSTALD 11.2.4')}
+        {row(t('about.privacy'), t('about.privacyValue'))}
       </div>
 
       <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
         <Cpu className="h-4 w-4 shrink-0 text-brand" />
-        Todas las cifras oficiales las produce el motor de cálculo (decimal exacto, sin redondeos intermedios no
-        documentados) y quedan trazables paso a paso.
+        {t('about.engineNote')}
       </div>
 
       <div className="flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <BookOpen className="h-3.5 w-3.5" /> Guía de usuario, licencias, actualizaciones y requisitos: carpeta{' '}
+          <BookOpen className="h-3.5 w-3.5" /> {t('about.docsNote')}{' '}
           <code className="font-mono">docs/</code>.
         </span>
       </div>
@@ -203,24 +195,53 @@ function AboutCard() {
 
 export function Configuracion() {
   const { theme, mode, font, density, setTheme, setMode, setFont, setDensity } = useTheme()
+  const { lang, setLang } = useI18n()
+  const t = useT()
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Configuración" />
+      <TopBar title={t('settings.title')} />
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-3xl space-y-6">
-          <Section icon={Palette} title="Apariencia" desc="Se aplica al instante y se recuerda en este equipo.">
+          <Section icon={Palette} title={t('settings.appearance')} desc={t('settings.appearanceDesc')}>
             <div>
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Tema</div>
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <Languages className="h-3.5 w-3.5" /> {t('settings.language')}
+              </div>
+              <div className="flex gap-2">
+                {LANGS.map((lg) => (
+                  <button
+                    key={lg}
+                    type="button"
+                    onClick={() => setLang(lg)}
+                    aria-pressed={lang === lg}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                      lang === lg ? 'border-brand bg-brand/5' : 'border-border hover:border-brand/40'
+                    }`}
+                  >
+                    {LANG_LABELS[lg]}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">{t('settings.languageDesc')}</p>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('settings.theme')}</div>
               <OptionCards
                 value={theme}
-                onChange={(t: ThemeId) => setTheme(t)}
-                options={THEMES.map((t) => ({ id: t.id, label: t.label, desc: t.desc, swatch: t.swatch }))}
+                onChange={(v: ThemeId) => setTheme(v)}
+                options={THEMES.map((th) => ({
+                  id: th.id,
+                  label: t(`theme.${th.id}.label`),
+                  desc: t(`theme.${th.id}.desc`),
+                  swatch: th.swatch,
+                }))}
               />
             </div>
 
             <div>
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Modo</div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('settings.mode')}</div>
               <div className="flex gap-2">
                 {(['light', 'dark'] as const).map((m) => (
                   <button
@@ -233,7 +254,7 @@ export function Configuracion() {
                     }`}
                   >
                     {m === 'light' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    {m === 'light' ? 'Claro' : 'Oscuro'}
+                    {m === 'light' ? t('settings.light') : t('settings.dark')}
                   </button>
                 ))}
               </div>
@@ -241,23 +262,27 @@ export function Configuracion() {
 
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <Type className="h-3.5 w-3.5" /> Fuente
+                <Type className="h-3.5 w-3.5" /> {t('settings.font')}
               </div>
-              <OptionCards value={font} onChange={(f: FontId) => setFont(f)} options={FONTS} />
+              <OptionCards
+                value={font}
+                onChange={(f: FontId) => setFont(f)}
+                options={FONTS.map((f) => ({ id: f.id, label: t(`font.${f.id}.label`), desc: t(`font.${f.id}.desc`) }))}
+              />
             </div>
 
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <Rows3 className="h-3.5 w-3.5" /> Densidad de tablas
+                <Rows3 className="h-3.5 w-3.5" /> {t('settings.density')}
               </div>
-              <OptionCards value={density} onChange={(d: DensityId) => setDensity(d)} options={DENSITIES} />
+              <OptionCards
+                value={density}
+                onChange={(d: DensityId) => setDensity(d)}
+                options={DENSITIES.map((d) => ({ id: d.id, label: t(`density.${d.id}.label`), desc: t(`density.${d.id}.desc`) }))}
+              />
             </div>
 
-            {isDesktop() && (
-              <p className="text-[11px] text-muted-foreground">
-                La app de escritorio recuerda además el tamaño y la posición de la ventana entre sesiones.
-              </p>
-            )}
+            {isDesktop() && <p className="text-[11px] text-muted-foreground">{t('settings.windowMemory')}</p>}
           </Section>
 
           <UpdatesCard />

@@ -231,7 +231,7 @@ export function VefPanel() {
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           Vessel TCV = sailing − OBQ. La 1ª media incluye todos los viajes salvo los rechazados; los que caen fuera de ±0.30% se
           descalifican; el VEF es Σvessel/Σshore de los que califican (4 dp). Aplicación: <em>ship × (1/VEF)</em> comparado con el
-          outturn de tierra. Todo lo calcula el kernel (HM49). Datos de demostración.
+          outturn de tierra. Todo lo calcula el motor de cálculo (HM49). Datos de demostración.
         </p>
       </CardContent>
     </Card>

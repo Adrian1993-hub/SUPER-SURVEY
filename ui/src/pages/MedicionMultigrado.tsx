@@ -314,7 +314,7 @@ export function MedicionMultigrado() {
       report_type: 'BQS_IMPERIAL_MULTIGRADE',
       demo_data: true,
       generated_at: new Date().toISOString(),
-      kernel_version: kver || null,
+      engine_version: kver || null,
       method: h.metodo,
       header: h,
       tolerance_layers: toleranceLayers,
@@ -362,7 +362,7 @@ export function MedicionMultigrado() {
                 <Braces className="h-4 w-4" /> JSON técnico
               </Button>
               <span className="inline-flex shrink-0 items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-                <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · 60 °F · 6B/13 · WASM
+                <Cpu className="h-3.5 w-3.5" /> Motor de cálculo · 60 °F · Tablas 6B/13{kver ? ` · v${kver}` : ''}
               </span>
             </div>
           </div>
@@ -424,8 +424,8 @@ export function MedicionMultigrado() {
 
           <p className="text-xs text-muted-foreground print:hidden">
             Celdas blancas = entrada del surveyor (API@60, °C, m³). Celdas <span className="rounded bg-muted/50 px-1">grises</span> ={' '}
-            kernel imperial (API→ρ60, ITS-68, VCF 6B por banda de API, WCF Tabla 13). Loaded = cierre − apertura. El veredicto por
-            grado (Received vs BDN) usa las capas de tolerancia del kernel. VLSFO replica el caso de validación de la hoja real del cliente.
+            motor de cálculo imperial (API→ρ60, ITS-68, VCF 6B por banda de API, WCF Tabla 13). Loaded = cierre − apertura. El veredicto por
+            grado (Received vs BDN) usa las capas de tolerancia del motor de cálculo. VLSFO replica el caso de validación de la hoja real del cliente.
           </p>
         </div>
       </main>

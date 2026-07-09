@@ -56,7 +56,7 @@ export function CalculoTrace() {
           </Card>
 
           <p className="text-xs text-muted-foreground">
-            Cada cantidad oficial será explicable paso a paso por el kernel (Rust, decimal exacto, sin
+            Cada cantidad oficial será explicable paso a paso por el motor de cálculo (decimal exacto, sin
             redondeo intermedio). Valores mostrados: demo ilustrativo.
           </p>
 

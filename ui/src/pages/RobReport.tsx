@@ -178,7 +178,7 @@ export function RobReport() {
       report_type: 'ROB_INVENTORY',
       demo_data: true,
       generated_at: new Date().toISOString(),
-      kernel_version: kver || null,
+      engine_version: kver || null,
       header: h,
       tolerance_layers: toleranceLayers,
       grades: robData.grades.map((g) => ({
@@ -218,7 +218,7 @@ export function RobReport() {
         rows: [
           ['SuperSurvey', 'Remaining On Board (ROB) Survey'],
           ['Referencia', h.referencia], ['Buque', h.buque], ['Surveyor', h.surveyor], ['Puerto', h.puerto],
-          ['Tipo de survey', h.surveyType], ['Fecha', h.fecha], ['Kernel', kver || ''], ['Datos', 'demostración (ficticios)'],
+          ['Tipo de survey', h.surveyType], ['Fecha', h.fecha], ['Motor de cálculo', kver || ''], ['Datos', 'demostración (ficticios)'],
         ],
       },
       { name: 'Resumen ROB', rows: summary },
@@ -308,7 +308,7 @@ export function RobReport() {
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                Calculado por SuperSurvey · kernel ASTM D1250-80 {kver ? `v${kver}` : ''} · comparación ROB vs ER Log
+                Calculado por SuperSurvey · motor de cálculo (ASTM D1250-80){kver ? ` v${kver}` : ''} · comparación ROB vs ER Log
                 (tolerancia industria ±0.5%) · documento de demostración con datos ficticios
               </footer>
             </div>

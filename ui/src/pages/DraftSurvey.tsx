@@ -156,7 +156,7 @@ export function DraftSurvey() {
                 <FileText className="h-4 w-4" /> PDF
               </Button>
               <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-                <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · UNECE · WASM
+                <Cpu className="h-3.5 w-3.5" /> Motor de cálculo · UNECE{kver ? ` · v${kver}` : ''}
               </span>
             </div>
           </div>

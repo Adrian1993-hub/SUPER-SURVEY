@@ -185,7 +185,7 @@ function AboutCard() {
 
       <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
         <Cpu className="h-4 w-4 shrink-0 text-brand" />
-        Todas las cifras oficiales las produce el kernel Rust (decimal exacto, sin redondeos intermedios no
+        Todas las cifras oficiales las produce el motor de cálculo (decimal exacto, sin redondeos intermedios no
         documentados) y quedan trazables paso a paso.
       </div>
 

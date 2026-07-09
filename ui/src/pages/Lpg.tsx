@@ -141,7 +141,7 @@ export function Lpg() {
                 <FileText className="h-4 w-4" /> PDF
               </Button>
               <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-                <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · WASM
+                <Cpu className="h-3.5 w-3.5" /> Motor de cálculo{kver ? ` · v${kver}` : ''}
               </span>
             </div>
           </div>
@@ -309,7 +309,7 @@ export function Lpg() {
           </Card>
 
           <p className="text-xs text-muted-foreground">
-            Cadena LPG completa en el kernel Rust/WASM: <strong>custodia líquida</strong> (LT desde vacío; bbl/gal vía ASTM-IP Table 1),
+            Cadena LPG completa en el motor de cálculo: <strong>custodia líquida</strong> (LT desde vacío; bbl/gal vía ASTM-IP Table 1),
             <strong> CTL líquido por COSTALD (API MPMS 11.2.4)</strong> y <strong>corrección de vapor (API MPMS 17.10.2)</strong>:
             ρv = (288.15/T)(P/1.01325)(M/23.6451)/Z; <strong>Total = masa líquida + masa de vapor</strong>. Valores por defecto anclados a
             documentos reales — líquido al certificado real del cliente (<em>buque A</em>) (588.203 MT vac) y vapor a API 17.10.2 Tabla 6 (ρv = 9.146 kg/m³).

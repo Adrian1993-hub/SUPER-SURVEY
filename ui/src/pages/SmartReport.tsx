@@ -200,7 +200,7 @@ function CustodySummary({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade:
         </tbody>
       </table>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Referencia: {tpl.grades[0]?.referenceLabel ?? '—'}. Veredicto por capas de tolerancia del kernel (ISO/inspección/contrato).
+        Referencia: {tpl.grades[0]?.referenceLabel ?? '—'}. Veredicto por capas de tolerancia del motor de cálculo (ISO/inspección/contrato).
       </p>
     </Section>
   )
@@ -224,7 +224,7 @@ function SwSection({ grossMt, swPct }: { grossMt: number; swPct: number }) {
         <Fig k="S&W (MT)" v={res?.sw} />
         <Fig k="Net (MT)" v={res?.net} highlight />
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">Net = Gross − round(Gross × S&W%). Calculado por el kernel (custody).</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">Net = Gross − round(Gross × S&W%). Calculado por el motor de cálculo (custodia).</p>
     </Section>
   )
 }
@@ -269,7 +269,7 @@ function ProRataSection({ total, spec }: { total: number; spec: NonNullable<Oper
           </tr>
         </tbody>
       </table>
-      <p className="mt-1 text-[11px] text-muted-foreground">Reparto proporcional con reconciliación exacta de redondeo (kernel).</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">Reparto proporcional con reconciliación exacta de redondeo (motor de cálculo).</p>
     </Section>
   )
 }
@@ -392,7 +392,7 @@ function QuantityTable({ tpl }: { tpl: OperationTemplate }) {
         })}
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Una sola cifra estándar expandida a todas las unidades por el kernel (masa invariante; el cruce 15 °C↔60 °F usa el VCF del
+        Una sola cifra estándar expandida a todas las unidades por el motor de cálculo (masa invariante; el cruce 15 °C↔60 °F usa el VCF del
         producto). NSV = GSV − S&W; TCV = GSV + agua libre.
       </p>
     </Section>
@@ -486,7 +486,7 @@ function MasterSummary({ tpl }: { tpl: OperationTemplate }) {
         </table>
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        B/L → cargado (±VEF) → en tránsito (carga vs descarga). Δ y % por el motor de comparación del kernel.
+        B/L → cargado (±VEF) → en tránsito (carga vs descarga). Δ y % por el motor de comparación.
       </p>
     </Section>
   )
@@ -602,7 +602,7 @@ export function SmartReport() {
       report_type: t.id,
       demo_data: true,
       generated_at: new Date().toISOString(),
-      kernel_version: kver || null,
+      engine_version: kver || null,
       header: t.header,
       grades: t.grades.map((g) => ({ grade: g.grade, survey_mt: mtByGrade[g.grade] ?? null, reference_mt: g.referenceMt ?? null })),
       total_mt: grandMt,
@@ -721,7 +721,7 @@ export function SmartReport() {
                   case 'notes':
                     return (
                       <footer key="notes" className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                        Calculado por SuperSurvey · kernel {kver ? `v${kver}` : ''} · {tpl.header.metodo} · documento de demostración con
+                        Calculado por SuperSurvey · motor de cálculo{kver ? ` v${kver}` : ''} · {tpl.header.metodo} · documento de demostración con
                         datos ficticios
                       </footer>
                     )

@@ -191,7 +191,7 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
           Innage = RGH − Ullage; cotas (dip desde referencia): Upper = Ullage + Innage/6, Middle = Ullage + Innage/2, Lower =
-          Ullage + 5·Innage/6 (zonas superior/media/inferior). Calculado por el kernel; clic en una fila para ver su tanque.
+          Ullage + 5·Innage/6 (zonas superior/media/inferior). Calculado por el motor de cálculo; clic en una fila para ver su tanque.
         </p>
       </CardContent>
     </Card>

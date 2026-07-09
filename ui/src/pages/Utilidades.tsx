@@ -166,7 +166,7 @@ function LabCard() {
         </div>
         <ErrorNote r={res} />
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          Para certificados de laboratorio reportados a 20 °C (u otra T): el kernel resuelve ρ15 invirtiendo ρ_obs = ρ15 ×
+          Para certificados de laboratorio reportados a 20 °C (u otra T): el motor de cálculo resuelve ρ15 invirtiendo ρ_obs = ρ15 ×
           VCF(ρ15, T) — la misma 54B de la hoja, sin factores fijos.
         </p>
       </CardContent>
@@ -279,7 +279,7 @@ export function Utilidades() {
               Conversiones de densidad del surveyor — método por ecuación, documentado y trazable (sin tablas impresas fijas).
             </p>
             <span className="inline-flex shrink-0 items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-              <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · WASM
+              <Cpu className="h-3.5 w-3.5" /> Motor de cálculo · ASTM{kver ? ` · v${kver}` : ''}
             </span>
           </div>
           <div className="grid gap-5 lg:grid-cols-2">

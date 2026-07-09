@@ -140,7 +140,7 @@ export function Reporte() {
       report_type: 'BQS_VMR',
       demo_data: true, // datos ficticios de demostración
       generated_at: new Date().toISOString(),
-      kernel_version: kver || null,
+      engine_version: kver || null,
       table_version: edition,
       header: h,
       sections: {
@@ -178,7 +178,7 @@ export function Reporte() {
           ['SuperSurvey', 'Bunker Quantity Survey'],
           ['Referencia', h.referencia], ['Buque', h.buque], ['Surveyor', h.surveyor], ['Barcaza', h.barcaza],
           ['Tipo de survey', h.surveyType], ['Puerto', h.puerto], ['Fecha', h.fecha], ['Estado del mar', h.seaCondition],
-          ['Densidad suplidor @15 °C (kg/L)', h.suppliersDensity], ['Edición tablas', editionLabel], ['Kernel', kver || ''],
+          ['Densidad suplidor @15 °C (kg/L)', h.suppliersDensity], ['Edición tablas', editionLabel], ['Motor de cálculo', kver || ''],
           ['Datos', 'demostración (ficticios)'],
         ],
       },
@@ -353,7 +353,7 @@ export function Reporte() {
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                Calculado por SuperSurvey · kernel ASTM {editionLabel} {kver ? `v${kver}` : ''} (sin redondeos intermedios no
+                Calculado por SuperSurvey · motor de cálculo (ASTM {editionLabel}){kver ? ` v${kver}` : ''} (sin redondeos intermedios no
                 documentados) · documento de demostración con datos ficticios
               </footer>
             </div>

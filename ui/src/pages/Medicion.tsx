@@ -366,12 +366,12 @@ export function Medicion() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
-              Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas en vivo por el kernel. Celdas blancas = entrada del
+              Celdas <span className="rounded bg-muted/50 px-1">grises</span> = calculadas en vivo por el motor de cálculo. Celdas blancas = entrada del
               surveyor. En el cierre, las flechas <ArrowUp className="inline h-3 w-3 text-success" />/<ArrowDown className="inline h-3 w-3 text-danger" /> marcan
               cambios de volumen y temperatura vs. apertura (solo referencia del inspector, no salen en el reporte).
             </p>
             <span className="status-ok inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
-              <Cpu className="h-3.5 w-3.5" /> Kernel ASTM {kver ? `v${kver}` : '…'} · {edition === 'D1250_04' ? 'D1250-04' : 'D1250-80'} · WASM
+              <Cpu className="h-3.5 w-3.5" /> Motor de cálculo · ASTM {edition === 'D1250_04' ? 'D1250-04' : 'D1250-80'}{kver ? ` · v${kver}` : ''}
             </span>
           </div>
 

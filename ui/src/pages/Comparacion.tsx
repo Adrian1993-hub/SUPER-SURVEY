@@ -147,7 +147,7 @@ export function Comparacion() {
               )}
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-current px-2 py-0.5 text-xs opacity-80">
-              <Cpu className="h-3 w-3" /> kernel
+              <Cpu className="h-3 w-3" /> Motor de cálculo
             </span>
           </div>
 
@@ -234,7 +234,7 @@ export function Comparacion() {
               <CardTitle>Documento de discrepancia</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Statement of Fact, NOAD y LOP comparten los mismos datos; cambia el formato y el tono. La pestaña
-                recomendada por el kernel está marcada.
+                recomendada por el motor de cálculo está marcada.
               </p>
             </CardHeader>
             <CardContent>

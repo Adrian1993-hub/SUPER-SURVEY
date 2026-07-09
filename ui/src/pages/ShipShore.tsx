@@ -107,7 +107,7 @@ export function ShipShore() {
                 <FileText className="h-4 w-4" /> PDF
               </Button>
               <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-                <Cpu className="h-3.5 w-3.5" /> Kernel {kver ? `v${kver}` : '…'} · WASM
+                <Cpu className="h-3.5 w-3.5" /> Motor de cálculo{kver ? ` · v${kver}` : ''}
               </span>
             </div>
           </div>
@@ -231,7 +231,7 @@ export function ShipShore() {
             <strong>Shore Quantity = |cierre − apertura| ± contenido de línea</strong> (carga: resta lo que quedó en la línea; descarga: suma lo
             entregado que aún está en la línea). <strong>Δ% = (figura − referencia)/referencia × 100</strong>; Buque vs Tierra (base = tierra),
             Buque/Tierra vs B/L (base = B/L). Mismo motor de tolerancia que Comparación (None/NOAD/LOP). Anclado al reporte real de Barge Tow
-            Loading (Loaded vs B/L = −0.411 %). Todo el cálculo en el kernel Rust/WASM.
+            Loading (Loaded vs B/L = −0.411 %). Todo el cálculo en el motor de cálculo verificado.
           </p>
         </div>
       </main>

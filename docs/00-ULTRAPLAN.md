@@ -42,6 +42,8 @@ Y debe poder **revenderse con otra marca** (white-label).
 | 2026-06-06 | **Tablas de cálculo ASTM/API** (VCF/WCF/densidad): incluir **TODAS las versiones/revisiones** (vieja/nueva, como LEGACY); el surveyor elige la aplicable. Implementar por **ecuaciones (API MPMS 11.1)** y validar vs valores de `TABLASASTM.xls`. *(Versiones: en investigación)* | ✅ |
 | 2026-06-06 | **Sin redondeo intermedio:** redondear solo el resultado final (handbook la inspectora p.62). La política de agregación del kernel (`aggregate_from_unrounded`) debe respetarlo | ✅ |
 | 2026-06-06 | **Convenciones BQS (surveyor):** densidad única por fuente; calcular **MT aire Y vacío** (oficial = aire); **tolerancia en capas configurable** (ISO default + comprador/suplidor/inspección/contrato); **trim Applied/Not Applied** = verificación del inspector (barcazas normalmente no); incluir bloque **"Quantity Transferred"** | ✅ |
+| 2026-07-10 | **Bilingüe ES/EN** (F7): i18n propio, offline, sin dependencias (`LanguageProvider` + diccionario co-localizado + `useT`); español = lengua de origen, inglés = traducción; selector en Configuración. Se **elimina la jerga interna** de la interfaz (kernel/WASM/Rust → «motor de cálculo») | 🔄 |
+| 2026-07-10 | **Descarga de LNG** (F8): operación nueva por **energía**. Cálculo **completo** — densidad **RKM** (GIIGNL CTH) *y* GHV/Wobbe (ISO 6976/GPA 2172) **desde composición**. **Página nueva dedicada** «LNG (descarga)» (no se mezcla con LPG). Constantes oficiales **citadas, nunca inventadas** | 🔄 |
 
 ---
 
@@ -131,8 +133,10 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 | **F4 — Report engine + white-label** | VMR/BMR/Summary/SOF → PDF/XLSX con branding + branding runtime | ✅ completa |
 | **F5 — Resto de operaciones** | Terminal, STS, **LPG** (custody+COSTALD+vapor), Draft, **Blend**, multigrado, VEF, muestreo, ROB | ✅ completa y ampliada |
 | **F6 — QA + empaque + marca** | ~152 tests vs casos reales; **instaladores CI** (build v0.1.0 ✅); pase de diseño + licencias + updater + seguridad | ✅ prácticamente completa |
+| **F7 — Bilingüe ES/EN** | i18n offline (LanguageProvider + diccionario co-localizado + `useT` + selector en Configuración); `<html lang>` + persistencia `ss-lang` | 🔄 en curso — base + chrome + Configuración + Dashboard + Utilidades + Lista de trabajos ✅ (verificado ES↔EN); páginas de operación/reporte por lotes pendientes |
+| **F8 — Descarga de LNG** | operación nueva (custody por **energía**): densidad **RKM** (GIIGNL CTH) + GHV/Wobbe (ISO 6976/GPA 2172) + cadena de energía; página + reporte | 🔄 en curso — análisis `docs/research/lng-discharge.md` ✅; **núcleo de cálculo F-LNG-1a** ✅ (6/6 anclas vs reporte real: densidad 426.0, masa 65 539 461 kg, energía 3 440 402 / neta 3 424 985 MMBtu); pendiente: tablas Vi(T)/K1/K2 + Hi/Hvi (F-LNG-1b), DTO/IPC, UI y reporte |
 
-- **% del sistema completo hoy:** **~97 %** (actualizado 2026-07-04; el plan original marcaba ~10 % en el día 0).
+- **% del sistema completo hoy:** **~97 %** del plan original (actualizado 2026-07-04; el plan original marcaba ~10 % en el día 0). **F7 (bilingüe)** y **F8 (descarga de LNG)** son **ampliaciones nuevas** pedidas después de cerrar el alcance original — en curso (ver §10).
 - **MVP BQS punta a punta (F1–F4):** ✅ hecho. **Resto de operaciones (F5):** ✅ hecho y ampliado.
 - **Cierre (F6):** casi completo. Hecho: **§9 cerrado** (`8ac0824`); **pase de diseño** completo con QA visual (matriz 3 estéticas × claro/oscuro, sistema de estado tokenizado, tablas/inputs densos canónicos, flujo guiado con stepper, chrome de reporte compartido, módulo **Configuración** + **Acerca de**); **licencias** Ed25519 (keygen aparte + validación suave); **updater** firmado (config + CI + runbook); **seguridad** (cálculo desktop por IPC sin WASM extraíble, perfil release endurecido, audits) y **limpieza white-label** (rastros OGC/SAT anonimizados); **docs**: guía de usuario, requisitos mínimos medidos, análisis IA offline (F8). **Pendiente real:** publicar el release firmado, firma de código Win/Mac (certificados propios), e integrar el plugin runtime del updater (4 pasos, requieren entorno desktop — `docs/actualizaciones.md`).
 
@@ -176,6 +180,43 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 ---
 
 ## 10. Estado actual y próximos pasos inmediatos
+
+> **Actualizado 2026-07-10.** F0–F6 completas/casi; en curso dos ampliaciones
+> nuevas: **F7 bilingüe ES/EN** y **F8 descarga de LNG**.
+
+**F7 — Bilingüe (en curso).** i18n casero y offline (sin dependencias):
+`ui/src/i18n/` con `LanguageProvider` (contexto `{lang, setLang, t}`, persiste
+`ss-lang`, sincroniza `<html lang>` + bootstrap anti-flash), diccionario
+co-localizado ES/EN partido por área (`dict.ts` núcleo + `dict.flow/operations/
+reports.ts`), hook `useT()`. Selector de idioma en Configuración junto a
+tema/fuente/densidad. **Traducido y verificado (Playwright, ES↔EN):** barra
+lateral, stepper, TopBar, siguiente-paso, barrera de errores, ThemeSwitcher,
+badges de estado, **Configuración**, **Dashboard**, **Utilidades**, **Lista de
+trabajos**. **Pendiente:** páginas de operación (Cover…Reporte, Multigrado,
+Draft, Ship↔Shore, LPG, Blend, ROB) y reportes — por lotes, con clave ausente →
+cae a español (nunca rompe).
+
+**F8 — Descarga de LNG (en curso).** Operación nueva: el LNG se factura por
+**energía**, calculada desde la composición molar (no medida). Análisis completo
+en `docs/research/lng-discharge.md` (método, estándares, fórmulas validadas,
+estructura de reporte de ~16 secciones, alcance en 5 fases). **Hecho — F-LNG-1a
+(núcleo de cálculo):** `rust-kernel/.../lng.rs` decimal-exacto — masas molares
+ISO 6976, densidad **RKM** `D=Σ(Xi·Mi)/[Σ(Xi·Vi)−Xm·C]`, cadena masa→energía
+bruta/neta; **6/6 anclas verdes** contra un reporte real (anonimizado).
+**Decisiones del usuario:** cálculo **completo** (densidad *y* GHV desde
+composición) y **página nueva dedicada** «LNG (descarga)».
+**Siguiente:** F-LNG-1b transcribir tablas oficiales Vi(T)/K1/K2 (GIIGNL) y
+Hi/Hvi/√bi (ISO 6976) con procedencia citada → densidad y GHV desde composición;
+luego DTO + IPC/WASM + wrapper TS, página de operación, y plantilla de reporte.
+
+**Cierre F6 pendiente (owner):** publicar el Release firmado (crea el tag),
+firma de código Win/Mac, e integrar el plugin runtime del updater
+(`docs/actualizaciones.md`). Re-disparar el build para incluir los últimos
+commits (legibilidad, jargon, bilingüe).
+
+---
+
+### Historial previo (F6)
 
 > **Actualizado 2026-06-29.** F0–F5 completas; estamos en **F6 (QA + empaque)**.
 

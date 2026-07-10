@@ -8,10 +8,16 @@
 // operación se van sumando en lotes posteriores. Cualquier clave ausente cae al
 // texto español y, en último término, a la propia clave — nunca rompe.
 
-export type Lang = 'es' | 'en'
-type Entry = { es: string; en: string }
+import type { Entry } from './types'
+import { flowDict } from './dict.flow'
+import { opsDict } from './dict.operations'
+import { reportsDict } from './dict.reports'
+export type { Lang } from './types'
 
-export const dict = {
+// Núcleo: chrome persistente, ajustes, dashboard, lista de trabajos y utilidades
+// (ya traducidos). Las páginas de operación viven en módulos por área que se
+// agregan abajo, para poder traducirlas en paralelo sin colisiones.
+const coreDict = {
   // ---- Común -------------------------------------------------------------
   'app.name': { es: 'SuperSurvey', en: 'SuperSurvey' },
   'common.continue': { es: 'Continuar', en: 'Continue' },
@@ -256,5 +262,10 @@ export const dict = {
     en: 'User guide, licenses, updates and requirements: folder',
   },
 } satisfies Record<string, Entry>
+
+// Agregado final: núcleo + módulos por área. Un módulo puede añadir claves sin
+// tocar este archivo. Claves duplicadas entre módulos: gana la última del spread
+// (los espacios de nombres por página lo evitan en la práctica).
+export const dict = { ...coreDict, ...flowDict, ...opsDict, ...reportsDict } satisfies Record<string, Entry>
 
 export type TKey = keyof typeof dict

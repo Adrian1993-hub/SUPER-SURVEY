@@ -38,6 +38,7 @@ pub mod draft;
 pub mod dto;
 pub mod error;
 pub mod figures;
+pub mod lng;
 pub mod lpg;
 pub mod lpg_vapor;
 pub mod movement;

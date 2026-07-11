@@ -58,20 +58,20 @@ export function TopBar({ title, activeJob }: TopBarProps) {
         <DemoChip />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-4">
         {activeJob && (
           <>
-            <div className="hidden items-center gap-3 text-sm xl:flex">
+            <div className="hidden min-w-0 items-center gap-3 text-sm 2xl:flex">
               <span className="text-muted-foreground">{t('topbar.number')}</span>
               <span className="font-mono font-medium">{activeJob.numero}</span>
               <Separator orientation="vertical" className="h-4" />
               <span className="text-muted-foreground">{t('topbar.vessel')}</span>
-              <span className="font-medium">{activeJob.buque}</span>
+              <span className="max-w-[140px] truncate font-medium">{activeJob.buque}</span>
               <Separator orientation="vertical" className="h-4" />
               <span className="text-muted-foreground">{t('topbar.client')}</span>
-              <span className="max-w-[180px] truncate font-medium">{activeJob.cliente}</span>
+              <span className="max-w-[160px] truncate font-medium">{activeJob.cliente}</span>
             </div>
-            <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="hidden h-6 2xl:block" />
           </>
         )}
         <ThemeSwitcher />

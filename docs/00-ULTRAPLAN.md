@@ -134,7 +134,7 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 | **F5 — Resto de operaciones** | Terminal, STS, **LPG** (custody+COSTALD+vapor), Draft, **Blend**, multigrado, VEF, muestreo, ROB | ✅ completa y ampliada |
 | **F6 — QA + empaque + marca** | ~152 tests vs casos reales; **instaladores CI** (build v0.1.0 ✅); pase de diseño + licencias + updater + seguridad | ✅ prácticamente completa |
 | **F7 — Bilingüe ES/EN** | i18n offline (LanguageProvider + diccionario co-localizado + `useT` + selector en Configuración); `<html lang>` + persistencia `ss-lang` | 🔄 en curso — base + chrome + Configuración + Dashboard + Utilidades + Lista de trabajos ✅ (verificado ES↔EN); páginas de operación/reporte por lotes pendientes |
-| **F8 — Descarga de LNG** | operación nueva (custody por **energía**): densidad **RKM** (GIIGNL CTH) + GHV/Wobbe (ISO 6976/GPA 2172) + cadena de energía; página + reporte | 🔄 en curso — análisis `docs/research/lng-discharge.md` ✅; **núcleo de cálculo F-LNG-1a** ✅ (6/6 anclas vs reporte real: densidad 426.0, masa 65 539 461 kg, energía 3 440 402 / neta 3 424 985 MMBtu); pendiente: tablas Vi(T)/K1/K2 + Hi/Hvi (F-LNG-1b), DTO/IPC, UI y reporte |
+| **F8 — Descarga de LNG** | operación nueva (custody por **energía**): densidad **RKM** (GIIGNL CTH) + GHV (ISO 6976/GPA 2172) + cadena de energía; página + reporte | 🔄 casi — análisis ✅; **cálculo desde composición** (densidad RKM, GHV masa, energía) ✅ 9 anclas vs reporte real (densidad 426.0, masa 65 539 461 kg, neta 3 424 985 MMBtu); **DTO+IPC+WASM+TS** ✅; **página «LNG (descarga)»** (cálculo en vivo) + **reporte imprimible** ✅ — funcional en escritorio. Pendiente: tablas de temperatura GIIGNL `Vi(T)/K1/K2` (densidad auto por T) + Wobbe/GHV-volumen; reconstruir el `.wasm` del demo web; i18n del cuerpo |
 
 - **% del sistema completo hoy:** **~97 %** del plan original (actualizado 2026-07-04; el plan original marcaba ~10 % en el día 0). **F7 (bilingüe)** y **F8 (descarga de LNG)** son **ampliaciones nuevas** pedidas después de cerrar el alcance original — en curso (ver §10).
 - **MVP BQS punta a punta (F1–F4):** ✅ hecho. **Resto de operaciones (F5):** ✅ hecho y ampliado.
@@ -205,9 +205,14 @@ ISO 6976, densidad **RKM** `D=Σ(Xi·Mi)/[Σ(Xi·Vi)−Xm·C]`, cadena masa→en
 bruta/neta; **6/6 anclas verdes** contra un reporte real (anonimizado).
 **Decisiones del usuario:** cálculo **completo** (densidad *y* GHV desde
 composición) y **página nueva dedicada** «LNG (descarga)».
-**Siguiente:** F-LNG-1b transcribir tablas oficiales Vi(T)/K1/K2 (GIIGNL) y
-Hi/Hvi/√bi (ISO 6976) con procedencia citada → densidad y GHV desde composición;
-luego DTO + IPC/WASM + wrapper TS, página de operación, y plantilla de reporte.
+**Hecho además:** GHV(masa) + densidad **desde composición** (Hi/Vi del reporte,
+citados) — 9 anclas; **DTO+WASM+IPC**, wrapper TS `lngDischarge()`, **página
+«LNG (descarga)»** con cálculo en vivo (ruta + sidebar), y **reporte imprimible**
+(`LngReport` + `data/lng.ts`). Funcional en escritorio; el demo web muestra aviso
+"escritorio" hasta reconstruir el `.wasm`. **Siguiente (refinamientos):** tablas
+de temperatura GIIGNL `Vi(T)/K1/K2` (densidad auto por composición+temperatura) +
+`Hvi/√bi/Zmix` (Wobbe/GHV-volumen), citadas; reconstruir el `.wasm` del demo;
+i18n del cuerpo de las páginas LNG.
 
 **Cierre F6 pendiente (owner):** publicar el Release firmado (crea el tag),
 firma de código Win/Mac, e integrar el plugin runtime del updater

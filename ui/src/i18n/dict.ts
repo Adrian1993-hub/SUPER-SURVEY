@@ -70,6 +70,7 @@ const coreDict = {
   'op.draft': { es: 'Draft Survey', en: 'Draft Survey' },
   'op.shipShore': { es: 'Buque ↔ Tierra', en: 'Ship ↔ Shore' },
   'op.lpg': { es: 'LPG (gaseros)', en: 'LPG (gas carriers)' },
+  'op.lngDischarge': { es: 'LNG (descarga)', en: 'LNG (discharge)' },
   'op.blend': { es: 'Blend', en: 'Blend' },
   'op.rob': { es: 'Reporte ROB', en: 'ROB Report' },
   'op.templates': { es: 'Plantillas', en: 'Templates' },

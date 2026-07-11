@@ -26,13 +26,23 @@ type KernelFnName =
   | 'vef_calculate' | 'sw_deduction' | 'pro_rata' | 'sampling_levels' | 'custody_figure'
   | 'draft_survey' | 'hydrostatic_interpolate' | 'reconcile_terminal' | 'lpg_custody'
   | 'costald_ctl' | 'lpg_vapor_correction' | 'blend_calculate' | 'movement_set_calculate'
-  | 'kernel_version'
+  | 'lng_discharge' | 'kernel_version'
+
+// El paquete WASM del demo web aún no exporta `lng_discharge` (se regenera al
+// reconstruir el .wasm); en el navegador devuelve un aviso claro. En escritorio
+// el cálculo va por `kernel_call` al binario nativo, que sí lo tiene.
+const lngDischargeWebStub = () =>
+  JSON.stringify({
+    success: false,
+    errors: [{ code: 'DESKTOP_ONLY', message: 'El cálculo de descarga de LNG está disponible en la app de escritorio.' }],
+  })
 
 const WASM_FNS: Record<KernelFnName, (json: string) => string> = {
   bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool,
   vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure,
   draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody,
   costald_ctl, lpg_vapor_correction, blend_calculate, movement_set_calculate,
+  lng_discharge: lngDischargeWebStub,
   kernel_version: () => kernel_version(),
 }
 
@@ -1314,6 +1324,153 @@ export async function compareSources(input: CompareInput): Promise<ComparisonRes
       })),
     })),
     trace: r.trace_json,
+    errors: r.errors,
+  }
+}
+
+// ---- LNG discharge (custody por energía) ----------------------------------
+
+/** Composición molar del LNG (mol% o fracción; el kernel normaliza). */
+export interface LngComposition {
+  methane?: number
+  ethane?: number
+  propane?: number
+  isoButane?: number
+  nButane?: number
+  isoPentane?: number
+  nPentane?: number
+  neoPentane?: number
+  hexanePlus?: number
+  nitrogen?: number
+  carbonDioxide?: number
+  oxygen?: number
+}
+
+/** Volúmenes molares Vi por componente (m³/kmol) a la temperatura del cargo. */
+export interface LngMolarVolumes {
+  methane?: number
+  ethane?: number
+  propane?: number
+  isoButane?: number
+  nButane?: number
+  isoPentane?: number
+  nPentane?: number
+  neoPentane?: number
+  hexanePlus?: number
+  nitrogen?: number
+}
+
+export interface LngDischargeInput {
+  composition: LngComposition
+  /** Densidad kg/m³ (si se da, se usa directo; si no, se calcula de Vi+K1+K2). */
+  density?: number
+  molarVolumes?: LngMolarVolumes
+  k1?: number
+  k2?: number
+  volumeBefore?: number
+  volumeAfter?: number
+  /** Energía (MMBtu) de vapor desplazado (Qr) y gas a máquinas (Qf). */
+  vaporDisplaced?: number
+  machineGas?: number
+  lbPerKg?: number
+  volumeDecimals?: number
+  densityDecimals?: number
+}
+
+export interface LngDischargeResult {
+  success: boolean
+  molarMass?: string
+  ghvMass?: string
+  density?: string
+  densityUnrounded?: string
+  volumeDelivered?: string
+  grossMass?: string
+  grossEnergy?: string
+  vaporDisplaced?: string
+  machineGas?: string
+  netEnergy?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+interface RawLngResponse {
+  success: boolean
+  molar_mass?: string
+  ghv_mass_btu_lb?: string
+  density_kg_m3?: string
+  density_kg_m3_unrounded?: string
+  volume_delivered_m3?: string
+  gross_mass_kg?: string
+  gross_energy_mmbtu?: string
+  vapor_displaced_mmbtu?: string
+  machine_gas_mmbtu?: string
+  net_energy_mmbtu?: string
+  errors?: { code?: string; message?: string }[]
+}
+
+const numStr = (n?: number) => (n !== undefined && n !== null ? String(n) : undefined)
+
+function lngCompositionDTO(c: LngComposition) {
+  return {
+    methane: numStr(c.methane),
+    ethane: numStr(c.ethane),
+    propane: numStr(c.propane),
+    iso_butane: numStr(c.isoButane),
+    n_butane: numStr(c.nButane),
+    iso_pentane: numStr(c.isoPentane),
+    n_pentane: numStr(c.nPentane),
+    neo_pentane: numStr(c.neoPentane),
+    hexane_plus: numStr(c.hexanePlus),
+    nitrogen: numStr(c.nitrogen),
+    carbon_dioxide: numStr(c.carbonDioxide),
+    oxygen: numStr(c.oxygen),
+  }
+}
+
+function lngMolarVolumesDTO(v?: LngMolarVolumes) {
+  if (!v) return undefined
+  return {
+    methane: numStr(v.methane),
+    ethane: numStr(v.ethane),
+    propane: numStr(v.propane),
+    iso_butane: numStr(v.isoButane),
+    n_butane: numStr(v.nButane),
+    iso_pentane: numStr(v.isoPentane),
+    n_pentane: numStr(v.nPentane),
+    neo_pentane: numStr(v.neoPentane),
+    hexane_plus: numStr(v.hexanePlus),
+    nitrogen: numStr(v.nitrogen),
+  }
+}
+
+/** Descarga de LNG por el kernel (GIIGNL/ISO 6976; sin matemática en TS). */
+export async function lngDischarge(input: LngDischargeInput): Promise<LngDischargeResult> {
+  const req = {
+    composition: lngCompositionDTO(input.composition),
+    density_kg_m3: numStr(input.density),
+    molar_volumes: lngMolarVolumesDTO(input.molarVolumes),
+    k1: numStr(input.k1),
+    k2: numStr(input.k2),
+    volume_before_m3: numStr(input.volumeBefore),
+    volume_after_m3: numStr(input.volumeAfter),
+    vapor_displaced_mmbtu: numStr(input.vaporDisplaced),
+    machine_gas_mmbtu: numStr(input.machineGas),
+    lb_per_kg: numStr(input.lbPerKg),
+    volume_decimals: input.volumeDecimals,
+    density_decimals: input.densityDecimals,
+  }
+  const r = JSON.parse(await callKernel('lng_discharge', JSON.stringify(req))) as RawLngResponse
+  return {
+    success: r.success,
+    molarMass: r.molar_mass,
+    ghvMass: r.ghv_mass_btu_lb,
+    density: r.density_kg_m3,
+    densityUnrounded: r.density_kg_m3_unrounded,
+    volumeDelivered: r.volume_delivered_m3,
+    grossMass: r.gross_mass_kg,
+    grossEnergy: r.gross_energy_mmbtu,
+    vaporDisplaced: r.vapor_displaced_mmbtu,
+    machineGas: r.machine_gas_mmbtu,
+    netEnergy: r.net_energy_mmbtu,
     errors: r.errors,
   }
 }

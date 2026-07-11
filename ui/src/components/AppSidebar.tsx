@@ -11,6 +11,7 @@ import {
   Factory,
   Droplets,
   Beaker,
+  Flame,
   Palette,
   Settings,
 } from 'lucide-react'
@@ -48,6 +49,7 @@ export function AppSidebar() {
     { to: `/trabajo/${jobId}/draft`, tkey: 'op.draft', icon: Anchor },
     { to: `/trabajo/${jobId}/ship-shore`, tkey: 'op.shipShore', icon: Factory },
     { to: `/trabajo/${jobId}/lpg`, tkey: 'op.lpg', icon: Droplets },
+    { to: `/trabajo/${jobId}/lng-descarga`, tkey: 'op.lngDischarge', icon: Flame },
     { to: `/trabajo/${jobId}/blend`, tkey: 'op.blend', icon: Beaker },
     { to: `/trabajo/${jobId}/rob`, tkey: 'op.rob', icon: Fuel },
     { to: `/trabajo/${jobId}/reporte/off-hire`, tkey: 'op.templates', icon: FileStack },

@@ -79,6 +79,14 @@ export function hydrostatic_interpolate(request_json: string): string;
 export function kernel_version(): string;
 
 /**
+ * LNG discharge (custody by energy): composition → density (revised
+ * Klosek–McKinley) + GHV(mass) → mass → gross/net energy (GIIGNL / ISO 6976).
+ * JSON `LngDischargeRequestDTO` → `LngDischargeResponseDTO`. Same error
+ * convention as `bqs_calculate_row`.
+ */
+export function lng_discharge(request_json: string): string;
+
+/**
  * LPG / NGL custody figure: standard volumes (@15 °C, @60 °F) + density →
  * every reported unit (L/m³ @15, MT vacuum & air, long tons from vacuum, bbl &
  * gal @60). JSON `LpgCustodyRequestDTO` → `…ResponseDTO`. (CTL/VCF via API
@@ -150,6 +158,7 @@ export interface InitOutput {
     readonly draft_survey: (a: number, b: number) => [number, number];
     readonly hydrostatic_interpolate: (a: number, b: number) => [number, number];
     readonly kernel_version: () => [number, number];
+    readonly lng_discharge: (a: number, b: number) => [number, number];
     readonly lpg_custody: (a: number, b: number) => [number, number];
     readonly lpg_vapor_correction: (a: number, b: number) => [number, number];
     readonly movement_set_calculate: (a: number, b: number) => [number, number];

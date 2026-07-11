@@ -7,7 +7,7 @@
 // The generated glue in ../wasm/ is committed, so `npm run build` needs no Rust
 // toolchain. Regenerate it with scripts/build-wasm.sh when the kernel changes.
 
-import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, blend_calculate, movement_set_calculate, kernel_version } from '../wasm/supersurvey_wasm.js'
+import init, { bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool, vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure, draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody, costald_ctl, lpg_vapor_correction, blend_calculate, movement_set_calculate, lng_discharge, kernel_version } from '../wasm/supersurvey_wasm.js'
 import wasmUrl from '../wasm/supersurvey_wasm_bg.wasm?url'
 
 let ready: Promise<void> | null = null
@@ -28,21 +28,12 @@ type KernelFnName =
   | 'costald_ctl' | 'lpg_vapor_correction' | 'blend_calculate' | 'movement_set_calculate'
   | 'lng_discharge' | 'kernel_version'
 
-// El paquete WASM del demo web aún no exporta `lng_discharge` (se regenera al
-// reconstruir el .wasm); en el navegador devuelve un aviso claro. En escritorio
-// el cálculo va por `kernel_call` al binario nativo, que sí lo tiene.
-const lngDischargeWebStub = () =>
-  JSON.stringify({
-    success: false,
-    errors: [{ code: 'DESKTOP_ONLY', message: 'El cálculo de descarga de LNG está disponible en la app de escritorio.' }],
-  })
-
 const WASM_FNS: Record<KernelFnName, (json: string) => string> = {
   bqs_calculate_row, bqs_calculate_row_imperial, compare_sources, density_tool,
   vef_calculate, sw_deduction, pro_rata, sampling_levels, custody_figure,
   draft_survey, hydrostatic_interpolate, reconcile_terminal, lpg_custody,
   costald_ctl, lpg_vapor_correction, blend_calculate, movement_set_calculate,
-  lng_discharge: lngDischargeWebStub,
+  lng_discharge,
   kernel_version: () => kernel_version(),
 }
 

@@ -25,6 +25,7 @@ export const costald_ctl = stub('costald_ctl')
 export const lpg_vapor_correction = stub('lpg_vapor_correction')
 export const blend_calculate = stub('blend_calculate')
 export const movement_set_calculate = stub('movement_set_calculate')
+export const lng_discharge = stub('lng_discharge')
 export const kernel_version = stub('kernel_version')
 
 // init(): no-op — no hay módulo que instanciar en escritorio.

@@ -18,6 +18,7 @@ import { DraftSurvey } from './pages/DraftSurvey'
 import { ShipShore } from './pages/ShipShore'
 import { Lpg } from './pages/Lpg'
 import { LngDescarga } from './pages/LngDescarga'
+import { LngReport } from './pages/LngReport'
 import { Blend } from './pages/Blend'
 import { Utilidades } from './pages/Utilidades'
 import { Configuracion } from './pages/Configuracion'
@@ -48,6 +49,7 @@ function AppShell() {
         <Route path="/trabajo/:id/ship-shore" element={<ShipShore />} />
         <Route path="/trabajo/:id/lpg" element={<Lpg />} />
         <Route path="/trabajo/:id/lng-descarga" element={<LngDescarga />} />
+        <Route path="/trabajo/:id/lng-descarga/reporte" element={<LngReport />} />
         <Route path="/trabajo/:id/blend" element={<Blend />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

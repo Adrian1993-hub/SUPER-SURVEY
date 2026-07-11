@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { StatusChip } from '../components/ui/status'
 import { TopBar } from '../components/TopBar'
+import { NextStepBar } from '../components/NextStepBar'
 import { getJob } from '../data/demoJobs'
 import { useParams } from 'react-router-dom'
 import { lngDischarge, kernelVersion, type LngDischargeResult, type LngComposition, type LngMolarVolumes } from '../lib/kernel'
@@ -272,6 +273,12 @@ export function LngDescarga() {
               </p>
             </CardContent>
           </Card>
+
+          <NextStepBar
+            to={`/trabajo/${id || '1'}/lng-descarga/reporte`}
+            label="Reporte de descarga"
+            hint="Genera el documento de custody de LNG por energía (imprimible / PDF)."
+          />
         </div>
       </main>
     </div>

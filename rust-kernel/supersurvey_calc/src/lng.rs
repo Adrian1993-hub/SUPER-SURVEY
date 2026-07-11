@@ -30,12 +30,17 @@
 //! 153 848.5 m³ → mass 65 539 461 kg; gross energy 3 440 402 MMBtu, net
 //! 3 424 985 MMBtu (all reconciled cell-by-cell in the tests below).
 //!
-//! Scope of THIS module: the calculation core is complete and anchor-tested —
-//! molar mass from composition, RKM density from the mixture sums, and the
-//! mass/energy chain. Turning a raw composition + temperature into Σ(Xi·Vi), K1
-//! and K2 requires transcribing the GIIGNL Vi(T)/K1/K2 tables (and the ISO 6976
-//! Hi/Hvi/√bi tables for GHV-from-composition); that data step is tracked
-//! separately (F-LNG-1b) and must cite its source — never fabricated.
+//! Scope of THIS module (all anchor-tested against the reference report):
+//!   • molar mass from composition (ISO 6976 Mi);
+//!   • GHV on a mass basis Hm from composition (GPA 2172 Hi) — drives energy;
+//!   • RKM density from composition given per-component Vi + K1/K2 at the cargo
+//!     temperature (`density_from_composition`), and the raw RKM core;
+//!   • the mass / gross / net energy chain.
+//! Remaining (F-LNG-1b-ii): the temperature lookup — turning a bare composition +
+//! temperature into Vi(T), K1 and K2 needs the GIIGNL Vi(T)/K1/K2 tables
+//! transcribed with cited provenance (never fabricated). Also pending: GHV on a
+//! VOLUME basis + Wobbe (Hvi/√bi/Zmix, ISO 6976) — reported quality figures, not
+//! part of the delivered-energy chain.
 
 use crate::error::{KernelError, KernelErrorCode, KernelResult};
 use rust_decimal::Decimal;
@@ -66,6 +71,27 @@ const M_NITROGEN: Decimal = dec!(28.0134);
 const M_CARBON_DIOXIDE: Decimal = dec!(44.0095);
 const M_OXYGEN: Decimal = dec!(31.9988);
 
+// ---------------------------------------------------------------------------
+// Gross heating value on a MASS basis, Hi (Btu/lbm @ 60 °F) — GPA 2172/2145 (ISO
+// 6976 equivalent), as applied in the reference worksheet (validated below).
+// The delivered ENERGY is driven by this (Gross = V·D·Hm·2.2046), so these are
+// the energy-critical constants. Inerts (N₂, CO₂, O₂) contribute no heat → 0.
+// ---------------------------------------------------------------------------
+const H_METHANE: Decimal = dec!(23892);
+const H_ETHANE: Decimal = dec!(22334);
+const H_PROPANE: Decimal = dec!(21654);
+const H_ISO_BUTANE: Decimal = dec!(21232);
+const H_N_BUTANE: Decimal = dec!(21300);
+const H_ISO_PENTANE: Decimal = dec!(21044);
+const H_N_PENTANE: Decimal = dec!(21085);
+// neo-pentane not tabulated in the reference sheet (≈ always N/A in LNG); use the
+// iso-pentane isomer value pending an exact ISO 6976 figure — documented, not final.
+const H_NEO_PENTANE: Decimal = dec!(21044);
+const H_HEXANE_PLUS: Decimal = dec!(20943);
+const H_NITROGEN: Decimal = dec!(0);
+const H_CARBON_DIOXIDE: Decimal = dec!(0);
+const H_OXYGEN: Decimal = dec!(0);
+
 /// LNG molar composition. Values may be given as percentages (Σ ≈ 100) or as
 /// fractions (Σ ≈ 1); they are normalized to fractions internally, so either
 /// convention is accepted. Components absent from a cargo are simply zero.
@@ -86,32 +112,30 @@ pub struct LngComposition {
 }
 
 impl LngComposition {
-    /// (component molar mass, raw mole value) pairs, in report order.
-    fn pairs(&self) -> [(Decimal, Decimal); 12] {
+    /// (molar mass Mi, mass-GHV Hi, raw mole value) per component, report order.
+    fn components(&self) -> [(Decimal, Decimal, Decimal); 12] {
         [
-            (M_METHANE, self.methane),
-            (M_ETHANE, self.ethane),
-            (M_PROPANE, self.propane),
-            (M_ISO_BUTANE, self.iso_butane),
-            (M_N_BUTANE, self.n_butane),
-            (M_ISO_PENTANE, self.iso_pentane),
-            (M_N_PENTANE, self.n_pentane),
-            (M_NEO_PENTANE, self.neo_pentane),
-            (M_HEXANE_PLUS, self.hexane_plus),
-            (M_NITROGEN, self.nitrogen),
-            (M_CARBON_DIOXIDE, self.carbon_dioxide),
-            (M_OXYGEN, self.oxygen),
+            (M_METHANE, H_METHANE, self.methane),
+            (M_ETHANE, H_ETHANE, self.ethane),
+            (M_PROPANE, H_PROPANE, self.propane),
+            (M_ISO_BUTANE, H_ISO_BUTANE, self.iso_butane),
+            (M_N_BUTANE, H_N_BUTANE, self.n_butane),
+            (M_ISO_PENTANE, H_ISO_PENTANE, self.iso_pentane),
+            (M_N_PENTANE, H_N_PENTANE, self.n_pentane),
+            (M_NEO_PENTANE, H_NEO_PENTANE, self.neo_pentane),
+            (M_HEXANE_PLUS, H_HEXANE_PLUS, self.hexane_plus),
+            (M_NITROGEN, H_NITROGEN, self.nitrogen),
+            (M_CARBON_DIOXIDE, H_CARBON_DIOXIDE, self.carbon_dioxide),
+            (M_OXYGEN, H_OXYGEN, self.oxygen),
         ]
     }
 
     /// Sum of the raw mole values (100 for a % basis, 1 for a fraction basis).
     pub fn total(&self) -> Decimal {
-        self.pairs().iter().map(|(_, x)| *x).sum()
+        self.components().iter().map(|(_, _, x)| *x).sum()
     }
 
-    /// Mixture molar mass M = Σ(Xi·Mi) [kg/kmol], with Xi normalized to Σ = 1.
-    /// Errors if the composition is empty (nothing to normalize).
-    pub fn molar_mass(&self) -> KernelResult<Decimal> {
+    fn require_nonempty(&self) -> KernelResult<Decimal> {
         let total = self.total();
         if total.is_zero() {
             return Err(KernelError::with_field(
@@ -120,8 +144,36 @@ impl LngComposition {
                 "composition",
             ));
         }
-        let weighted: Decimal = self.pairs().iter().map(|(mi, x)| *mi * *x).sum();
+        Ok(total)
+    }
+
+    /// Mixture molar mass M = Σ(Xi·Mi) [kg/kmol], with Xi normalized to Σ = 1.
+    /// Errors if the composition is empty (nothing to normalize).
+    pub fn molar_mass(&self) -> KernelResult<Decimal> {
+        let total = self.require_nonempty()?;
+        let weighted: Decimal = self.components().iter().map(|(mi, _, x)| *mi * *x).sum();
         Ok(weighted / total)
+    }
+
+    /// Gross heating value on a mass basis Hm = Σ(Hi·Xi·Mi) / Σ(Xi·Mi) [Btu/lb].
+    /// The normalization factor cancels, so raw % or fraction values both work.
+    /// This is the figure that drives the delivered energy.
+    pub fn ghv_mass_btu_lb(&self) -> KernelResult<Decimal> {
+        self.require_nonempty()?;
+        let mut num = Decimal::ZERO; // Σ Hi·Mi·x
+        let mut den = Decimal::ZERO; // Σ Mi·x
+        for (mi, hi, x) in self.components() {
+            num += hi * mi * x;
+            den += mi * x;
+        }
+        if den.is_zero() {
+            return Err(KernelError::with_field(
+                KernelErrorCode::DivisionByZero,
+                "Σ(Xi·Mi) evaluated to zero",
+                "composition",
+            ));
+        }
+        Ok(num / den)
     }
 
     /// Normalized methane mole fraction (0..1).
@@ -145,6 +197,61 @@ impl LngComposition {
         }
         Ok(x / total)
     }
+}
+
+/// Per-component molar volumes Vi of the pure liquid **at the cargo temperature**
+/// (m³/kmol). Vi is temperature-dependent, so these come from the GIIGNL CTH /
+/// ISO 6578 tables read (and interpolated) at the LNG temperature — that lookup
+/// is F-LNG-1b-ii. Only liquefiable components are carried: CO₂ and O₂ do not
+/// form part of the LNG liquid and are excluded from the density basis (GIIGNL).
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct LngMolarVolumes {
+    pub methane: Decimal,
+    pub ethane: Decimal,
+    pub propane: Decimal,
+    pub iso_butane: Decimal,
+    pub n_butane: Decimal,
+    pub iso_pentane: Decimal,
+    pub n_pentane: Decimal,
+    pub neo_pentane: Decimal,
+    pub hexane_plus: Decimal,
+    pub nitrogen: Decimal,
+}
+
+/// Revised Klosek–McKinley density straight from composition + per-component
+/// molar volumes at the cargo temperature. Builds Σ(Xi·Mi) and Σ(Xi·Vi) over the
+/// liquefiable components (CO₂/O₂ excluded) using the full-composition mole
+/// fractions, then applies the RKM core. `k1`/`k2` are the mixture correction
+/// coefficients from the GIIGNL table at that temperature and molar mass.
+pub fn density_from_composition(
+    comp: &LngComposition,
+    vi: &LngMolarVolumes,
+    k1: Decimal,
+    k2: Decimal,
+) -> KernelResult<Decimal> {
+    let total = comp.require_nonempty()?;
+    let liquefiable = [
+        (M_METHANE, comp.methane, vi.methane),
+        (M_ETHANE, comp.ethane, vi.ethane),
+        (M_PROPANE, comp.propane, vi.propane),
+        (M_ISO_BUTANE, comp.iso_butane, vi.iso_butane),
+        (M_N_BUTANE, comp.n_butane, vi.n_butane),
+        (M_ISO_PENTANE, comp.iso_pentane, vi.iso_pentane),
+        (M_N_PENTANE, comp.n_pentane, vi.n_pentane),
+        (M_NEO_PENTANE, comp.neo_pentane, vi.neo_pentane),
+        (M_HEXANE_PLUS, comp.hexane_plus, vi.hexane_plus),
+        (M_NITROGEN, comp.nitrogen, vi.nitrogen),
+    ];
+    let mut sum_xi_mi = Decimal::ZERO;
+    let mut sum_xi_vi = Decimal::ZERO;
+    for (mi, x, v) in liquefiable {
+        let xi = x / total;
+        sum_xi_mi += xi * mi;
+        sum_xi_vi += xi * v;
+    }
+    let x_methane = comp.methane / total;
+    let x_nitrogen = comp.nitrogen / total;
+    rkm_density_from_sums(sum_xi_mi, sum_xi_vi, x_methane, x_nitrogen, k1, k2)
 }
 
 /// Revised Klosek–McKinley density from the already-summed mixture terms.
@@ -219,6 +326,37 @@ mod tests {
         // Reference report molar mass Σ(Xi·Mi) = 16.3601 kg/kmol.
         let m = reference_composition().molar_mass().unwrap();
         approx(m, dec!(16.3601), dec!(0.001));
+    }
+
+    #[test]
+    fn ghv_mass_from_composition_matches_reference() {
+        // Reference report: Hm = Σ(Hi·Xi·Mi)/Σ(Xi·Mi) = 23,811 Btu/lb — the
+        // figure that drives delivered energy.
+        let hm = reference_composition().ghv_mass_btu_lb().unwrap();
+        approx(hm, dec!(23811), dec!(1));
+    }
+
+    #[test]
+    fn density_from_composition_matches_reference() {
+        // Report per-component Vi (m³/kmol at −159.3 °C) → Σ(Xi·Vi)=0.038476 →
+        // DENSITY 426.0 kg/m³, straight from the composition.
+        let vi = LngMolarVolumes {
+            methane: dec!(0.038242),
+            ethane: dec!(0.048001),
+            propane: dec!(0.062560),
+            iso_butane: dec!(0.078423),
+            n_butane: dec!(0.076943),
+            nitrogen: dec!(0.047499),
+            ..Default::default()
+        };
+        let d = density_from_composition(
+            &reference_composition(),
+            &vi,
+            dec!(0.000071),
+            dec!(0.000165),
+        )
+        .unwrap();
+        approx(d, dec!(426.0), dec!(0.1));
     }
 
     #[test]

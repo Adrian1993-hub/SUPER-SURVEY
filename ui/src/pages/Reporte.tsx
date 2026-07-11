@@ -11,6 +11,7 @@ import { compareSources, kernelVersion, type ComparisonResult } from '../lib/ker
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { useJobMeasurement } from '../lib/jobStore'
 import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
+import { useT } from '../i18n/LanguageProvider'
 import { FileText, FileSpreadsheet, Braces, PenLine, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 // Reporte BQS imprimible: TODA cifra sale del kernel WASM (misma matemática
@@ -29,23 +30,24 @@ const td = ''
 const tdL = 'cell-l'
 
 function SectionTable({ title, section, calc }: { title: string; section: VmrSectionData; calc: (CalcFields | null)[] }) {
+  const t = useT()
   const tot = sectionTotals(section.tanques, calc)
   return (
     <section className="print:break-inside-avoid">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-bold uppercase tracking-wide">{title}</h3>
         <div className="text-[11px] text-muted-foreground">
-          Calado proa <span className="font-mono">{section.draftFore.toFixed(2)}</span> · popa{' '}
+          {t('flowShared.draftFore')} <span className="font-mono">{section.draftFore.toFixed(2)}</span> · {t('reporte.aftSep')}{' '}
           <span className="font-mono">{section.draftAft.toFixed(2)}</span> · trim{' '}
           <span className="font-mono">{section.trim.toFixed(2)}</span> · list{' '}
-          <span className="font-mono">{section.list.toFixed(2)}</span> · trim {section.trimApplied ? 'aplicado' : 'no aplicado'}
+          <span className="font-mono">{section.list.toFixed(2)}</span> · trim {section.trimApplied ? t('flowShared.applied') : t('flowShared.notApplied')}
         </div>
       </div>
       <table className="table-dense mt-2 w-full border-collapse">
         <thead>
           <tr>
-            <th className={th}>Tanque</th>
-            <th className={th}>Grado</th>
+            <th className={th}>{t('flowShared.tank')}</th>
+            <th className={th}>{t('flowShared.grade')}</th>
             <th className={`${th} text-right`}>Dens@15</th>
             <th className={`${th} text-right`}>Temp °C</th>
             <th className={`${th} text-right`}>TOV m³</th>
@@ -53,30 +55,30 @@ function SectionTable({ title, section, calc }: { title: string; section: VmrSec
             <th className={`${th} text-right`}>VCF 54B</th>
             <th className={`${th} text-right`}>GSV@15 m³</th>
             <th className={`${th} text-right`}>WCF 56</th>
-            <th className={`${th} text-right`}>MT (aire)</th>
+            <th className={`${th} text-right`}>{t('reporte.mtAir')}</th>
           </tr>
         </thead>
         <tbody>
-          {section.tanques.map((t, i) => {
+          {section.tanques.map((tk, i) => {
             const c = calc[i]
             return (
-              <tr key={t.tanque + i}>
-                <td className={tdL}>{t.tanque}</td>
-                <td className={tdL}>{t.grade}</td>
-                <td className={td}>{f4(t.densidad15)}</td>
-                <td className={td}>{t.temp.toFixed(1)}</td>
-                <td className={td}>{f3(t.tov)}</td>
-                <td className={td}>{f3(c ? c.gov : t.gov)}</td>
-                <td className={td}>{f4(c ? c.vcf : t.vcf)}</td>
-                <td className={td}>{f3(c ? c.gsv : t.gsv)}</td>
-                <td className={td}>{f4(c ? c.wcf56 : t.wcf56)}</td>
-                <td className={`${td} font-semibold`}>{f3(c ? c.mt : t.mt)}</td>
+              <tr key={tk.tanque + i}>
+                <td className={tdL}>{tk.tanque}</td>
+                <td className={tdL}>{tk.grade}</td>
+                <td className={td}>{f4(tk.densidad15)}</td>
+                <td className={td}>{tk.temp.toFixed(1)}</td>
+                <td className={td}>{f3(tk.tov)}</td>
+                <td className={td}>{f3(c ? c.gov : tk.gov)}</td>
+                <td className={td}>{f4(c ? c.vcf : tk.vcf)}</td>
+                <td className={td}>{f3(c ? c.gsv : tk.gsv)}</td>
+                <td className={td}>{f4(c ? c.wcf56 : tk.wcf56)}</td>
+                <td className={`${td} font-semibold`}>{f3(c ? c.mt : tk.mt)}</td>
               </tr>
             )
           })}
           <tr className="bg-muted font-semibold">
             <td className={tdL} colSpan={4}>
-              Totales
+              {t('flowShared.totals')}
             </td>
             <td className={td}>{f3(tot.tov)}</td>
             <td className={td}>{f3(tot.gov)}</td>
@@ -93,6 +95,7 @@ function SectionTable({ title, section, calc }: { title: string; section: VmrSec
 
 export function Reporte() {
   const { id } = useParams<{ id: string }>()
+  const t = useT()
   const job = getJob(id || '1')
   const h = vmrData.header
   // Mismas mediciones que editó el surveyor en Medición (estado compartido).
@@ -206,17 +209,17 @@ export function Reporte() {
 
   return (
     <div className="flex h-full flex-col print:block print:h-auto">
-      <TopBar title="Reporte" activeJob={job} />
+      <TopBar title={t('reporte.title')} activeJob={job} />
       <JobStepper />
 
       <main className="flex-1 overflow-auto p-6 print:overflow-visible print:p-0">
         <div className="mx-auto max-w-4xl space-y-4 print:max-w-none print:space-y-0">
           {/* Acciones (no se imprimen) */}
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-            <h2 className="text-lg font-semibold">Reporte BQS — vista de impresión</h2>
+            <h2 className="text-lg font-semibold">{t('reporte.printView')}</h2>
             <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title="Edición de las tablas de medición de petróleo">
-                Tablas
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title={t('flowShared.tablesTitle')}>
+                {t('flowShared.tables')}
                 <select
                   value={edition}
                   onChange={(e) => setEdition(e.target.value as TableVersion)}
@@ -227,16 +230,16 @@ export function Reporte() {
                 </select>
               </label>
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
-                <FileText className="h-4 w-4" /> PDF / Imprimir
+                <FileText className="h-4 w-4" /> {t('reporte.pdfPrint')}
               </Button>
               <Button variant="outline" className="gap-2" onClick={exportJson}>
-                <Braces className="h-4 w-4" /> JSON técnico
+                <Braces className="h-4 w-4" /> {t('reporte.jsonTech')}
               </Button>
               <Button variant="outline" className="gap-2" onClick={exportXlsx}>
                 <FileSpreadsheet className="h-4 w-4" /> XLSX
               </Button>
-              <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110" disabled title="La firma digital llega con la fase de firma">
-                <PenLine className="h-4 w-4" /> Firmar
+              <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110" disabled title={t('reporte.signTitle')}>
+                <PenLine className="h-4 w-4" /> {t('flowShared.sign')}
               </Button>
             </div>
           </div>
@@ -251,30 +254,30 @@ export function Reporte() {
 
               {/* Meta */}
               <div className="grid gap-x-10 gap-y-1 text-sm sm:grid-cols-2 print:grid-cols-2">
-                <Meta k="Buque" v={h.buque} />
-                <Meta k="Surveyor" v={h.surveyor} />
-                <Meta k="Barcaza" v={h.barcaza} />
-                <Meta k="Tipo de survey" v={h.surveyType} />
-                <Meta k="Puerto" v={h.puerto} />
-                <Meta k="Fecha" v={h.fecha} />
-                <Meta k="Estado del mar" v={h.seaCondition} />
-                <Meta k="Densidad suplidor @15 °C" v={`${f4(h.suppliersDensity)} kg/L`} />
+                <Meta k={t('flowShared.vessel')} v={h.buque} />
+                <Meta k={t('flowShared.surveyor')} v={h.surveyor} />
+                <Meta k={t('flowShared.barge')} v={h.barcaza} />
+                <Meta k={t('reporte.surveyType')} v={h.surveyType} />
+                <Meta k={t('flowShared.port')} v={h.puerto} />
+                <Meta k={t('flowShared.date')} v={h.fecha} />
+                <Meta k={t('reporte.seaState')} v={h.seaCondition} />
+                <Meta k={t('reporte.metaSupplierDensity')} v={`${f4(h.suppliersDensity)} kg/L`} />
               </div>
 
-              <SectionTable title="Before receiving" section={beforeSection} calc={beforeCalc} />
-              <SectionTable title="After receiving" section={afterSection} calc={afterCalc} />
+              <SectionTable title={t('flowShared.beforeReceiving')} section={beforeSection} calc={beforeCalc} />
+              <SectionTable title={t('flowShared.afterReceiving')} section={afterSection} calc={afterCalc} />
 
               {/* Quantity transferred */}
               <section className="print:break-inside-avoid">
-                <h3 className="text-sm font-bold uppercase tracking-wide">Quantity transferred</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wide">{t('flowShared.quantityTransferred')}</h3>
                 <table className="table-dense mt-2 w-full border-collapse">
                   <tbody>
                     <tr>
                       <th className={th}>GSV @15 °C (Δ after − before)</th>
-                      <th className={th}>Densidad suplidor</th>
-                      <th className={th}>WCF Tabla 56</th>
-                      <th className={th}>MT (vacío)</th>
-                      <th className={th}>MT (aire)</th>
+                      <th className={th}>{t('flowShared.supplierDensity')}</th>
+                      <th className={th}>{t('reporte.wcfTable56')}</th>
+                      <th className={th}>{t('reporte.mtVac')}</th>
+                      <th className={th}>{t('reporte.mtAir')}</th>
                     </tr>
                     <tr>
                       <td className={td}>{transferred ? f3(transferred.gsv) : '—'} m³</td>
@@ -289,16 +292,16 @@ export function Reporte() {
 
               {/* Comparación de fuentes */}
               <section className="print:break-inside-avoid">
-                <h3 className="text-sm font-bold uppercase tracking-wide">Comparación de fuentes (MT aire)</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wide">{t('reporte.sourceComparison')}</h3>
                 <table className="table-dense mt-2 w-full border-collapse">
                   <thead>
                     <tr>
-                      <th className={th}>Par</th>
+                      <th className={th}>{t('reporte.pair')}</th>
                       <th className={`${th} text-right`}>A</th>
                       <th className={`${th} text-right`}>B</th>
                       <th className={`${th} text-right`}>Δ MT</th>
                       <th className={`${th} text-right`}>Δ%</th>
-                      <th className={th}>Resultado</th>
+                      <th className={th}>{t('reporte.result')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -311,7 +314,7 @@ export function Reporte() {
                         <td className={td}>{p.valueB}</td>
                         <td className={td}>{p.delta}</td>
                         <td className={td}>{p.deltaPct}%</td>
-                        <td className={tdL}>{p.withinAll ? 'Dentro de tolerancia' : 'Fuera de tolerancia'}</td>
+                        <td className={tdL}>{p.withinAll ? t('reporte.withinTol') : t('reporte.outTol')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -320,19 +323,17 @@ export function Reporte() {
                   {action === 'NONE' ? (
                     <>
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                      <span>
-                        Todas las diferencias dentro de las capas de tolerancia (
-                        {toleranceLayers.map((l) => `${l.name} ±${l.limitPct}%`).join(' · ')}). No se requiere documento de
-                        discrepancia.
-                      </span>
+                      <span>{t('reporte.allWithin', { layers: toleranceLayers.map((l) => `${l.name} ±${l.limitPct}%`).join(' · ') })}</span>
                     </>
                   ) : (
                     <>
                       <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${action === 'ISSUE_LOP' ? 'text-danger' : 'text-warning'}`} />
                       <span>
-                        El peor |Δ%| ({cmp?.worstDeltaPct}%) excede {action === 'ISSUE_LOP' ? 'la capa más amplia' : 'la capa más estricta'} de
-                        tolerancia — se {action === 'ISSUE_LOP' ? 'emite Letter of Protest (LOP)' : 'notifica discrepancia aparente (NOAD)'}, adjunta a este
-                        reporte.
+                        {t('reporte.worstExceeds', {
+                          worst: String(cmp?.worstDeltaPct ?? ''),
+                          layer: action === 'ISSUE_LOP' ? t('reporte.layerWidest') : t('reporte.layerStrictest'),
+                          act: action === 'ISSUE_LOP' ? t('reporte.actLop') : t('reporte.actNoad'),
+                        })}
                       </span>
                     </>
                   )}
@@ -341,28 +342,27 @@ export function Reporte() {
 
               {/* Observaciones */}
               <section className="print:break-inside-avoid">
-                <h3 className="text-sm font-bold uppercase tracking-wide">Observaciones</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wide">{t('reporte.observations')}</h3>
                 <div className="mt-2 h-14 rounded border border-dashed print:rounded-none" />
               </section>
 
               {/* Firmas */}
               <section className="grid grid-cols-3 gap-6 pt-4 text-sm print:break-inside-avoid">
-                <ReportSignature label="Surveyor" />
-                <ReportSignature label="Master / Chief Engineer" />
-                <ReportSignature label="Por la barcaza" />
+                <ReportSignature label={t('flowShared.surveyor')} />
+                <ReportSignature label={t('reporte.sigMaster')} />
+                <ReportSignature label={t('reporte.sigBarge')} />
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                Calculado por SuperSurvey · motor de cálculo (ASTM {editionLabel}){kver ? ` v${kver}` : ''} (sin redondeos intermedios no
-                documentados) · documento de demostración con datos ficticios
+                {t('reporte.footerPre', { edition: editionLabel })}{kver ? ` v${kver}` : ''}{t('reporte.footerPost')}
               </footer>
             </div>
           </article>
 
           <NextStepBar
             to="/trabajos"
-            label="Trabajos"
-            hint="Imprime o exporta el reporte y ciérralo con las firmas; el trabajo queda en la lista."
+            label={t('reporte.nextLabel')}
+            hint={t('reporte.nextHint')}
           />
         </div>
       </main>

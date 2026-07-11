@@ -6,16 +6,18 @@ import { TopBar } from '../components/TopBar'
 import { JobStepper } from '../components/Stepper'
 import { NextStepBar } from '../components/NextStepBar'
 import { getJob, calcTraceData } from '../data/demoJobs'
+import { useT } from '../i18n/LanguageProvider'
 
 export function CalculoTrace() {
   const { id } = useParams<{ id: string }>()
+  const t = useT()
   const jobId = id || '1'
   const job = getJob(jobId)
   const c = calcTraceData[jobId] ?? calcTraceData['1']
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Cálculo + Trace" activeJob={job} />
+      <TopBar title={t('calculo.title')} activeJob={job} />
       <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
@@ -23,12 +25,12 @@ export function CalculoTrace() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip tone="neutral">{c.tanque}</StatusChip>
             <Badge variant="outline">{c.engineVersion}</Badge>
-            <Badge variant="outline">Tablas {c.tablaAstm}</Badge>
+            <Badge variant="outline">{t('calculo.tablesBadge', { astm: c.tablaAstm })}</Badge>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Cadena de cálculo explicable</CardTitle>
+              <CardTitle>{t('calculo.chainTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ol className="space-y-0">
@@ -55,15 +57,12 @@ export function CalculoTrace() {
             </CardContent>
           </Card>
 
-          <p className="text-xs text-muted-foreground">
-            Cada cantidad oficial será explicable paso a paso por el motor de cálculo (decimal exacto, sin
-            redondeo intermedio). Valores mostrados: demo ilustrativo.
-          </p>
+          <p className="text-xs text-muted-foreground">{t('calculo.note')}</p>
 
           <NextStepBar
             to={`/trabajo/${jobId}/comparacion`}
-            label="Comparación"
-            hint="Con las cantidades trazadas, compara Vessel / Barge / BDN contra las capas de tolerancia."
+            label={t('calculo.nextLabel')}
+            hint={t('calculo.nextHint')}
           />
         </div>
       </main>

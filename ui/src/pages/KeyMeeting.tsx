@@ -7,6 +7,7 @@ import { TopBar } from '../components/TopBar'
 import { JobStepper } from '../components/Stepper'
 import { NextStepBar } from '../components/NextStepBar'
 import { getJob, keyMeetingData } from '../data/demoJobs'
+import { useT } from '../i18n/LanguageProvider'
 import { CheckCircle2, AlertTriangle, PenLine } from 'lucide-react'
 
 function Rata({ label, value }: { label: string; value: number }) {
@@ -26,43 +27,44 @@ function Rata({ label, value }: { label: string; value: number }) {
 
 export function KeyMeeting() {
   const { id } = useParams<{ id: string }>()
+  const t = useT()
   const jobId = id || '1'
   const job = getJob(jobId)
   const k = keyMeetingData[jobId] ?? keyMeetingData['1']
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Key Meeting" activeJob={job} />
+      <TopBar title={t('keymeeting.title')} activeJob={job} />
       <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-4xl space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
-            <Rata label="Rata inicial" value={k.ratas.inicial} />
-            <Rata label="Rata máxima" value={k.ratas.maxima} />
-            <Rata label="Rata topping-off" value={k.ratas.topping} />
+            <Rata label={t('keymeeting.rateInitial')} value={k.ratas.inicial} />
+            <Rata label={t('keymeeting.rateMax')} value={k.ratas.maxima} />
+            <Rata label={t('keymeeting.rateTopping')} value={k.ratas.topping} />
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Acuerdos</CardTitle>
+              <CardTitle>{t('keymeeting.agreements')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-muted-foreground">Grados:</span>
+                <span className="text-sm text-muted-foreground">{t('keymeeting.grades')}</span>
                 {k.gradosConfirmados.map((g) => (
                   <StatusChip key={g} tone="info">{g}</StatusChip>
                 ))}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-muted-foreground">Tanques nominados:</span>
-                {k.tanquesNominados.map((t) => (
-                  <Badge key={t} variant="outline">{t}</Badge>
+                <span className="text-sm text-muted-foreground">{t('keymeeting.nominatedTanks')}</span>
+                {k.tanquesNominados.map((tn) => (
+                  <Badge key={tn} variant="outline">{tn}</Badge>
                 ))}
               </div>
               <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">ROB esperado: </span>
+                  <span className="text-muted-foreground">{t('keymeeting.expectedRob')}</span>
                   <span className="font-mono font-medium tabular-nums">{k.robEsperado.toFixed(1)} m³</span>
                 </div>
                 <div>
@@ -75,7 +77,7 @@ export function KeyMeeting() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Checklist</CardTitle>
+              <CardTitle>{t('keymeeting.checklist')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
               {k.items.map((it) => (
@@ -94,13 +96,13 @@ export function KeyMeeting() {
           <div className="flex justify-end">
             <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110">
               <PenLine className="h-4 w-4" />
-              Firmar acta
+              {t('keymeeting.signMinutes')}
             </Button>
           </div>
           <NextStepBar
             to={`/trabajo/${id || '1'}/medicion`}
-            label="Medición"
-            hint="Acuerdos del key meeting confirmados: tanques nominados, grados y secuencia."
+            label={t('keymeeting.nextLabel')}
+            hint={t('keymeeting.nextHint')}
           />
         </div>
       </main>

@@ -42,9 +42,12 @@
 //! VOLUME basis + Wobbe (Hvi/√bi/Zmix, ISO 6976) — reported quality figures, not
 //! part of the delivered-energy chain.
 
+use crate::decimal::DecimalValue;
 use crate::error::{KernelError, KernelErrorCode, KernelResult};
+use crate::precision::{round_decimal, SystemRoundingRule};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::{Deserialize, Serialize};
 
 /// Nitrogen reference mole fraction in the RKM correction (GIIGNL RKM).
 const RKM_N2_REF: Decimal = dec!(0.0425);
@@ -299,6 +302,237 @@ pub fn net_energy(gross: Decimal, vapor_displaced: Decimal, machine_gas: Decimal
     gross - vapor_displaced - machine_gas
 }
 
+// ---------------------------------------------------------------------------
+// DTO boundary — string-in / string-out, same contract as every other operation.
+// ---------------------------------------------------------------------------
+
+fn fmt(value: Decimal, decimals: u32) -> String {
+    let mut r = round_decimal(value, decimals, SystemRoundingRule::HalfUp);
+    r.rescale(decimals);
+    r.to_string()
+}
+
+fn parse_opt(raw: &Option<String>, field: &'static str) -> KernelResult<Decimal> {
+    match raw {
+        Some(s) if !s.trim().is_empty() => Ok(DecimalValue::parse(s, field)?.value),
+        _ => Ok(Decimal::ZERO),
+    }
+}
+
+fn parse_req(raw: &Option<String>, field: &'static str) -> KernelResult<Decimal> {
+    match raw {
+        Some(s) if !s.trim().is_empty() => Ok(DecimalValue::parse(s, field)?.value),
+        _ => Err(KernelError::with_field(
+            KernelErrorCode::ComparisonInputInvalid,
+            format!("Missing `{field}`"),
+            field,
+        )),
+    }
+}
+
+/// Molar composition as strings (mol% or fractions; either works).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct LngCompositionDTO {
+    #[serde(default)] pub methane: Option<String>,
+    #[serde(default)] pub ethane: Option<String>,
+    #[serde(default)] pub propane: Option<String>,
+    #[serde(default)] pub iso_butane: Option<String>,
+    #[serde(default)] pub n_butane: Option<String>,
+    #[serde(default)] pub iso_pentane: Option<String>,
+    #[serde(default)] pub n_pentane: Option<String>,
+    #[serde(default)] pub neo_pentane: Option<String>,
+    #[serde(default)] pub hexane_plus: Option<String>,
+    #[serde(default)] pub nitrogen: Option<String>,
+    #[serde(default)] pub carbon_dioxide: Option<String>,
+    #[serde(default)] pub oxygen: Option<String>,
+}
+
+impl LngCompositionDTO {
+    fn parse(&self) -> KernelResult<LngComposition> {
+        Ok(LngComposition {
+            methane: parse_opt(&self.methane, "methane")?,
+            ethane: parse_opt(&self.ethane, "ethane")?,
+            propane: parse_opt(&self.propane, "propane")?,
+            iso_butane: parse_opt(&self.iso_butane, "iso_butane")?,
+            n_butane: parse_opt(&self.n_butane, "n_butane")?,
+            iso_pentane: parse_opt(&self.iso_pentane, "iso_pentane")?,
+            n_pentane: parse_opt(&self.n_pentane, "n_pentane")?,
+            neo_pentane: parse_opt(&self.neo_pentane, "neo_pentane")?,
+            hexane_plus: parse_opt(&self.hexane_plus, "hexane_plus")?,
+            nitrogen: parse_opt(&self.nitrogen, "nitrogen")?,
+            carbon_dioxide: parse_opt(&self.carbon_dioxide, "carbon_dioxide")?,
+            oxygen: parse_opt(&self.oxygen, "oxygen")?,
+        })
+    }
+}
+
+/// Per-component molar volumes at the cargo temperature (m³/kmol) as strings.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct LngMolarVolumesDTO {
+    #[serde(default)] pub methane: Option<String>,
+    #[serde(default)] pub ethane: Option<String>,
+    #[serde(default)] pub propane: Option<String>,
+    #[serde(default)] pub iso_butane: Option<String>,
+    #[serde(default)] pub n_butane: Option<String>,
+    #[serde(default)] pub iso_pentane: Option<String>,
+    #[serde(default)] pub n_pentane: Option<String>,
+    #[serde(default)] pub neo_pentane: Option<String>,
+    #[serde(default)] pub hexane_plus: Option<String>,
+    #[serde(default)] pub nitrogen: Option<String>,
+}
+
+impl LngMolarVolumesDTO {
+    fn parse(&self) -> KernelResult<LngMolarVolumes> {
+        Ok(LngMolarVolumes {
+            methane: parse_opt(&self.methane, "vi.methane")?,
+            ethane: parse_opt(&self.ethane, "vi.ethane")?,
+            propane: parse_opt(&self.propane, "vi.propane")?,
+            iso_butane: parse_opt(&self.iso_butane, "vi.iso_butane")?,
+            n_butane: parse_opt(&self.n_butane, "vi.n_butane")?,
+            iso_pentane: parse_opt(&self.iso_pentane, "vi.iso_pentane")?,
+            n_pentane: parse_opt(&self.n_pentane, "vi.n_pentane")?,
+            neo_pentane: parse_opt(&self.neo_pentane, "vi.neo_pentane")?,
+            hexane_plus: parse_opt(&self.hexane_plus, "vi.hexane_plus")?,
+            nitrogen: parse_opt(&self.nitrogen, "vi.nitrogen")?,
+        })
+    }
+}
+
+/// LNG discharge request. Density is taken from `density_kg_m3` when given
+/// (e.g. read off the ship's CTS), otherwise computed from `molar_volumes` +
+/// `k1` + `k2` (revised Klosek–McKinley). Volume delivered = before − after.
+/// `*_decimals` reproduce the ship report's rounding convention (both default 1).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LngDischargeRequestDTO {
+    #[serde(default)]
+    pub composition: LngCompositionDTO,
+    #[serde(default)]
+    pub density_kg_m3: Option<String>,
+    #[serde(default)]
+    pub molar_volumes: Option<LngMolarVolumesDTO>,
+    #[serde(default)]
+    pub k1: Option<String>,
+    #[serde(default)]
+    pub k2: Option<String>,
+    #[serde(default)]
+    pub volume_before_m3: Option<String>,
+    #[serde(default)]
+    pub volume_after_m3: Option<String>,
+    #[serde(default)]
+    pub vapor_displaced_mmbtu: Option<String>,
+    #[serde(default)]
+    pub machine_gas_mmbtu: Option<String>,
+    #[serde(default)]
+    pub lb_per_kg: Option<String>,
+    #[serde(default)]
+    pub volume_decimals: Option<u32>,
+    #[serde(default)]
+    pub density_decimals: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LngDischargeResponseDTO {
+    pub success: bool,
+    pub molar_mass: Option<String>,
+    pub ghv_mass_btu_lb: Option<String>,
+    pub density_kg_m3: Option<String>,
+    pub density_kg_m3_unrounded: Option<String>,
+    pub volume_delivered_m3: Option<String>,
+    pub gross_mass_kg: Option<String>,
+    pub gross_energy_mmbtu: Option<String>,
+    pub vapor_displaced_mmbtu: Option<String>,
+    pub machine_gas_mmbtu: Option<String>,
+    pub net_energy_mmbtu: Option<String>,
+    pub errors: Option<Vec<KernelError>>,
+}
+
+impl LngDischargeResponseDTO {
+    fn failure(errors: Vec<KernelError>) -> Self {
+        Self {
+            success: false,
+            molar_mass: None,
+            ghv_mass_btu_lb: None,
+            density_kg_m3: None,
+            density_kg_m3_unrounded: None,
+            volume_delivered_m3: None,
+            gross_mass_kg: None,
+            gross_energy_mmbtu: None,
+            vapor_displaced_mmbtu: None,
+            machine_gas_mmbtu: None,
+            net_energy_mmbtu: None,
+            errors: Some(errors),
+        }
+    }
+}
+
+impl LngDischargeRequestDTO {
+    pub fn calculate(&self) -> LngDischargeResponseDTO {
+        match self.calc_inner() {
+            Ok(r) => r,
+            Err(e) => LngDischargeResponseDTO::failure(vec![e]),
+        }
+    }
+
+    fn calc_inner(&self) -> KernelResult<LngDischargeResponseDTO> {
+        let comp = self.composition.parse()?;
+        let molar_mass = comp.molar_mass()?;
+        let hm = comp.ghv_mass_btu_lb()?;
+
+        // Density: given directly, or computed from composition + Vi + K1/K2.
+        let density_unrounded = match &self.density_kg_m3 {
+            Some(s) if !s.trim().is_empty() => DecimalValue::parse(s, "density_kg_m3")?.value,
+            _ => {
+                let vi = self
+                    .molar_volumes
+                    .as_ref()
+                    .ok_or_else(|| {
+                        KernelError::with_field(
+                            KernelErrorCode::ComparisonInputInvalid,
+                            "Provide `density_kg_m3`, or `molar_volumes` + `k1` + `k2` to compute it.",
+                            "density_kg_m3",
+                        )
+                    })?
+                    .parse()?;
+                let k1 = parse_req(&self.k1, "k1")?;
+                let k2 = parse_req(&self.k2, "k2")?;
+                density_from_composition(&comp, &vi, k1, k2)?
+            }
+        };
+        let ddec = self.density_decimals.unwrap_or(1);
+        let density = round_decimal(density_unrounded, ddec, SystemRoundingRule::HalfUp);
+
+        let vbefore = parse_opt(&self.volume_before_m3, "volume_before_m3")?;
+        let vafter = parse_opt(&self.volume_after_m3, "volume_after_m3")?;
+        let vdec = self.volume_decimals.unwrap_or(1);
+        let vdelivered = round_decimal(vbefore - vafter, vdec, SystemRoundingRule::HalfUp);
+
+        let mass = gross_mass_kg(vdelivered, density);
+        let lb_per_kg = match &self.lb_per_kg {
+            Some(s) if !s.trim().is_empty() => DecimalValue::parse(s, "lb_per_kg")?.value,
+            _ => dec!(2.2046),
+        };
+        let gross = gross_energy_mmbtu(mass, hm, lb_per_kg);
+        let qr = parse_opt(&self.vapor_displaced_mmbtu, "vapor_displaced_mmbtu")?;
+        let qf = parse_opt(&self.machine_gas_mmbtu, "machine_gas_mmbtu")?;
+        let net = net_energy(gross, qr, qf);
+
+        Ok(LngDischargeResponseDTO {
+            success: true,
+            molar_mass: Some(fmt(molar_mass, 4)),
+            ghv_mass_btu_lb: Some(fmt(hm, 1)),
+            density_kg_m3: Some(fmt(density, ddec)),
+            density_kg_m3_unrounded: Some(fmt(density_unrounded, 4)),
+            volume_delivered_m3: Some(fmt(vdelivered, vdec)),
+            gross_mass_kg: Some(fmt(mass, 0)),
+            gross_energy_mmbtu: Some(fmt(gross, 0)),
+            vapor_displaced_mmbtu: Some(fmt(qr, 0)),
+            machine_gas_mmbtu: Some(fmt(qf, 0)),
+            net_energy_mmbtu: Some(fmt(net, 0)),
+            errors: None,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -401,5 +635,50 @@ mod tests {
     #[test]
     fn empty_composition_errors() {
         assert!(LngComposition::default().molar_mass().is_err());
+    }
+
+    #[test]
+    fn dto_discharge_from_composition_matches_reference() {
+        // End-to-end through the DTO: composition + Vi + K1/K2 + volumes → the
+        // reference report's density, mass and (net) energy.
+        let s = |v: &str| Some(v.to_string());
+        let req = LngDischargeRequestDTO {
+            composition: LngCompositionDTO {
+                methane: s("97.98"),
+                ethane: s("1.78"),
+                propane: s("0.15"),
+                iso_butane: s("0.03"),
+                n_butane: s("0.02"),
+                nitrogen: s("0.04"),
+                ..Default::default()
+            },
+            density_kg_m3: None,
+            molar_volumes: Some(LngMolarVolumesDTO {
+                methane: s("0.038242"),
+                ethane: s("0.048001"),
+                propane: s("0.062560"),
+                iso_butane: s("0.078423"),
+                n_butane: s("0.076943"),
+                nitrogen: s("0.047499"),
+                ..Default::default()
+            }),
+            k1: s("0.000071"),
+            k2: s("0.000165"),
+            volume_before_m3: s("155928.015"),
+            volume_after_m3: s("2079.490"),
+            vapor_displaced_mmbtu: s("14162"),
+            machine_gas_mmbtu: s("1255"),
+            lb_per_kg: None,
+            volume_decimals: None,
+            density_decimals: None,
+        };
+        let r = req.calculate();
+        assert!(r.success, "errors: {:?}", r.errors);
+        assert_eq!(r.density_kg_m3.as_deref(), Some("426.0"));
+        assert_eq!(r.volume_delivered_m3.as_deref(), Some("153848.5"));
+        assert_eq!(r.gross_mass_kg.as_deref(), Some("65539461"));
+        // Net within the report's internal rounding noise (~0.02 %).
+        let net: f64 = r.net_energy_mmbtu.unwrap().parse().unwrap();
+        assert!((net - 3_424_985.0).abs() < 1000.0, "net={net}");
     }
 }

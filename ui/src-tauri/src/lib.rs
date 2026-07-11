@@ -297,6 +297,7 @@ fn kernel_call(fn_name: String, request_json: String) -> Result<String, String> 
         "draft_survey" => run(&request_json, |r: &calc::draft::DraftSurveyRequestDTO| out(&r.calculate())),
         "hydrostatic_interpolate" => run(&request_json, |r: &calc::draft::HydrostaticInterpolateRequestDTO| out(&r.calculate())),
         "reconcile_terminal" => run(&request_json, |r: &calc::reconcile::ReconciliationRequestDTO| out(&r.calculate())),
+        "lng_discharge" => run(&request_json, |r: &calc::lng::LngDischargeRequestDTO| out(&r.calculate())),
         "lpg_custody" => run(&request_json, |r: &calc::lpg::LpgCustodyRequestDTO| out(&r.calculate())),
         "costald_ctl" => run(&request_json, |r: &calc::costald::CostaldCtlRequestDTO| out(&r.calculate())),
         "lpg_vapor_correction" => run(&request_json, |r: &calc::lpg_vapor::LpgVaporRequestDTO| out(&r.calculate())),

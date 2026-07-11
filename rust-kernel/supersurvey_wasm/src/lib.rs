@@ -13,6 +13,7 @@ use supersurvey_calc::custody::{ProRataRequestDTO, SwRequestDTO};
 use supersurvey_calc::density::DensityToolRequestDTO;
 use supersurvey_calc::draft::{DraftSurveyRequestDTO, HydrostaticInterpolateRequestDTO};
 use supersurvey_calc::figures::CustodyFigureRequestDTO;
+use supersurvey_calc::lng::LngDischargeRequestDTO;
 use supersurvey_calc::lpg::LpgCustodyRequestDTO;
 use supersurvey_calc::lpg_vapor::LpgVaporRequestDTO;
 use supersurvey_calc::movement::MovementSetRequestDTO;
@@ -230,6 +231,19 @@ pub fn blend_calculate(request_json: &str) -> String {
 #[wasm_bindgen]
 pub fn movement_set_calculate(request_json: &str) -> String {
     match serde_json::from_str::<MovementSetRequestDTO>(request_json) {
+        Ok(req) => serde_json::to_string(&req.calculate())
+            .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
+        Err(e) => fallback_error(&format!("invalid request JSON: {e}")),
+    }
+}
+
+/// LNG discharge (custody by energy): composition → density (revised
+/// Klosek–McKinley) + GHV(mass) → mass → gross/net energy (GIIGNL / ISO 6976).
+/// JSON `LngDischargeRequestDTO` → `LngDischargeResponseDTO`. Same error
+/// convention as `bqs_calculate_row`.
+#[wasm_bindgen]
+pub fn lng_discharge(request_json: &str) -> String {
+    match serde_json::from_str::<LngDischargeRequestDTO>(request_json) {
         Ok(req) => serde_json::to_string(&req.calculate())
             .unwrap_or_else(|e| fallback_error(&format!("serialize response failed: {e}"))),
         Err(e) => fallback_error(&format!("invalid request JSON: {e}")),

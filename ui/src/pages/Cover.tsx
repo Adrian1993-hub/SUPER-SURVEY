@@ -10,52 +10,54 @@ import { TopBar } from '../components/TopBar'
 import { JobStepper } from '../components/Stepper'
 import { NextStepBar } from '../components/NextStepBar'
 import { getJob, jobDetails } from '../data/demoJobs'
+import { useT } from '../i18n/LanguageProvider'
 
 export function Cover() {
   const { id } = useParams<{ id: string }>()
   const jobId = id || '1'
   const job = getJob(jobId)
   const d = jobDetails[jobId] ?? jobDetails['1']
+  const t = useT()
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Cover / Configuración" activeJob={job} />
+      <TopBar title={t('cover.title')} activeJob={job} />
       <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-4xl space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Datos del trabajo</CardTitle>
+              <CardTitle>{t('cover.jobData')}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Cliente</Label>
+                <Label>{t('cover.client')}</Label>
                 <Input defaultValue={d.cliente} />
               </div>
               <div className="space-y-2">
-                <Label>Tipo de operación</Label>
+                <Label>{t('cover.operationType')}</Label>
                 <Select defaultValue="BQS">
-                  <option value="BQS">BQS — Bunker Quantity Survey</option>
-                  <option value="TERMINAL">Terminal (Load / Discharge)</option>
-                  <option value="STS">STS (Ship-to-Ship)</option>
-                  <option value="DRAFT">Draft Survey</option>
+                  <option value="BQS">{t('cover.opBqs')}</option>
+                  <option value="TERMINAL">{t('cover.opTerminal')}</option>
+                  <option value="STS">{t('cover.opSts')}</option>
+                  <option value="DRAFT">{t('cover.opDraft')}</option>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Buque</Label>
+                <Label>{t('flowShared.vessel')}</Label>
                 <Input defaultValue={d.buque} />
               </div>
               <div className="space-y-2">
-                <Label>Puerto</Label>
+                <Label>{t('flowShared.port')}</Label>
                 <Input defaultValue={d.puerto} />
               </div>
               <div className="space-y-2">
-                <Label>Fecha NOR</Label>
+                <Label>{t('cover.norDate')}</Label>
                 <Input defaultValue={d.fechaNor} />
               </div>
               <div className="space-y-2">
-                <Label>Grados</Label>
+                <Label>{t('cover.grades')}</Label>
                 <div className="flex flex-wrap gap-2 pt-1.5">
                   {d.grados.map((g) => (
                     <StatusChip key={g} tone="info">
@@ -69,15 +71,15 @@ export function Cover() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Partes</CardTitle>
+              <CardTitle>{t('cover.parties')}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead className="w-[160px] text-center">Firma documentos</TableHead>
+                    <TableHead>{t('cover.name')}</TableHead>
+                    <TableHead>{t('cover.role')}</TableHead>
+                    <TableHead className="w-[160px] text-center">{t('cover.signsDocs')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

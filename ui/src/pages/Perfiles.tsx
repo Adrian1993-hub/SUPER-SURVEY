@@ -12,9 +12,11 @@ import { TopBar } from '../components/TopBar'
 import { JobStepper } from '../components/Stepper'
 import { NextStepBar } from '../components/NextStepBar'
 import { getJob, profileData } from '../data/demoJobs'
+import { useT } from '../i18n/LanguageProvider'
 
 export function Perfiles() {
   const { id } = useParams<{ id: string }>()
+  const t = useT()
   const jobId = id || '1'
   const job = getJob(jobId)
   const p = profileData[jobId] ?? profileData['1']
@@ -22,39 +24,39 @@ export function Perfiles() {
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Perfiles" activeJob={job} />
+      <TopBar title={t('perfiles.title')} activeJob={job} />
       <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-4xl">
           <Tabs defaultValue="buque">
             <TabsList>
-              <TabsTrigger value="buque">Buque / Tanques</TabsTrigger>
-              <TabsTrigger value="calculo">Cálculo</TabsTrigger>
-              <TabsTrigger value="tolerancia">Tolerancia</TabsTrigger>
+              <TabsTrigger value="buque">{t('perfiles.tabVessel')}</TabsTrigger>
+              <TabsTrigger value="calculo">{t('perfiles.tabCalc')}</TabsTrigger>
+              <TabsTrigger value="tolerancia">{t('perfiles.tabTolerance')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="buque">
               <Card>
                 <CardHeader>
-                  <CardTitle>Tanques del buque</CardTitle>
+                  <CardTitle>{t('perfiles.vesselTanks')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Tanque</TableHead>
-                        <TableHead className="text-right">Capacidad (m³)</TableHead>
-                        <TableHead className="w-[120px] text-center">Es bunker</TableHead>
+                        <TableHead>{t('flowShared.tank')}</TableHead>
+                        <TableHead className="text-right">{t('perfiles.capacity')}</TableHead>
+                        <TableHead className="w-[120px] text-center">{t('perfiles.isBunker')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {p.tanques.map((t) => (
-                        <TableRow key={t.nombre}>
-                          <TableCell className="font-medium">{t.nombre}</TableCell>
-                          <TableCell className="text-right font-mono tabular-nums">{t.capacidad.toFixed(1)}</TableCell>
+                      {p.tanques.map((tk) => (
+                        <TableRow key={tk.nombre}>
+                          <TableCell className="font-medium">{tk.nombre}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">{tk.capacidad.toFixed(1)}</TableCell>
                           <TableCell className="text-center">
-                            <Checkbox defaultChecked={t.esBunker} />
+                            <Checkbox defaultChecked={tk.esBunker} />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -62,18 +64,15 @@ export function Perfiles() {
                   </Table>
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Fecha de calibración de la tabla</Label>
+                      <Label>{t('perfiles.calibDate')}</Label>
                       <Input defaultValue={p.calibracion.fecha} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Referencia de la tabla</Label>
+                      <Label>{t('perfiles.tableRef')}</Label>
                       <Input defaultValue={p.calibracion.ref} />
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    La app no almacena la tabla de calibración: el surveyor ingresa el volumen y se
-                    registra solo la fecha/referencia (trazabilidad).
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('perfiles.calibNote')}</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -81,38 +80,38 @@ export function Perfiles() {
             <TabsContent value="calculo">
               <Card>
                 <CardHeader>
-                  <CardTitle>Perfil de cálculo</CardTitle>
+                  <CardTitle>{t('perfiles.calcProfile')}</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Estándar</Label>
+                    <Label>{t('perfiles.standard')}</Label>
                     <Select defaultValue={p.calculo.estandar}>
                       <option>{p.calculo.estandar}</option>
                       <option>ASTM D1250-19 / API MPMS 11.1</option>
-                      <option>ASTM D1250-80 (legado)</option>
+                      <option>{t('perfiles.standardLegacy')}</option>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Tabla / versión</Label>
+                    <Label>{t('perfiles.tableVersion')}</Label>
                     <Select defaultValue={p.calculo.tabla}>
                       <option>{p.calculo.tabla}</option>
-                      <option>Tabla 6B</option>
-                      <option>Tabla 54A (crudo)</option>
+                      <option>{t('perfiles.table6b')}</option>
+                      <option>{t('perfiles.table54a')}</option>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Base de densidad</Label>
+                    <Label>{t('perfiles.densityBase')}</Label>
                     <Input defaultValue={p.calculo.baseDensidad} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Agregar desde no redondeado</Label>
+                    <Label>{t('perfiles.aggUnrounded')}</Label>
                     <div>
                       <Toggle
                         pressed={aggUnrounded}
                         onPressedChange={setAggUnrounded}
                         className="data-[state=on]:bg-brand data-[state=on]:text-brand-foreground"
                       >
-                        {aggUnrounded ? 'Activado' : 'Desactivado'}
+                        {aggUnrounded ? t('perfiles.enabled') : t('perfiles.disabled')}
                       </Toggle>
                     </div>
                   </div>
@@ -123,14 +122,14 @@ export function Perfiles() {
             <TabsContent value="tolerancia">
               <Card>
                 <CardHeader>
-                  <CardTitle>Capas de tolerancia</CardTitle>
+                  <CardTitle>{t('perfiles.toleranceLayers')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Capa</TableHead>
-                        <TableHead>Base</TableHead>
+                        <TableHead>{t('perfiles.layer')}</TableHead>
+                        <TableHead>{t('perfiles.base')}</TableHead>
                         <TableHead className="w-[120px] text-right">%</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -152,8 +151,8 @@ export function Perfiles() {
           </Tabs>
           <NextStepBar
             to={`/trabajo/${id || '1'}/key-meeting`}
-            label="Key Meeting"
-            hint="Perfiles del buque, parámetros de cálculo y capas de tolerancia definidos."
+            label={t('perfiles.nextLabel')}
+            hint={t('perfiles.nextHint')}
           />
         </div>
       </main>

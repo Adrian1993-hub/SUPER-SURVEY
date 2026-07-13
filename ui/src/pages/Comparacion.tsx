@@ -12,6 +12,8 @@ import { NextStepBar } from '../components/NextStepBar'
 import { getJob } from '../data/demoJobs'
 import { comparacionUnidades, BARGE_FACTOR, BDN_FACTOR, TOLERANCIA_PCT, toleranceLayers, discrepanciaInfo } from '../data/vmr'
 import { compareSources, type ComparisonResult, type RecommendedAction } from '../lib/kernel'
+import { useT } from '../i18n/LanguageProvider'
+import type { TKey } from '../i18n/dict'
 import { CheckCircle2, AlertTriangle, FileText, PenLine, ShieldAlert, Cpu } from 'lucide-react'
 
 const toneBox: Record<string, string> = {
@@ -20,38 +22,23 @@ const toneBox: Record<string, string> = {
   emerald: 'status-ok',
 }
 
-function recommendation(action: RecommendedAction, worst: number) {
+type Translate = (key: TKey, vars?: Record<string, string | number>) => string
+
+function recommendation(action: RecommendedAction, worst: number, t: Translate) {
   const w = worst.toFixed(4)
   switch (action) {
     case 'ISSUE_LOP':
-      return {
-        tab: 'lop',
-        tone: 'red',
-        icon: ShieldAlert,
-        title: 'Excede tolerancia — emitir LOP',
-        desc: `El peor |Δ%| (${w}%) supera la capa más amplia. Se recomienda una Letter of Protest.`,
-      }
+      return { tab: 'lop', tone: 'red', icon: ShieldAlert, title: t('comparacion.recLopTitle'), desc: t('comparacion.recLopDesc', { w }) }
     case 'ISSUE_NOAD':
-      return {
-        tab: 'noad',
-        tone: 'amber',
-        icon: AlertTriangle,
-        title: 'Discrepancia aparente — NOAD',
-        desc: `El peor |Δ%| (${w}%) supera la capa más estricta pero no la más amplia. Notifíquese (NOAD).`,
-      }
+      return { tab: 'noad', tone: 'amber', icon: AlertTriangle, title: t('comparacion.recNoadTitle'), desc: t('comparacion.recNoadDesc', { w }) }
     default:
-      return {
-        tab: 'sof',
-        tone: 'emerald',
-        icon: CheckCircle2,
-        title: 'Dentro de tolerancia',
-        desc: `El peor |Δ%| (${w}%) está dentro de todas las capas. No se requiere documento de discrepancia.`,
-      }
+      return { tab: 'sof', tone: 'emerald', icon: CheckCircle2, title: t('comparacion.recOkTitle'), desc: t('comparacion.recOkDesc', { w }) }
   }
 }
 
 export function Comparacion() {
   const { id } = useParams<{ id: string }>()
+  const t = useT()
   const job = getJob(id || '1')
   const [unitIdx, setUnitIdx] = useState(3) // MT (aire) por defecto
   const [cmp, setCmp] = useState<ComparisonResult | null>(null)
@@ -111,14 +98,14 @@ export function Comparacion() {
 
   const action: RecommendedAction = cmp?.recommendedAction ?? 'NONE'
   const worst = cmp?.worstDeltaPct ? Number(cmp.worstDeltaPct) : Math.max(...pares.map((p) => Math.abs(p.pct)))
-  const rec = recommendation(action, worst)
+  const rec = recommendation(action, worst, t)
   const RecIcon = rec.icon
   const worstLayers = cmp?.pairs?.[1]?.layers ?? [] // capas del peor par (vessel vs BDN)
   const main = pares[0]
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar title="Comparación" activeJob={job} />
+      <TopBar title={t('comparacion.title')} activeJob={job} />
       <JobStepper />
 
       <main className="flex-1 overflow-auto p-6">
@@ -147,7 +134,7 @@ export function Comparacion() {
               )}
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-current px-2 py-0.5 text-xs opacity-80">
-              <Cpu className="h-3 w-3" /> Motor de cálculo
+              <Cpu className="h-3 w-3" /> {t('flowShared.engine')}
             </span>
           </div>
 
@@ -155,9 +142,9 @@ export function Comparacion() {
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <CardTitle>Cantidades recibidas vs entregadas</CardTitle>
+                <CardTitle>{t('comparacion.receivedVsDelivered')}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Unidad:</span>
+                  <span className="text-sm text-muted-foreground">{t('comparacion.unit')}</span>
                   <div className="w-52">
                     <Select value={unitIdx} onChange={(e) => setUnitIdx(Number(e.target.value))} className="w-full">
                       {comparacionUnidades.map((unit, i) => (
@@ -188,7 +175,7 @@ export function Comparacion() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Comparación</TableHead>
+                    <TableHead>{t('comparacion.thComparison')}</TableHead>
                     <TableHead className="text-right">A ({u.sufijo})</TableHead>
                     <TableHead className="text-right">B ({u.sufijo})</TableHead>
                     <TableHead className="text-right">Δ ({u.sufijo})</TableHead>
@@ -213,11 +200,11 @@ export function Comparacion() {
                       <TableCell>
                         {p.dentro ? (
                           <Badge className="status-ok gap-1.5 border">
-                            <CheckCircle2 className="h-3 w-3" /> Dentro
+                            <CheckCircle2 className="h-3 w-3" /> {t('comparacion.within')}
                           </Badge>
                         ) : (
                           <Badge variant="destructive" className="gap-1.5">
-                            <AlertTriangle className="h-3 w-3" /> Fuera
+                            <AlertTriangle className="h-3 w-3" /> {t('comparacion.out')}
                           </Badge>
                         )}
                       </TableCell>
@@ -231,25 +218,28 @@ export function Comparacion() {
           {/* Documentos de discrepancia: mismo dato, distinto formato */}
           <Card>
             <CardHeader>
-              <CardTitle>Documento de discrepancia</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Statement of Fact, NOAD y LOP comparten los mismos datos; cambia el formato y el tono. La pestaña
-                recomendada por el motor de cálculo está marcada.
-              </p>
+              <CardTitle>{t('comparacion.discDoc')}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t('comparacion.discDocNote')}</p>
             </CardHeader>
             <CardContent>
               {/* key={rec.tab} remonta las pestañas para abrir la recomendada al cargar */}
               <Tabs key={rec.tab} defaultValue={rec.tab}>
                 <TabsList>
-                  <TabsTrigger value="sof">Statement of Fact{rec.tab === 'sof' && ' ★'}</TabsTrigger>
+                  <TabsTrigger value="sof">{t('comparacion.tabSof')}{rec.tab === 'sof' && ' ★'}</TabsTrigger>
                   <TabsTrigger value="noad">NOAD{rec.tab === 'noad' && ' ★'}</TabsTrigger>
                   <TabsTrigger value="lop">LOP{rec.tab === 'lop' && ' ★'}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="sof">
                   <DocBody
-                    titulo="STATEMENT OF FACT"
-                    intro={`Por la presente se dejan constancia de los hechos de la operación ${discrepanciaInfo.operacion} a bordo del ${discrepanciaInfo.buque}, desde ${discrepanciaInfo.barcaza}, en ${discrepanciaInfo.puerto} el ${discrepanciaInfo.fecha}. Las cantidades medidas se detallan a continuación.`}
+                    titulo={t('comparacion.sofTitle')}
+                    intro={t('comparacion.sofIntro', {
+                      operacion: discrepanciaInfo.operacion,
+                      buque: discrepanciaInfo.buque,
+                      barcaza: discrepanciaInfo.barcaza,
+                      puerto: discrepanciaInfo.puerto,
+                      fecha: discrepanciaInfo.fecha,
+                    })}
                     main={main}
                     unit={u}
                     fmt={fmt}
@@ -257,8 +247,12 @@ export function Comparacion() {
                 </TabsContent>
                 <TabsContent value="noad">
                   <DocBody
-                    titulo="NOTICE OF APPARENT DISCREPANCY (NOAD)"
-                    intro={`Se notifica una aparente discrepancia entre la cantidad entregada por la barcaza (${discrepanciaInfo.barcaza}) y la recibida por el buque (${discrepanciaInfo.buque}) en la operación de ${discrepanciaInfo.grado}. Se solicita acuse de recibo de la diferencia indicada.`}
+                    titulo={t('comparacion.noadTitle')}
+                    intro={t('comparacion.noadIntro', {
+                      barcaza: discrepanciaInfo.barcaza,
+                      buque: discrepanciaInfo.buque,
+                      grado: discrepanciaInfo.grado,
+                    })}
                     main={main}
                     unit={u}
                     fmt={fmt}
@@ -266,8 +260,8 @@ export function Comparacion() {
                 </TabsContent>
                 <TabsContent value="lop">
                   <DocBody
-                    titulo="LETTER OF PROTEST (LOP)"
-                    intro={`Por la presente protestamos formalmente la diferencia observada entre la cantidad entregada y la recibida en la operación a bordo del ${discrepanciaInfo.buque} en ${discrepanciaInfo.puerto}, sin perjuicio de derechos posteriores.`}
+                    titulo={t('comparacion.lopTitle')}
+                    intro={t('comparacion.lopIntro', { buque: discrepanciaInfo.buque, puerto: discrepanciaInfo.puerto })}
                     main={main}
                     unit={u}
                     fmt={fmt}
@@ -279,8 +273,8 @@ export function Comparacion() {
 
           <NextStepBar
             to={`/trabajo/${id || '1'}/reporte`}
-            label="Reporte"
-            hint="El veredicto (OK / NOAD / LOP) y sus documentos quedan listos; genera el reporte firmable."
+            label={t('comparacion.nextLabel')}
+            hint={t('comparacion.nextHint')}
           />
         </div>
       </main>
@@ -308,11 +302,12 @@ function DocBody({
   unit: { sufijo: string }
   fmt: (n: number) => string
 }) {
+  const t = useT()
   return (
     <div className="space-y-4 rounded-lg border bg-card p-5">
       <div className="text-center">
         <div className="text-lg font-bold tracking-wide">{titulo}</div>
-        <div className="text-xs text-muted-foreground">SuperSurvey · Empresa Demo (marca configurable)</div>
+        <div className="text-xs text-muted-foreground">{t('comparacion.demoBrand')}</div>
       </div>
       <p className="text-sm leading-relaxed">{intro}</p>
 
@@ -331,7 +326,7 @@ function DocBody({
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-semibold">Diferencia</TableCell>
+            <TableCell className="font-semibold">{t('comparacion.difference')}</TableCell>
             <TableCell className="text-right font-mono font-semibold tabular-nums">
               {main.delta > 0 ? '+' : ''}
               {fmt(main.delta)} {unit.sufijo} ({main.pct > 0 ? '+' : ''}
@@ -344,20 +339,20 @@ function DocBody({
       <div className="grid grid-cols-2 gap-8 pt-4 text-sm">
         <div>
           <div className="h-10 border-b" />
-          <div className="mt-1 text-muted-foreground">Surveyor</div>
+          <div className="mt-1 text-muted-foreground">{t('flowShared.surveyor')}</div>
         </div>
         <div>
           <div className="h-10 border-b" />
-          <div className="mt-1 text-muted-foreground">Por el buque / barcaza</div>
+          <div className="mt-1 text-muted-foreground">{t('comparacion.forVesselBarge')}</div>
         </div>
       </div>
 
       <div className="flex flex-wrap justify-end gap-3 pt-2">
         <Button variant="outline" className="gap-2">
-          <FileText className="h-4 w-4" /> Exportar PDF
+          <FileText className="h-4 w-4" /> {t('comparacion.exportPdf')}
         </Button>
         <Button className="gap-2 bg-brand text-brand-foreground hover:brightness-110">
-          <PenLine className="h-4 w-4" /> Firmar
+          <PenLine className="h-4 w-4" /> {t('flowShared.sign')}
         </Button>
       </div>
     </div>

@@ -58,9 +58,9 @@ export function LngReport() {
         <div className="mx-auto max-w-4xl space-y-4 print:max-w-none print:space-y-0">
           {/* Acciones (no se imprimen) */}
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-            <h2 className="text-lg font-semibold">Reporte de descarga de LNG — vista de impresión</h2>
+            <h2 className="text-lg font-semibold">{t('lngrep.printView')}</h2>
             <Button variant="outline" className="gap-2" onClick={() => window.print()}>
-              <FileText className="h-4 w-4" /> PDF / Imprimir
+              <FileText className="h-4 w-4" /> {t('report.pdfPrint')}
             </Button>
           </div>
 
@@ -69,43 +69,43 @@ export function LngReport() {
             <ReportBrandBar referencia={d.meta.referencia} fecha={d.meta.fecha} />
 
             <div className="space-y-6 px-8 py-6">
-              <ReportTitle title="LNG Discharge Report" subtitle="Custody transfer by energy · GIIGNL / ISO 6976" />
+              <ReportTitle title={t('lngrep.doc.title')} subtitle={t('lngrep.doc.subtitle')} />
 
               <div className="grid gap-x-10 gap-y-1 text-sm sm:grid-cols-2 print:grid-cols-2">
-                <Meta k="Buque" v={d.meta.buque} />
-                <Meta k="Terminal / Puerto" v={d.meta.terminal} />
-                <Meta k="Cliente" v={d.meta.cliente} />
-                <Meta k="Viaje" v={d.meta.voyage} />
-                <Meta k="Puerto de carga" v={d.meta.loadPort} />
-                <Meta k="Temp. del LNG" v={`${grp(ql.tempC, 1)} °C`} />
+                <Meta k={t('report.meta.vessel')} v={d.meta.buque} />
+                <Meta k={t('lngrep.meta.terminalPort')} v={d.meta.terminal} />
+                <Meta k={t('report.meta.client')} v={d.meta.cliente} />
+                <Meta k={t('lngrep.meta.voyage')} v={d.meta.voyage} />
+                <Meta k={t('lngrep.meta.loadPort')} v={d.meta.loadPort} />
+                <Meta k={t('lngrep.meta.lngTemp')} v={`${grp(ql.tempC, 1)} °C`} />
               </div>
 
               {/* Cifras clave */}
               <section className="print:break-inside-avoid">
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide">Resumen — cantidad y energía</h3>
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide">{t('lngrep.summary.title')}</h3>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Fig k="Densidad" v={grp(ql.density, 1)} unit="kg/m³" />
-                  <Fig k="Volumen entregado" v={grp(q.volDelivered, 1)} unit="m³" />
-                  <Fig k="Masa bruta" v={grp(q.grossMass)} unit="kg" />
-                  <Fig k="GHV (masa)" v={grp(ql.ghvMass)} unit="Btu/lb" />
-                  <Fig k="Energía bruta" v={grp(q.grossEnergy)} unit="MMBtu" />
-                  <Fig k="Vapor desplazado" v={grp(q.vaporDisplaced)} unit="MMBtu" />
-                  <Fig k="Gas a máquinas" v={grp(q.machineGas)} unit="MMBtu" />
-                  <Fig k="Energía neta" v={grp(q.netEnergy)} unit="MMBtu" big />
+                  <Fig k={t('lngrep.fig.density')} v={grp(ql.density, 1)} unit="kg/m³" />
+                  <Fig k={t('lngrep.fig.volDelivered')} v={grp(q.volDelivered, 1)} unit="m³" />
+                  <Fig k={t('lngrep.fig.grossMass')} v={grp(q.grossMass)} unit="kg" />
+                  <Fig k={t('lngrep.fig.ghvMass')} v={grp(ql.ghvMass)} unit="Btu/lb" />
+                  <Fig k={t('lngrep.fig.grossEnergy')} v={grp(q.grossEnergy)} unit="MMBtu" />
+                  <Fig k={t('lngrep.fig.vaporDisplaced')} v={grp(q.vaporDisplaced)} unit="MMBtu" />
+                  <Fig k={t('lngrep.fig.machineGas')} v={grp(q.machineGas)} unit="MMBtu" />
+                  <Fig k={t('lngrep.fig.netEnergy')} v={grp(q.netEnergy)} unit="MMBtu" big />
                 </div>
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  Masa neta equivalente {grp(q.netMassEq, 3)} t (ISO 13398) · GHV volumen {grp(ql.ghvVolume, 2)} Btu/scf · Wobbe{' '}
+                  {t('lngrep.summary.netMassEq')} {grp(q.netMassEq, 3)} t (ISO 13398) · {t('lngrep.summary.ghvVolume')} {grp(ql.ghvVolume, 2)} Btu/scf · Wobbe{' '}
                   {grp(ql.wobbe, 2)} Btu/scf.
                 </p>
               </section>
 
               {/* Composición */}
               <section className="print:break-inside-avoid">
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide">Composición molar (certificado)</h3>
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide">{t('lngrep.composition.title')}</h3>
                 <table className="table-dense w-full border-collapse">
                   <thead>
                     <tr>
-                      <th className="cell-l th-caps">Componente</th>
+                      <th className="cell-l th-caps">{t('lngrep.composition.component')}</th>
                       <th className="th-caps">mol %</th>
                     </tr>
                   </thead>
@@ -117,7 +117,7 @@ export function LngReport() {
                       </tr>
                     ))}
                     <tr className="font-semibold">
-                      <td className="cell-l">Total</td>
+                      <td className="cell-l">{t('flowShared.totals')}</td>
                       <td>{grp(d.composition.reduce((a, c) => a + c.pct, 0), 2)}</td>
                     </tr>
                   </tbody>
@@ -126,13 +126,13 @@ export function LngReport() {
 
               {/* Cadena de cálculo */}
               <section className="print:break-inside-avoid text-sm">
-                <h3 className="mb-1 text-sm font-bold uppercase tracking-wide">Método (explicable)</h3>
+                <h3 className="mb-1 text-sm font-bold uppercase tracking-wide">{t('lngrep.method.title')}</h3>
                 <ol className="ml-4 list-decimal space-y-0.5 text-muted-foreground">
-                  <li>Densidad del líquido por Klosek–McKinley revisado (GIIGNL) desde composición y temperatura → {grp(ql.density, 1)} kg/m³.</li>
-                  <li>GHV (masa) = Σ(Hi·Xi·Mi)/Σ(Xi·Mi) (GPA 2172 / ISO 6976) → {grp(ql.ghvMass)} Btu/lb.</li>
-                  <li>Volumen entregado = O.C.T. {grp(q.volBefore, 3)} − C.C.T. {grp(q.volAfter, 3)} = {grp(q.volDelivered, 1)} m³.</li>
-                  <li>Masa = V × densidad → {grp(q.grossMass)} kg; Energía bruta = masa × GHV × 2.2046.</li>
-                  <li>Energía neta = bruta − vapor desplazado (Qr) − gas a máquinas (Qf) → {grp(q.netEnergy)} MMBtu.</li>
+                  <li>{t('lngrep.method.s1', { v: grp(ql.density, 1) })}</li>
+                  <li>{t('lngrep.method.s2', { v: grp(ql.ghvMass) })}</li>
+                  <li>{t('lngrep.method.s3', { a: grp(q.volBefore, 3), b: grp(q.volAfter, 3), c: grp(q.volDelivered, 1) })}</li>
+                  <li>{t('lngrep.method.s4', { v: grp(q.grossMass) })}</li>
+                  <li>{t('lngrep.method.s5', { v: grp(q.netEnergy) })}</li>
                 </ol>
               </section>
 
@@ -153,14 +153,13 @@ export function LngReport() {
 
               {/* Firmas */}
               <section className="grid grid-cols-3 gap-6 pt-4 text-sm print:break-inside-avoid">
-                <ReportSignature label="Vessel Representative" />
-                <ReportSignature label="Terminal Representative" />
-                <ReportSignature label="Surveyor" />
+                <ReportSignature label={t('report.sig.vesselRep')} />
+                <ReportSignature label={t('report.sig.terminalRep')} />
+                <ReportSignature label={t('report.sig.surveyor')} />
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                Calculado por SuperSurvey · motor de cálculo (GIIGNL CTH · ISO 6976){kver ? ` v${kver}` : ''} · custody de LNG por energía ·
-                documento de demostración con datos de referencia anonimizados.
+                {t('report.footer.calcBy')} (GIIGNL CTH · ISO 6976){kver ? ` v${kver}` : ''} · {t('lngrep.footer.custody')} · {t('lngrep.footer.demoRef')}
               </footer>
             </div>
           </article>

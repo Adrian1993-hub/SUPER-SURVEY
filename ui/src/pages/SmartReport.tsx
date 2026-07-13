@@ -10,7 +10,11 @@ import { toleranceLayers, type VmrTank } from '../data/vmr'
 import { compareSources, swDeduction, proRata, custodyFigure, kernelVersion, type ComparisonResult, type ImperialRowInput, type SwResult, type ProRataResult, type CustodyFigureResult, type UnitSet } from '../lib/kernel'
 import { useComputedRows, useImperialRows, type CalcFields, type ImperialCalcFields } from '../lib/useBqsRows'
 import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
+import { useT } from '../i18n/LanguageProvider'
+import type { TKey } from '../i18n/dict'
 import { FileText, Braces, Layers, FileSpreadsheet } from 'lucide-react'
+
+type Translate = (key: TKey, vars?: Record<string, string | number>) => string
 
 // Renderer ÚNICO de plantillas inteligentes: lee el descriptor de la operación
 // (data/reportTemplates), arma las secciones declaradas y deja que el kernel WASM
@@ -26,10 +30,10 @@ const thL = 'cell-l th-caps'
 const td = ''
 const tdL = 'cell-l'
 
-function verdict(action: ComparisonResult['recommendedAction']) {
+function verdict(action: ComparisonResult['recommendedAction'], t: Translate) {
   if (action === 'ISSUE_LOP') return { cls: 'text-danger', label: 'LOP' }
   if (action === 'ISSUE_NOAD') return { cls: 'text-warning', label: 'NOAD' }
-  return { cls: 'text-success', label: 'Conforme' }
+  return { cls: 'text-success', label: t('report.verdict.compliant') }
 }
 
 const toVmr = (t: TemplateTank): VmrTank => ({
@@ -44,16 +48,17 @@ const toImp = (t: TemplateTank): ImperialRowInput => ({
 // ---- Grade inventory blocks (metric / imperial), lift MT up --------------
 
 function MetricGrade({ g, onMt }: { g: TemplateGrade; onMt: (grade: string, mt: number) => void }) {
+  const t = useT()
   const calc = useComputedRows(g.tanks.map(toVmr))
   const mt = calc.reduce((a, c: CalcFields | null) => a + (c ? c.mt : 0), 0)
   useEffect(() => onMt(g.grade, mt), [g.grade, mt, onMt])
   return (
     <GradeTable
       label={g.label}
-      head={['Tanque', 'Dens@15', 'Temp °C', 'TOV m³', 'GSV@15 m³', 'WCF56', 'MT (aire)']}
-      rows={g.tanks.map((t, i) => {
+      head={[t('report.col.tank'), 'Dens@15', 'Temp °C', 'TOV m³', 'GSV@15 m³', 'WCF56', t('report.col.mtAir')]}
+      rows={g.tanks.map((tk, i) => {
         const c = calc[i]
-        return [t.tank, f4(t.densidad15 ?? 0), t.temp.toFixed(1), f3(t.tov), c ? f3(c.gsv) : '—', c ? f4(c.wcf56) : '—', c ? f3(c.mt) : '—']
+        return [tk.tank, f4(tk.densidad15 ?? 0), tk.temp.toFixed(1), f3(tk.tov), c ? f3(c.gsv) : '—', c ? f4(c.wcf56) : '—', c ? f3(c.mt) : '—']
       })}
       totalMt={mt}
     />
@@ -61,6 +66,7 @@ function MetricGrade({ g, onMt }: { g: TemplateGrade; onMt: (grade: string, mt: 
 }
 
 function ImperialGrade({ g, onMt }: { g: TemplateGrade; onMt: (grade: string, mt: number) => void }) {
+  const t = useT()
   const closing = useImperialRows(g.tanks.map(toImp))
   const opening = useImperialRows((g.opening ?? []).map(toImp))
   const sum = (rows: (ImperialCalcFields | null)[]) => rows.reduce((a, c) => a + (c ? c.mtAir : 0), 0)
@@ -68,32 +74,33 @@ function ImperialGrade({ g, onMt }: { g: TemplateGrade; onMt: (grade: string, mt
   const openMt = g.opening ? sum(opening) : 0
   const mt = closeMt - openMt // loaded = closing − opening (OBQ)
   useEffect(() => onMt(g.grade, mt), [g.grade, mt, onMt])
+  const impHead = [t('report.col.tank'), 'API@60', 'Temp °C', 'TOV m³', 'GSV bbl', 'VCF 6B', t('report.col.mtAir')]
   return (
     <div className="space-y-2">
       <GradeTable
-        label={g.opening ? `${g.label} — total a bordo` : g.label}
-        head={['Tanque', 'API@60', 'Temp °C', 'TOV m³', 'GSV bbl', 'VCF 6B', 'MT (aire)']}
-        rows={g.tanks.map((t, i) => {
+        label={g.opening ? t('smart.gradeTotalOnBoard', { label: g.label }) : g.label}
+        head={impHead}
+        rows={g.tanks.map((tk, i) => {
           const c = closing[i]
-          return [t.tank, (t.api ?? 0).toFixed(2), t.temp.toFixed(1), f3(t.tov), c ? c.gsvBbl.toFixed(2) : '—', c ? c.vcf.toFixed(5) : '—', c ? f3(c.mtAir) : '—']
+          return [tk.tank, (tk.api ?? 0).toFixed(2), tk.temp.toFixed(1), f3(tk.tov), c ? c.gsvBbl.toFixed(2) : '—', c ? c.vcf.toFixed(5) : '—', c ? f3(c.mtAir) : '—']
         })}
         totalMt={closeMt}
-        totalLabel={g.opening ? 'Total a bordo' : undefined}
+        totalLabel={g.opening ? t('smart.totalOnBoard') : undefined}
       />
       {g.opening && (
         <>
           <GradeTable
-            label={`${g.label} — OBQ (antes)`}
-            head={['Tanque', 'API@60', 'Temp °C', 'TOV m³', 'GSV bbl', 'VCF 6B', 'MT (aire)']}
-            rows={g.opening.map((t, i) => {
+            label={t('smart.gradeObq', { label: g.label })}
+            head={impHead}
+            rows={g.opening.map((tk, i) => {
               const c = opening[i]
-              return [t.tank, (t.api ?? 0).toFixed(2), t.temp.toFixed(1), f3(t.tov), c ? c.gsvBbl.toFixed(2) : '—', c ? c.vcf.toFixed(5) : '—', c ? f3(c.mtAir) : '—']
+              return [tk.tank, (tk.api ?? 0).toFixed(2), tk.temp.toFixed(1), f3(tk.tov), c ? c.gsvBbl.toFixed(2) : '—', c ? c.vcf.toFixed(5) : '—', c ? f3(c.mtAir) : '—']
             })}
             totalMt={openMt}
             totalLabel="OBQ"
           />
           <div className="rounded-md border bg-brand/10 px-3 py-1.5 text-sm">
-            <span className="text-muted-foreground">Loaded = a bordo − OBQ: </span>
+            <span className="text-muted-foreground">{t('smart.loadedFormula')}</span>
             <span className="font-mono font-bold tabular-nums text-brand">{f3(mt)} MT</span>
           </div>
         </>
@@ -143,6 +150,7 @@ function GradeTable({ label, head, rows, totalMt, totalLabel = 'Total' }: { labe
 // ---- Sections that consume the lifted per-grade MT -----------------------
 
 function CustodySummary({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade: Record<string, number> }) {
+  const t = useT()
   const [cmps, setCmps] = useState<Record<string, ComparisonResult | null>>({})
   useEffect(() => {
     let cancelled = false
@@ -169,23 +177,23 @@ function CustodySummary({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade:
   }, [tpl, mtByGrade])
 
   return (
-    <Section title="Resumen de custodia (MT aire)">
+    <Section title={t('smart.custodySummary.title')}>
       <table className="table-dense w-full border-collapse">
         <thead>
           <tr>
-            <th className={thL}>Grado</th>
+            <th className={thL}>{t('report.col.grade')}</th>
             <th className={th}>Survey</th>
-            <th className={th}>Referencia</th>
+            <th className={th}>{t('report.meta.reference')}</th>
             <th className={th}>Δ MT</th>
             <th className={th}>Δ%</th>
-            <th className={thL}>Veredicto</th>
+            <th className={thL}>{t('report.col.verdict')}</th>
           </tr>
         </thead>
         <tbody>
           {tpl.grades.map((g) => {
             const survey = mtByGrade[g.grade] ?? 0
             const p = cmps[g.grade]?.pairs?.[0]
-            const v = verdict(cmps[g.grade]?.recommendedAction ?? 'NONE')
+            const v = verdict(cmps[g.grade]?.recommendedAction ?? 'NONE', t)
             return (
               <tr key={g.grade}>
                 <td className={tdL}>{g.grade}</td>
@@ -200,13 +208,14 @@ function CustodySummary({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade:
         </tbody>
       </table>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Referencia: {tpl.grades[0]?.referenceLabel ?? '—'}. Veredicto por capas de tolerancia del motor de cálculo (ISO/inspección/contrato).
+        {t('report.meta.reference')}: {tpl.grades[0]?.referenceLabel ?? '—'}. {t('smart.custodySummary.verdictNote')}
       </p>
     </Section>
   )
 }
 
 function SwSection({ grossMt, swPct }: { grossMt: number; swPct: number }) {
+  const t = useT()
   const [res, setRes] = useState<SwResult | null>(null)
   useEffect(() => {
     let cancelled = false
@@ -218,18 +227,19 @@ function SwSection({ grossMt, swPct }: { grossMt: number; swPct: number }) {
     }
   }, [grossMt, swPct])
   return (
-    <Section title={`Deducción S&W (${swPct}%) — crudo`}>
+    <Section title={t('smart.sw.title', { pct: swPct })}>
       <div className="flex flex-wrap gap-x-8 gap-y-1 text-sm">
         <Fig k="Gross (MT)" v={res?.gross} />
         <Fig k="S&W (MT)" v={res?.sw} />
         <Fig k="Net (MT)" v={res?.net} highlight />
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">Net = Gross − round(Gross × S&W%). Calculado por el motor de cálculo (custodia).</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">Net = Gross − round(Gross × S&W%). {t('smart.sw.note')}</p>
     </Section>
   )
 }
 
 function ProRataSection({ total, spec }: { total: number; spec: NonNullable<OperationTemplate['proRata']> }) {
+  const t = useT()
   const [res, setRes] = useState<ProRataResult | null>(null)
   useEffect(() => {
     let cancelled = false
@@ -245,9 +255,9 @@ function ProRataSection({ total, spec }: { total: number; spec: NonNullable<Oper
       <table className="table-dense w-full border-collapse">
         <thead>
           <tr>
-            <th className={thL}>Parcela</th>
-            <th className={th}>Peso (B/L)</th>
-            <th className={th}>Parte (MT)</th>
+            <th className={thL}>{t('smart.proRata.colParcel')}</th>
+            <th className={th}>{t('smart.proRata.colWeight')}</th>
+            <th className={th}>{t('smart.proRata.colShare')}</th>
             <th className={th}>%</th>
           </tr>
         </thead>
@@ -269,26 +279,27 @@ function ProRataSection({ total, spec }: { total: number; spec: NonNullable<Oper
           </tr>
         </tbody>
       </table>
-      <p className="mt-1 text-[11px] text-muted-foreground">Reparto proporcional con reconciliación exacta de redondeo (motor de cálculo).</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{t('smart.proRata.note')}</p>
     </Section>
   )
 }
 
 function Certificate({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade: Record<string, number> }) {
+  const t = useT()
   const c = tpl.certificate!
   return (
-    <Section title={c.kind === 'OFF_HIRE' ? 'Certificado de búnker (off-hire)' : 'Certificado de cantidad'} avoidBreak>
+    <Section title={c.kind === 'OFF_HIRE' ? t('smart.cert.titleOffHire') : t('smart.cert.titleQty')} avoidBreak>
       <p className="text-sm leading-relaxed">
         {c.kind === 'OFF_HIRE' ? (
           <>
-            Se certifica que el buque <strong>{tpl.header.buque}</strong> fue inspeccionado en {tpl.header.puerto} el{' '}
-            {tpl.header.fecha}. Las cantidades de búnker a bordo al momento de la inspección, consignadas a{' '}
-            <strong>{c.consignee}</strong>, son:
+            {t('smart.cert.offHire.a')}<strong>{tpl.header.buque}</strong>
+            {t('smart.cert.offHire.b', { puerto: tpl.header.puerto, fecha: tpl.header.fecha })}
+            <strong>{c.consignee}</strong>{t('smart.cert.offHire.c')}
           </>
         ) : (
           <>
-            Se certifica la cantidad de <strong>{c.subject.toLowerCase()}</strong> para <strong>{tpl.header.buque}</strong> en{' '}
-            {tpl.header.puerto} ({tpl.header.fecha}), consignada a <strong>{c.consignee}</strong>:
+            {t('smart.cert.qty.a')}<strong>{c.subject.toLowerCase()}</strong>{t('smart.cert.qty.b')}<strong>{tpl.header.buque}</strong>
+            {t('smart.cert.qty.c', { puerto: tpl.header.puerto, fecha: tpl.header.fecha })}<strong>{c.consignee}</strong>{t('smart.cert.qty.d')}
           </>
         )}
       </p>
@@ -304,7 +315,7 @@ function Certificate({ tpl, mtByGrade }: { tpl: OperationTemplate; mtByGrade: Re
         </tbody>
       </table>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Este survey se realizó sin perjuicio de las partes. {tpl.header.metodo}.
+        {t('smart.cert.disclaimer')} {tpl.header.metodo}.
       </p>
     </Section>
   )
@@ -325,6 +336,7 @@ const UNIT_COLS: [string, keyof UnitSet][] = [
 ]
 
 function QuantityTable({ tpl }: { tpl: OperationTemplate }) {
+  const t = useT()
   const figs = useMemo(() => tpl.summaryFigures ?? [], [tpl])
   const [res, setRes] = useState<Record<string, CustodyFigureResult>>({})
   useEffect(() => {
@@ -349,7 +361,7 @@ function QuantityTable({ tpl }: { tpl: OperationTemplate }) {
   }, [figs])
 
   return (
-    <Section title="Resumen de cantidades (multi-unidad)">
+    <Section title={t('smart.qty.title')}>
       <div className="space-y-4">
         {figs.map((f) => {
           const r = res[f.grade]
@@ -391,10 +403,7 @@ function QuantityTable({ tpl }: { tpl: OperationTemplate }) {
           )
         })}
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        Una sola cifra estándar expandida a todas las unidades por el motor de cálculo (masa invariante; el cruce 15 °C↔60 °F usa el VCF del
-        producto). NSV = GSV − S&W; TCV = GSV + agua libre.
-      </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{t('smart.qty.note')}</p>
     </Section>
   )
 }
@@ -407,6 +416,7 @@ interface Pair {
 }
 
 function MasterSummary({ tpl }: { tpl: OperationTemplate }) {
+  const t = useT()
   const v = tpl.voyage
   const cols = useMemo(() => {
     if (!v) return []
@@ -458,7 +468,7 @@ function MasterSummary({ tpl }: { tpl: OperationTemplate }) {
   const cell = (key: string, field: keyof Pair) => pairs[key]?.[field] ?? '—'
 
   return (
-    <Section title={`Master Summary — reconciliación de viaje (${v.unit})`}>
+    <Section title={t('smart.master.title', { unit: v.unit })}>
       <div className="overflow-x-auto">
         <table className="table-dense w-full border-collapse">
           <thead>
@@ -485,9 +495,7 @@ function MasterSummary({ tpl }: { tpl: OperationTemplate }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        B/L → cargado (±VEF) → en tránsito (carga vs descarga). Δ y % por el motor de comparación.
-      </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{t('smart.master.note')}</p>
     </Section>
   )
 }
@@ -528,6 +536,7 @@ function Fig({ k, v, highlight }: { k: string; v?: string; highlight?: boolean }
 
 export function SmartReport() {
   const { op } = useParams<{ op: string }>()
+  const t = useT()
   const tpl = op ? operationTemplates[op] : undefined
   const [mtByGrade, setMtByGrade] = useState<Record<string, number>>({})
   const onMt = useCallback((grade: string, mt: number) => {
@@ -625,7 +634,7 @@ export function SmartReport() {
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
             <div>
               <h2 className="text-lg font-semibold">{tpl.title}</h2>
-              <p className="text-sm text-muted-foreground">{tpl.subtitle} · plantilla inteligente</p>
+              <p className="text-sm text-muted-foreground">{tpl.subtitle} · {t('smart.smartTemplate')}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {Object.values(operationTemplates).map((o) => (
@@ -660,17 +669,17 @@ export function SmartReport() {
                   case 'meta':
                     return (
                       <div key="meta" className="grid gap-x-10 gap-y-1 text-sm sm:grid-cols-2 print:grid-cols-2">
-                        <Meta k="Buque" v={tpl.header.buque} />
-                        <Meta k="Surveyor" v={tpl.header.surveyor} />
-                        <Meta k="Contraparte" v={tpl.header.contraparte} />
-                        <Meta k="Cliente" v={tpl.header.cliente ?? '—'} />
-                        <Meta k="Puerto" v={tpl.header.puerto} />
-                        <Meta k="Método" v={tpl.header.metodo} />
+                        <Meta k={t('report.meta.vessel')} v={tpl.header.buque} />
+                        <Meta k={t('report.meta.surveyor')} v={tpl.header.surveyor} />
+                        <Meta k={t('report.meta.counterparty')} v={tpl.header.contraparte} />
+                        <Meta k={t('report.meta.client')} v={tpl.header.cliente ?? '—'} />
+                        <Meta k={t('report.meta.port')} v={tpl.header.puerto} />
+                        <Meta k={t('report.meta.method')} v={tpl.header.metodo} />
                       </div>
                     )
                   case 'gradeInventory':
                     return (
-                      <Section key="inv" title="Inventario por grado">
+                      <Section key="inv" title={t('smart.inventoryByGrade')}>
                         <div className="space-y-4">
                           {tpl.grades.map((g) =>
                             tpl.unitSystem === 'metric' ? (
@@ -680,7 +689,7 @@ export function SmartReport() {
                             ),
                           )}
                           <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm print:bg-transparent">
-                            <span className="text-muted-foreground">Total general: </span>
+                            <span className="text-muted-foreground">{t('smart.grandTotal')}: </span>
                             <span className="font-mono text-base font-bold tabular-nums">{f3(grandMt)} MT</span>
                           </div>
                         </div>
@@ -713,16 +722,15 @@ export function SmartReport() {
                   case 'signatures':
                     return (
                       <section key="sig" className="grid grid-cols-3 gap-6 pt-4 text-sm print:break-inside-avoid">
-                        <ReportSignature label="Surveyor" />
-                        <ReportSignature label="Master / Capitán" />
-                        <ReportSignature label="Chief Engineer" />
+                        <ReportSignature label={t('report.sig.surveyor')} />
+                        <ReportSignature label={t('report.sig.master')} />
+                        <ReportSignature label={t('report.sig.chiefEngineer')} />
                       </section>
                     )
                   case 'notes':
                     return (
                       <footer key="notes" className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                        Calculado por SuperSurvey · motor de cálculo{kver ? ` v${kver}` : ''} · {tpl.header.metodo} · documento de demostración con
-                        datos ficticios
+                        {t('report.footer.calcBy')}{kver ? ` v${kver}` : ''} · {tpl.header.metodo} · {t('report.footer.demoDoc')}
                       </footer>
                     )
                   default:

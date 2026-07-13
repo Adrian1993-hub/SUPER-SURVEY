@@ -9,7 +9,11 @@ import { robData, type RobGrade } from '../data/rob'
 import { compareSources, kernelVersion, type ComparisonResult } from '../lib/kernel'
 import { sectionTotals, useComputedRows } from '../lib/useBqsRows'
 import { downloadWorkbook, type SheetSpec } from '../lib/xlsx'
+import { useT } from '../i18n/LanguageProvider'
+import type { TKey } from '../i18n/dict'
 import { FileText, FileSpreadsheet, Braces, CheckCircle2, AlertTriangle } from 'lucide-react'
+
+type Translate = (key: TKey, vars?: Record<string, string | number>) => string
 
 // Reporte ROB (Remaining On Board): inventario de búnker por grado calculado por
 // el kernel (misma matemática que BQS) y comparado, grado a grado, contra el ROB
@@ -32,13 +36,14 @@ interface GradeResult {
   deltaPct?: string
 }
 
-function verdictStyle(action: ComparisonResult['recommendedAction']) {
+function verdictStyle(action: ComparisonResult['recommendedAction'], t: Translate) {
   if (action === 'ISSUE_LOP') return { text: 'text-danger', chip: 'status-bad', label: 'LOP' }
   if (action === 'ISSUE_NOAD') return { text: 'text-warning', chip: 'status-warn', label: 'NOAD' }
-  return { text: 'text-success', chip: 'status-ok', label: 'Conforme' }
+  return { text: 'text-success', chip: 'status-ok', label: t('report.verdict.compliant') }
 }
 
 function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r: GradeResult) => void }) {
+  const t = useT()
   const calc = useComputedRows(g.tanks)
   const tot = sectionTotals(g.tanks, calc)
   const surveyMt = tot.mt
@@ -63,7 +68,7 @@ function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r:
 
   const action = cmp?.recommendedAction ?? 'NONE'
   const pair = cmp?.pairs?.[0]
-  const v = verdictStyle(action)
+  const v = verdictStyle(action, t)
 
   useEffect(() => {
     onResult(g.grade, { surveyMt, action, delta: pair?.delta, deltaPct: pair?.deltaPct })
@@ -78,7 +83,7 @@ function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r:
       <table className="table-dense mt-2 w-full border-collapse">
         <thead>
           <tr>
-            <th className={th}>Tanque</th>
+            <th className={th}>{t('report.col.tank')}</th>
             <th className={`${th} text-right`}>Dens@15</th>
             <th className={`${th} text-right`}>Temp °C</th>
             <th className={`${th} text-right`}>TOV m³</th>
@@ -90,19 +95,19 @@ function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r:
           </tr>
         </thead>
         <tbody>
-          {g.tanks.map((t, i) => {
+          {g.tanks.map((tk, i) => {
             const c = calc[i]
             return (
-              <tr key={t.tanque + i}>
-                <td className={tdL}>{t.tanque}</td>
-                <td className={td}>{f4(t.densidad15)}</td>
-                <td className={td}>{t.temp.toFixed(1)}</td>
-                <td className={td}>{f3(t.tov)}</td>
-                <td className={td}>{f3(c ? c.gov : t.gov)}</td>
-                <td className={td}>{f4(c ? c.vcf : t.vcf)}</td>
-                <td className={td}>{f3(c ? c.gsv : t.gsv)}</td>
-                <td className={td}>{f4(c ? c.wcf56 : t.wcf56)}</td>
-                <td className={`${td} font-semibold`}>{f3(c ? c.mt : t.mt)}</td>
+              <tr key={tk.tanque + i}>
+                <td className={tdL}>{tk.tanque}</td>
+                <td className={td}>{f4(tk.densidad15)}</td>
+                <td className={td}>{tk.temp.toFixed(1)}</td>
+                <td className={td}>{f3(tk.tov)}</td>
+                <td className={td}>{f3(c ? c.gov : tk.gov)}</td>
+                <td className={td}>{f4(c ? c.vcf : tk.vcf)}</td>
+                <td className={td}>{f3(c ? c.gsv : tk.gsv)}</td>
+                <td className={td}>{f4(c ? c.wcf56 : tk.wcf56)}</td>
+                <td className={`${td} font-semibold`}>{f3(c ? c.mt : tk.mt)}</td>
               </tr>
             )
           })}
@@ -139,10 +144,10 @@ function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r:
         <span className={`flex items-center gap-1 font-medium ${v.text}`}>
           {action === 'NONE' ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
           {action === 'NONE'
-            ? 'Dentro de tolerancia'
+            ? t('rob.grade.within')
             : action === 'ISSUE_LOP'
-              ? 'Discrepancia > tolerancia — emitir LOP'
-              : 'Discrepancia aparente — NOAD'}
+              ? t('rob.grade.issueLop')
+              : t('rob.grade.noad')}
         </span>
       </div>
     </section>
@@ -151,6 +156,7 @@ function GradeBlock({ g, onResult }: { g: RobGrade; onResult: (grade: string, r:
 
 export function RobReport() {
   const { id } = useParams<{ id: string }>()
+  const t = useT()
   const job = getJob(id || '1')
   const h = robData.header
 
@@ -202,7 +208,7 @@ export function RobReport() {
   }
 
   async function exportXlsx() {
-    const lbl = (a?: ComparisonResult['recommendedAction']) => (a ? verdictStyle(a).label : '')
+    const lbl = (a?: ComparisonResult['recommendedAction']) => (a ? verdictStyle(a, t).label : '')
     const summary: (string | number | null)[][] = [
       ['Grado', 'Survey ROB (MT)', 'ER Log (MT)', 'Δ (MT)', 'Δ%', 'Veredicto'],
       ...robData.grades.map((g) => {
@@ -230,23 +236,23 @@ export function RobReport() {
     await downloadWorkbook(`${h.referencia.replace(/\s+/g, '_')}_ROB.xlsx`, sheets)
   }
 
-  const gv = verdictStyle(worstAction as ComparisonResult['recommendedAction'])
+  const gv = verdictStyle(worstAction as ComparisonResult['recommendedAction'], t)
 
   return (
     <div className="flex h-full flex-col print:block print:h-auto">
-      <TopBar title="Reporte ROB" activeJob={job} />
+      <TopBar title={t('rob.title')} activeJob={job} />
 
       <main className="flex-1 overflow-auto p-6 print:overflow-visible print:p-0">
         <div className="mx-auto max-w-4xl space-y-4 print:max-w-none print:space-y-0">
           {/* Acciones (no se imprimen) */}
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-            <h2 className="text-lg font-semibold">Reporte ROB — vista de impresión</h2>
+            <h2 className="text-lg font-semibold">{t('rob.printView')}</h2>
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
-                <FileText className="h-4 w-4" /> PDF / Imprimir
+                <FileText className="h-4 w-4" /> {t('report.pdfPrint')}
               </Button>
               <Button variant="outline" className="gap-2" onClick={exportJson}>
-                <Braces className="h-4 w-4" /> JSON técnico
+                <Braces className="h-4 w-4" /> {t('rob.jsonTechnical')}
               </Button>
               <Button variant="outline" className="gap-2" onClick={exportXlsx}>
                 <FileSpreadsheet className="h-4 w-4" /> XLSX
@@ -259,15 +265,15 @@ export function RobReport() {
             <ReportBrandBar referencia={h.referencia} fecha={h.fecha} />
 
             <div className="space-y-6 px-8 py-6">
-              <ReportTitle title="Remaining On Board (ROB) Survey" subtitle="Bunker inventory vs Engine Room Log" />
+              <ReportTitle title={t('rob.doc.title')} subtitle={t('rob.doc.subtitle')} />
 
               <div className="grid gap-x-10 gap-y-1 text-sm sm:grid-cols-2 print:grid-cols-2">
-                <Meta k="Buque" v={h.buque} />
-                <Meta k="Surveyor" v={h.surveyor} />
-                <Meta k="Puerto" v={h.puerto} />
-                <Meta k="Tipo de survey" v={h.surveyType} />
-                <Meta k="Fecha" v={h.fecha} />
-                <Meta k="Estado del mar" v={h.seaCondition} />
+                <Meta k={t('report.meta.vessel')} v={h.buque} />
+                <Meta k={t('report.meta.surveyor')} v={h.surveyor} />
+                <Meta k={t('report.meta.port')} v={h.puerto} />
+                <Meta k={t('report.meta.surveyType')} v={h.surveyType} />
+                <Meta k={t('report.meta.date')} v={h.fecha} />
+                <Meta k={t('rob.meta.seaCondition')} v={h.seaCondition} />
               </div>
 
               {/* Resumen ROB total */}
@@ -286,16 +292,14 @@ export function RobReport() {
                   <>
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                     <span>
-                      Todos los grados dentro de las capas de tolerancia (
-                      {toleranceLayers.map((l) => `${l.name} ±${l.limitPct}%`).join(' · ')}). ROB del survey aceptado como base.
+                      {t('rob.tol.okPre')} ({toleranceLayers.map((l) => `${l.name} ±${l.limitPct}%`).join(' · ')}). {t('rob.tol.okPost')}
                     </span>
                   </>
                 ) : (
                   <>
                     <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${gv.text}`} />
                     <span>
-                      Al menos un grado excede la tolerancia: se {worstAction === 'ISSUE_LOP' ? 'emite Letter of Protest (LOP)' : 'notifica discrepancia aparente (NOAD)'}.
-                      Las cifras del surveyor son las oficiales para el acuerdo de charter.
+                      {worstAction === 'ISSUE_LOP' ? t('rob.tol.badLop') : t('rob.tol.badNoad')} {t('rob.tol.badPost')}
                     </span>
                   </>
                 )}
@@ -303,13 +307,12 @@ export function RobReport() {
 
               {/* Firmas */}
               <section className="grid grid-cols-2 gap-6 pt-4 text-sm print:break-inside-avoid">
-                <ReportSignature label="Surveyor" />
-                <ReportSignature label="Chief Engineer" />
+                <ReportSignature label={t('report.sig.surveyor')} />
+                <ReportSignature label={t('report.sig.chiefEngineer')} />
               </section>
 
               <footer className="border-t pt-3 text-center text-[10px] text-muted-foreground">
-                Calculado por SuperSurvey · motor de cálculo (ASTM D1250-80){kver ? ` v${kver}` : ''} · comparación ROB vs ER Log
-                (tolerancia industria ±0.5%) · documento de demostración con datos ficticios
+                {t('report.footer.calcBy')} (ASTM D1250-80){kver ? ` v${kver}` : ''} · {t('rob.footer.comparison')} · {t('report.footer.demoDoc')}
               </footer>
             </div>
           </article>

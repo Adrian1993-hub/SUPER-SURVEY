@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import { calcVef, type VefResult, type VefVoyageInput } from '../lib/kernel'
 import { Gauge, Plus, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { parseDec } from '../lib/num'
+import { useT } from '../i18n/LanguageProvider'
 
 // Vessel Experience Factor (API MPMS 17.9 / HM49) — parte de la operación de
 // carga/descarga multigrado. Historial de viajes editable; el VEF y su
@@ -46,6 +47,7 @@ function Num({ value, onChange, w = 'w-24' }: { value: number; onChange: (n: num
 }
 
 export function VefPanel() {
+  const t = useT()
   const [rows, setRows] = useState<Row[]>(demoVoyages.map((r) => ({ ...r })))
   // Viaje actual al que se aplica el VEF (descarga de crudo).
   const [vesselQty, setVesselQty] = useState(49965)
@@ -88,13 +90,13 @@ export function VefPanel() {
           <table className="table-dense w-full border-collapse">
             <thead>
               <tr>
-                <th className={thL}>Viaje</th>
+                <th className={thL}>{t('vef.colVoyage')}</th>
                 <th className={th}>Sailing TCV</th>
                 <th className={th}>OBQ</th>
                 <th className={th}>Vessel TCV</th>
                 <th className={th}>Shore/B-L TCV</th>
                 <th className={th}>Ratio</th>
-                <th className={thL}>Estado</th>
+                <th className={thL}>{t('opsShared.status')}</th>
                 <th className={thL}></th>
               </tr>
             </thead>
@@ -102,10 +104,10 @@ export function VefPanel() {
               {rows.map((r, i) => {
                 const vr = res?.voyages?.[i]
                 const state = r.rejected
-                  ? { label: 'Rechazado', cls: 'text-muted-foreground line-through' }
+                  ? { label: t('vef.stateRejected'), cls: 'text-muted-foreground line-through' }
                   : vr?.qualifying
-                    ? { label: 'Califica', cls: 'text-success' }
-                    : { label: 'Descalificado', cls: 'text-warning' }
+                    ? { label: t('vef.stateQualifies'), cls: 'text-success' }
+                    : { label: t('vef.stateDisqualified'), cls: 'text-warning' }
                 return (
                   <tr key={i}>
                     <td className="border border-border p-0">
@@ -130,14 +132,14 @@ export function VefPanel() {
                     <td className="border border-border text-center">
                       <button
                         onClick={() => update(i, { rejected: !r.rejected })}
-                        title={r.rejected ? 'Reactivar viaje' : 'Rechazar viaje (error grueso)'}
+                        title={r.rejected ? t('vef.reactivate') : t('vef.reject')}
                         className="px-1 text-[10px] text-muted-foreground hover:text-foreground"
                       >
                         {r.rejected ? '↺' : '⊘'}
                       </button>
                       <button
                         onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))}
-                        title="Quitar"
+                        title={t('opsShared.remove')}
                         className="px-1 text-muted-foreground hover:text-danger"
                       >
                         <Trash2 className="mx-auto h-3 w-3" />
@@ -154,24 +156,24 @@ export function VefPanel() {
             className="mt-2 gap-1"
             onClick={() => setRows((p) => [...p, { label: `V-${p.length + 1}`, sailingTcv: 0, obq: 0, shoreTcv: 0, rejected: false }])}
           >
-            <Plus className="h-3.5 w-3.5" /> Añadir viaje
+            <Plus className="h-3.5 w-3.5" /> {t('vef.addVoyage')}
           </Button>
         </div>
 
         {/* Resultado VEF */}
         <div className="grid gap-x-8 gap-y-2 rounded-lg border bg-muted/40 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4 print:bg-transparent">
           <div>
-            <div className="text-xs text-muted-foreground">1ª media (Σv/Σs)</div>
+            <div className="text-xs text-muted-foreground">{t('vef.firstAverage')}</div>
             <div className="font-mono tabular-nums">{res?.firstAverage ?? '—'}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">Banda ±0.30%</div>
+            <div className="text-xs text-muted-foreground">{t('vef.band')}</div>
             <div className="font-mono text-[11px] tabular-nums">
               {res?.bandLow ?? '—'} … {res?.bandHigh ?? '—'}
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">Viajes que califican</div>
+            <div className="text-xs text-muted-foreground">{t('vef.qualifyingVoyages')}</div>
             <div className="font-mono tabular-nums">
               {res?.qualifyingCount ?? '—'} / {res?.voyageCount ?? '—'}
             </div>
@@ -190,7 +192,7 @@ export function VefPanel() {
 
         {/* Aplicación al viaje actual */}
         <div>
-          <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">Aplicación al viaje actual (descarga)</h4>
+          <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('vef.applicationTitle')}</h4>
           <div className="flex flex-wrap items-end gap-4 text-sm">
             <label className="text-xs text-muted-foreground">
               Ship figure (TCV)
@@ -217,22 +219,18 @@ export function VefPanel() {
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {app && Math.abs(Number(app.differencePct)) <= 0.3 ? (
                 <>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-success" /> dentro de lo esperado
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" /> {t('vef.withinExpected')}
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="h-3.5 w-3.5 text-warning" /> revisar
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning" /> {t('vef.review')}
                 </>
               )}
             </span>
           </div>
         </div>
 
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Vessel TCV = sailing − OBQ. La 1ª media incluye todos los viajes salvo los rechazados; los que caen fuera de ±0.30% se
-          descalifican; el VEF es Σvessel/Σshore de los que califican (4 dp). Aplicación: <em>ship × (1/VEF)</em> comparado con el
-          outturn de tierra. Todo lo calcula el motor de cálculo (HM49). Datos de demostración.
-        </p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{t('vef.note')}</p>
       </CardContent>
     </Card>
   )

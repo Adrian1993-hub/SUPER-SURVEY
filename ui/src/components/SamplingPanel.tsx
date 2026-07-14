@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import { samplingLevels, type SamplingTankResult } from '../lib/kernel'
 import { Beaker, Plus, Trash2 } from 'lucide-react'
 import { parseDec } from '../lib/num'
+import { useT } from '../i18n/LanguageProvider'
 
 // Calculador de niveles de muestreo (API MPMS 8.1 / ISO 3170): a partir de la
 // altura de referencia (RGH) y el ullage de cada tanque, el kernel da las cotas
@@ -44,12 +45,13 @@ function NumCell({ value, onChange }: { value: number; onChange: (n: number) => 
 
 /** SVG sección del tanque: producto + cotas Upper/Middle/Lower. */
 function TankChart({ r }: { r: SamplingTankResult }) {
+  const t = useT()
   const rgh = Number(r.referenceHeight)
   const ullage = Number(r.ullage)
   const num = (s?: string) => (s ? Number(s) : NaN)
   const dips = { Upper: num(r.upper), Middle: num(r.middle), Lower: num(r.lower) }
   if (!isFinite(rgh) || rgh <= 0 || r.error) {
-    return <div className="flex h-[260px] items-center justify-center text-xs text-muted-foreground">{r.error ?? 'Sin datos'}</div>
+    return <div className="flex h-[260px] items-center justify-center text-xs text-muted-foreground">{r.error ?? t('sampling.noData')}</div>
   }
   const W = 220
   const H = 240
@@ -75,7 +77,7 @@ function TankChart({ r }: { r: SamplingTankResult }) {
       <line x1={x0} y1={surfaceY} x2={x0 + tankW} y2={surfaceY} className="stroke-brand" strokeWidth="2" />
       {/* etiqueta superficie / ullage */}
       <text x={x0 + tankW + 6} y={surfaceY + 3} className="fill-current text-[8px]">
-        superficie
+        {t('sampling.surface')}
       </text>
       <text x={x0 - 6} y={padTop + 8} textAnchor="end" className="fill-muted-foreground text-[8px]">
         ref 0
@@ -101,7 +103,8 @@ function TankChart({ r }: { r: SamplingTankResult }) {
   )
 }
 
-export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper / Middle / Lower)' }: { seed?: SamplingSeedTank[]; title?: string }) {
+export function SamplingPanel({ seed = DEMO, title }: { seed?: SamplingSeedTank[]; title?: string }) {
+  const t = useT()
   const [rows, setRows] = useState<SamplingSeedTank[]>(seed.map((s) => ({ ...s })))
   const [res, setRes] = useState<SamplingTankResult[]>([])
   const [sel, setSel] = useState(0)
@@ -123,7 +126,7 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
     <Card className="print:break-inside-avoid">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Beaker className="h-4 w-4 text-brand" /> {title}
+          <Beaker className="h-4 w-4 text-brand" /> {title ?? t('sampling.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -132,7 +135,7 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
             <table className="table-dense w-full border-collapse">
               <thead>
                 <tr>
-                  <th className={thL}>Tanque</th>
+                  <th className={thL}>{t('sampling.tank')}</th>
                   <th className={th}>RGH</th>
                   <th className={th}>Ullage</th>
                   <th className={th}>Innage</th>
@@ -161,7 +164,7 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
                       <td className={`${tdGrey} text-warning`}>{c?.middle ?? '—'}</td>
                       <td className={`${tdGrey} text-danger`}>{c?.lower ?? '—'}</td>
                       <td className="border border-border text-center">
-                        <button onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))} title="Quitar" className="text-muted-foreground hover:text-danger">
+                        <button onClick={() => setRows((p) => p.filter((_, idx) => idx !== i))} title={t('opsShared.remove')} className="text-muted-foreground hover:text-danger">
                           <Trash2 className="mx-auto h-3 w-3" />
                         </button>
                       </td>
@@ -176,11 +179,11 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
               className="mt-2 gap-1 print:hidden"
               onClick={() => setRows((p) => [...p, { tank: `T${p.length + 1}`, referenceHeight: 0, ullage: 0 }])}
             >
-              <Plus className="h-3.5 w-3.5" /> Añadir tanque
+              <Plus className="h-3.5 w-3.5" /> {t('sampling.addTank')}
             </Button>
           </div>
           <div className="rounded-lg border bg-card p-2 print:break-inside-avoid">
-            <div className="mb-1 text-center text-xs font-medium text-muted-foreground">{selected ? `Tanque ${selected.tank}` : 'Tanque'}</div>
+            <div className="mb-1 text-center text-xs font-medium text-muted-foreground">{selected ? t('sampling.tankN', { name: selected.tank }) : t('sampling.tank')}</div>
             {selected ? <TankChart r={selected} /> : <div className="h-[260px]" />}
             <div className="mt-1 flex justify-center gap-3 text-[10px]">
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-success" /> Upper</span>
@@ -189,10 +192,7 @@ export function SamplingPanel({ seed = DEMO, title = 'Niveles de muestreo (Upper
             </div>
           </div>
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          Innage = RGH − Ullage; cotas (dip desde referencia): Upper = Ullage + Innage/6, Middle = Ullage + Innage/2, Lower =
-          Ullage + 5·Innage/6 (zonas superior/media/inferior). Calculado por el motor de cálculo; clic en una fila para ver su tanque.
-        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{t('sampling.note')}</p>
       </CardContent>
     </Card>
   )

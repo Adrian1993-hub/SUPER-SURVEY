@@ -8,6 +8,7 @@ import { useParams } from 'react-router-dom'
 import { lngDischarge, kernelVersion, type LngDischargeResult, type LngComposition, type LngMolarVolumes } from '../lib/kernel'
 import { parseDec } from '../lib/num'
 import { useT } from '../i18n/LanguageProvider'
+import type { TKey } from '../i18n/dict'
 import { Flame, Cpu, AlertTriangle } from 'lucide-react'
 
 // Descarga de LNG — custody por ENERGÍA (GIIGNL / ISO 6976). La composición molar
@@ -20,19 +21,19 @@ import { Flame, Cpu, AlertTriangle } from 'lucide-react'
 type CompKey = keyof LngComposition
 type ViKey = keyof LngMolarVolumes
 
-const COMPONENTS: { key: CompKey; label: string; vi: ViKey | null }[] = [
-  { key: 'methane', label: 'Metano (CH₄)', vi: 'methane' },
-  { key: 'ethane', label: 'Etano (C₂H₆)', vi: 'ethane' },
-  { key: 'propane', label: 'Propano (C₃H₈)', vi: 'propane' },
-  { key: 'isoButane', label: 'iso-Butano', vi: 'isoButane' },
-  { key: 'nButane', label: 'n-Butano', vi: 'nButane' },
-  { key: 'isoPentane', label: 'iso-Pentano', vi: 'isoPentane' },
-  { key: 'nPentane', label: 'n-Pentano', vi: 'nPentane' },
-  { key: 'neoPentane', label: 'neo-Pentano', vi: 'neoPentane' },
-  { key: 'hexanePlus', label: 'Hexano +', vi: 'hexanePlus' },
-  { key: 'nitrogen', label: 'Nitrógeno (N₂)', vi: 'nitrogen' },
-  { key: 'carbonDioxide', label: 'CO₂', vi: null },
-  { key: 'oxygen', label: 'O₂', vi: null },
+const COMPONENTS: { key: CompKey; labelKey: TKey; vi: ViKey | null }[] = [
+  { key: 'methane', labelKey: 'lngd.comp.methane', vi: 'methane' },
+  { key: 'ethane', labelKey: 'lngd.comp.ethane', vi: 'ethane' },
+  { key: 'propane', labelKey: 'lngd.comp.propane', vi: 'propane' },
+  { key: 'isoButane', labelKey: 'lngd.comp.isoButane', vi: 'isoButane' },
+  { key: 'nButane', labelKey: 'lngd.comp.nButane', vi: 'nButane' },
+  { key: 'isoPentane', labelKey: 'lngd.comp.isoPentane', vi: 'isoPentane' },
+  { key: 'nPentane', labelKey: 'lngd.comp.nPentane', vi: 'nPentane' },
+  { key: 'neoPentane', labelKey: 'lngd.comp.neoPentane', vi: 'neoPentane' },
+  { key: 'hexanePlus', labelKey: 'lngd.comp.hexanePlus', vi: 'hexanePlus' },
+  { key: 'nitrogen', labelKey: 'lngd.comp.nitrogen', vi: 'nitrogen' },
+  { key: 'carbonDioxide', labelKey: 'lngd.comp.co2', vi: null },
+  { key: 'oxygen', labelKey: 'lngd.comp.o2', vi: null },
 ]
 
 // Caso de referencia (anonimizado) — composición mol%.
@@ -115,10 +116,10 @@ export function LngDescarga() {
         <div className="mx-auto max-w-5xl space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Flame className="h-4 w-4 text-brand" /> Custody de LNG por <strong>energía</strong>: composición → densidad y GHV → masa → energía neta.
+              <Flame className="h-4 w-4 text-brand" /> {t('lngd.introPre')}<strong>{t('lngd.introEnergy')}</strong>{t('lngd.introPost')}
             </p>
             <span className="inline-flex shrink-0 items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-              <Cpu className="h-3.5 w-3.5" /> Motor de cálculo · GIIGNL · ISO 6976{kver ? ` · v${kver}` : ''}
+              <Cpu className="h-3.5 w-3.5" /> {t('flowShared.engine')} · GIIGNL · ISO 6976{kver ? ` · v${kver}` : ''}
             </span>
           </div>
 
@@ -127,7 +128,7 @@ export function LngDescarga() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between gap-2 text-base">
-                  <span>Composición molar</span>
+                  <span>{t('lngd.molarComposition')}</span>
                   <StatusChip tone={sumOk ? 'ok' : 'warn'}>Σ {sum.toFixed(2)} %</StatusChip>
                 </CardTitle>
               </CardHeader>
@@ -135,7 +136,7 @@ export function LngDescarga() {
                 <table className="table-dense w-full border-collapse">
                   <thead>
                     <tr>
-                      <th className="cell-l">Componente</th>
+                      <th className="cell-l">{t('lngd.component')}</th>
                       <th>mol %</th>
                       {mode === 'rkm' && <th>Vi (m³/kmol)</th>}
                     </tr>
@@ -143,7 +144,7 @@ export function LngDescarga() {
                   <tbody>
                     {COMPONENTS.map((c) => (
                       <tr key={c.key}>
-                        <td className="cell-l">{c.label}</td>
+                        <td className="cell-l">{t(c.labelKey)}</td>
                         <td className="border border-border p-0">
                           <NumInput value={comp[c.key] ?? 0} onChange={(n) => setCompVal(c.key, n)} step={0.01} />
                         </td>
@@ -152,7 +153,7 @@ export function LngDescarga() {
                             {c.vi ? (
                               <NumInput value={vi[c.vi] ?? 0} onChange={(n) => setViVal(c.vi as ViKey, n)} step={0.0001} />
                             ) : (
-                              <span className="block px-2 py-1 text-center text-[10px] text-muted-foreground">excl.</span>
+                              <span className="block px-2 py-1 text-center text-[10px] text-muted-foreground">{t('lngd.excl')}</span>
                             )}
                           </td>
                         )}
@@ -160,20 +161,18 @@ export function LngDescarga() {
                     ))}
                   </tbody>
                 </table>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  CO₂ y O₂ se excluyen de la base de densidad del líquido (GIIGNL). La suma debe dar 100 %.
-                </p>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{t('lngd.co2Note')}</p>
               </CardContent>
             </Card>
 
             {/* Densidad + cantidad */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Densidad y cantidad</CardTitle>
+                <CardTitle className="text-base">{t('lngd.densityQty')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Densidad del LNG</div>
+                  <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('lngd.lngDensity')}</div>
                   <div className="mb-2 flex gap-2">
                     {(['rkm', 'entered'] as const).map((m) => (
                       <button
@@ -185,7 +184,7 @@ export function LngDescarga() {
                           mode === m ? 'border-brand bg-brand/5 text-brand' : 'border-border text-muted-foreground hover:text-foreground'
                         }`}
                       >
-                        {m === 'rkm' ? 'Calcular (RKM)' : 'Ingresar (CTS)'}
+                        {m === 'rkm' ? t('lngd.computeRkm') : t('lngd.enterCts')}
                       </button>
                     ))}
                   </div>
@@ -216,25 +215,25 @@ export function LngDescarga() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="text-xs text-muted-foreground">
-                    Volumen antes O.C.T. (m³)
+                    {t('lngd.volBefore')}
                     <div className="mt-0.5 rounded-md border border-input">
                       <NumInput value={volBefore} onChange={setVolBefore} step={0.001} />
                     </div>
                   </label>
                   <label className="text-xs text-muted-foreground">
-                    Volumen después C.C.T. (m³)
+                    {t('lngd.volAfter')}
                     <div className="mt-0.5 rounded-md border border-input">
                       <NumInput value={volAfter} onChange={setVolAfter} step={0.001} />
                     </div>
                   </label>
                   <label className="text-xs text-muted-foreground">
-                    Vapor desplazado Qr (MMBtu)
+                    {t('lngd.vaporQr')}
                     <div className="mt-0.5 rounded-md border border-input">
                       <NumInput value={qr} onChange={setQr} step={1} />
                     </div>
                   </label>
                   <label className="text-xs text-muted-foreground">
-                    Gas a máquinas Qf (MMBtu)
+                    {t('lngd.machineQf')}
                     <div className="mt-0.5 rounded-md border border-input">
                       <NumInput value={qf} onChange={setQf} step={1} />
                     </div>
@@ -247,37 +246,33 @@ export function LngDescarga() {
           {/* Resultados */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Cantidad y energía entregada</CardTitle>
+              <CardTitle className="text-base">{t('lngd.qtyEnergyTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               {desktopOnly ? (
                 <p className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-warning" /> El cálculo de descarga de LNG se ejecuta en la app de escritorio (el
-                  demo del navegador aún no incluye este módulo del motor).
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-warning" /> {t('lngd.desktopOnly')}
                 </p>
               ) : (
                 <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                  <Out label="Masa molar" value={res?.molarMass} unit="kg/kmol" />
-                  <Out label="GHV (masa)" value={res?.ghvMass} unit="Btu/lb" />
-                  <Out label="Densidad" value={res?.density} unit="kg/m³" />
-                  <Out label="Volumen entregado" value={res?.volumeDelivered} unit="m³" />
-                  <Out label="Masa bruta" value={res?.grossMass} unit="kg" />
-                  <Out label="Energía bruta" value={res?.grossEnergy} unit="MMBtu" />
-                  <Out label="Vapor + máquinas" value={res ? String(Number(res.vaporDisplaced) + Number(res.machineGas)) : undefined} unit="MMBtu" />
-                  <Out label="Energía neta" value={res?.netEnergy} unit="MMBtu" big />
+                  <Out label={t('lngd.molarMass')} value={res?.molarMass} unit="kg/kmol" />
+                  <Out label={t('lngrep.fig.ghvMass')} value={res?.ghvMass} unit="Btu/lb" />
+                  <Out label={t('lngrep.fig.density')} value={res?.density} unit="kg/m³" />
+                  <Out label={t('lngrep.fig.volDelivered')} value={res?.volumeDelivered} unit="m³" />
+                  <Out label={t('lngrep.fig.grossMass')} value={res?.grossMass} unit="kg" />
+                  <Out label={t('lngrep.fig.grossEnergy')} value={res?.grossEnergy} unit="MMBtu" />
+                  <Out label={t('lngd.vaporPlusMachines')} value={res ? String(Number(res.vaporDisplaced) + Number(res.machineGas)) : undefined} unit="MMBtu" />
+                  <Out label={t('lngrep.fig.netEnergy')} value={res?.netEnergy} unit="MMBtu" big />
                 </div>
               )}
-              <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-                Densidad por Klosek–McKinley revisado (GIIGNL); GHV masa Σ(Hi·Xi·Mi)/Σ(Xi·Mi) (GPA 2172/ISO 6976); energía neta = bruta − vapor
-                desplazado (Qr) − gas a máquinas (Qf). El auto-lookup de Vi por temperatura llega con las tablas GIIGNL. Datos de demostración.
-              </p>
+              <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{t('lngd.note')}</p>
             </CardContent>
           </Card>
 
           <NextStepBar
             to={`/trabajo/${id || '1'}/lng-descarga/reporte`}
-            label="Reporte de descarga"
-            hint="Genera el documento de custody de LNG por energía (imprimible / PDF)."
+            label={t('lngd.nextLabel')}
+            hint={t('lngd.nextHint')}
           />
         </div>
       </main>

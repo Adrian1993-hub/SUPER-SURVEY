@@ -15,6 +15,7 @@ import {
 } from '../lib/kernel'
 import { Cpu, FileText, Droplets, Wind, Scale, Thermometer, PenLine } from 'lucide-react'
 import { parseDec } from '../lib/num'
+import { useT } from '../i18n/LanguageProvider'
 
 // Certificate of Quantity (LPG / NGL gas carriers). Everything is computed by the
 // Rust calc kernel (WASM): liquid custody assembly (lpg_custody) + COSTALD CTL
@@ -51,6 +52,7 @@ const PRESSURE_UNITS: PressureUnit[] = ['BARA', 'BARG', 'PSIG', 'PSIA', 'KPA_ABS
 const compLabel = (c: string) => c.replace(/_/g, ' ').toLowerCase().replace(/^./, (s) => s.toUpperCase())
 
 export function Lpg() {
+  const t = useT()
   // Certificate header (free text)
   const [vessel, setVessel] = useState('MT DEMO-LPG')
   const [cargoName, setCargoName] = useState('Propane (C3)')
@@ -134,14 +136,14 @@ export function Lpg() {
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
             <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <Droplets className="h-5 w-5 text-brand" /> LPG / NGL — Certificate of Quantity (gaseros)
+              <Droplets className="h-5 w-5 text-brand" /> {t('lpg.heading')}
             </h2>
             <div className="flex items-center gap-3">
               <Button variant="outline" className="gap-2" onClick={() => window.print()}>
                 <FileText className="h-4 w-4" /> PDF
               </Button>
               <span className="inline-flex items-center gap-1.5 status-ok rounded-full border px-2.5 py-1 text-xs font-medium">
-                <Cpu className="h-3.5 w-3.5" /> Motor de cálculo{kver ? ` · v${kver}` : ''}
+                <Cpu className="h-3.5 w-3.5" /> {t('flowShared.engine')}{kver ? ` · v${kver}` : ''}
               </span>
             </div>
           </div>
@@ -150,24 +152,24 @@ export function Lpg() {
           <div className="grid gap-4 lg:grid-cols-3 print:hidden">
             {/* Liquid custody */}
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide"><Droplets className="h-4 w-4 text-brand" /> Líquido (custodia)</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide"><Droplets className="h-4 w-4 text-brand" /> {t('lpg.liquidCustody')}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                <Field label="Volumen @ 15 °C (m³)" value={m315} onChange={setM315} />
-                <Field label="Densidad @ 15 °C (kg/L, vacío)" value={density15} onChange={setDensity15} step={0.0001} />
+                <Field label={t('lpg.vol15')} value={m315} onChange={setM315} />
+                <Field label={t('lpg.density15')} value={density15} onChange={setDensity15} step={0.0001} />
                 <Field label="US barrels @ 60 °F" value={bbl60} onChange={setBbl60} step={0.01} />
-                <Field label="Factor Table 56 (aire/vacío)" value={wcf} onChange={setWcf} step={0.00000001} />
+                <Field label={t('lpg.wcfFactor')} value={wcf} onChange={setWcf} step={0.00000001} />
               </CardContent>
             </Card>
 
             {/* COSTALD CTL */}
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide"><Thermometer className="h-4 w-4 text-brand" /> CTL líquido (COSTALD · API 11.2.4)</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide"><Thermometer className="h-4 w-4 text-brand" /> {t('lpg.ctlTitle')}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                <Field label="Densidad relativa 60/60 °F" value={relDens60} onChange={setRelDens60} step={0.0001} />
+                <Field label={t('lpg.relDens')} value={relDens60} onChange={setRelDens60} step={0.0001} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Field label={`Temp. líquido (${liqTempUnit === 'CELSIUS' ? '°C' : '°F'})`} value={liqTemp} onChange={setLiqTemp} step={0.1} />
+                  <Field label={t('lpg.liqTemp', { u: liqTempUnit === 'CELSIUS' ? '°C' : '°F' })} value={liqTemp} onChange={setLiqTemp} step={0.1} />
                   <label className="flex flex-col gap-0.5">
-                    <span className={lbl}>Unidad temp.</span>
+                    <span className={lbl}>{t('lpg.tempUnit')}</span>
                     <select value={liqTempUnit} onChange={(e) => setLiqTempUnit(e.target.value as 'CELSIUS' | 'FAHRENHEIT')} className={sel}>
                       <option value="FAHRENHEIT">°F</option>
                       <option value="CELSIUS">°C</option>
@@ -176,20 +178,20 @@ export function Lpg() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-0.5">
-                    <span className={lbl}>Componente ligero</span>
+                    <span className={lbl}>{t('lpg.compLight')}</span>
                     <select value={compLight} onChange={(e) => setCompLight(e.target.value as LpgComponent)} className={sel}>
                       {COMPONENTS.map((c) => <option key={c} value={c}>{compLabel(c)}</option>)}
                     </select>
                   </label>
                   <label className="flex flex-col gap-0.5">
-                    <span className={lbl}>Componente pesado</span>
+                    <span className={lbl}>{t('lpg.compHeavy')}</span>
                     <select value={compHeavy} onChange={(e) => setCompHeavy(e.target.value as LpgComponent)} className={sel}>
                       {COMPONENTS.map((c) => <option key={c} value={c}>{compLabel(c)}</option>)}
                     </select>
                   </label>
                 </div>
                 <label className="flex flex-col gap-0.5">
-                  <span className={lbl}>Referencia CTL</span>
+                  <span className={lbl}>{t('lpg.ctlRef')}</span>
                   <select value={ctlRef} onChange={(e) => setCtlRef(e.target.value as '60F' | '15C')} className={sel}>
                     <option value="60F">60 °F (bbl@60)</option>
                     <option value="15C">15 °C (m³@15)</option>
@@ -200,22 +202,22 @@ export function Lpg() {
 
             {/* Vapour */}
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide"><Wind className="h-4 w-4 text-brand" /> Vapor (API 17.10.2)</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide"><Wind className="h-4 w-4 text-brand" /> {t('lpg.vaporTitle')}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                <Field label="Volumen del espacio de vapor (m³)" value={vaporVol} onChange={setVaporVol} step={0.001} />
+                <Field label={t('lpg.vaporVol')} value={vaporVol} onChange={setVaporVol} step={0.001} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Field label="Presión" value={pressure} onChange={setPressure} step={0.001} />
+                  <Field label={t('lpg.pressure')} value={pressure} onChange={setPressure} step={0.001} />
                   <label className="flex flex-col gap-0.5">
-                    <span className={lbl}>Unidad presión</span>
+                    <span className={lbl}>{t('lpg.pressureUnit')}</span>
                     <select value={pressureUnit} onChange={(e) => setPressureUnit(e.target.value as PressureUnit)} className={sel}>
                       {PRESSURE_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </label>
                 </div>
-                <Field label="Temp. vapor (°C)" value={vaporTemp} onChange={setVaporTemp} step={0.1} />
+                <Field label={t('lpg.vaporTemp')} value={vaporTemp} onChange={setVaporTemp} step={0.1} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Field label="Masa molar (kg/kmol)" value={molarMass} onChange={setMolarMass} step={0.001} />
-                  <Field label="Compresibilidad Z" value={z} onChange={setZ} step={0.001} />
+                  <Field label={t('lpg.molarMass')} value={molarMass} onChange={setMolarMass} step={0.001} />
+                  <Field label={t('lpg.z')} value={z} onChange={setZ} step={0.001} />
                 </div>
               </CardContent>
             </Card>
@@ -238,11 +240,11 @@ export function Lpg() {
             <CardContent className="space-y-5 pt-4">
               {/* Header fields */}
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 print:grid-cols-3">
-                <TextField label="Buque" value={vessel} onChange={setVessel} />
-                <TextField label="Producto" value={cargoName} onChange={setCargoName} />
-                <TextField label="Puerto" value={port} onChange={setPort} />
-                <TextField label="Fecha" value={docDate} onChange={setDocDate} />
-                <TextField label="Surveyor" value={surveyor} onChange={setSurveyor} />
+                <TextField label={t('flowShared.vessel')} value={vessel} onChange={setVessel} />
+                <TextField label={t('lpg.product')} value={cargoName} onChange={setCargoName} />
+                <TextField label={t('flowShared.port')} value={port} onChange={setPort} />
+                <TextField label={t('flowShared.date')} value={docDate} onChange={setDocDate} />
+                <TextField label={t('flowShared.surveyor')} value={surveyor} onChange={setSurveyor} />
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
@@ -309,10 +311,9 @@ export function Lpg() {
           </Card>
 
           <p className="text-xs text-muted-foreground">
-            Cadena LPG completa en el motor de cálculo: <strong>custodia líquida</strong> (LT desde vacío; bbl/gal vía ASTM-IP Table 1),
-            <strong> CTL líquido por COSTALD (API MPMS 11.2.4)</strong> y <strong>corrección de vapor (API MPMS 17.10.2)</strong>:
-            ρv = (288.15/T)(P/1.01325)(M/23.6451)/Z; <strong>Total = masa líquida + masa de vapor</strong>. Valores por defecto anclados a
-            documentos reales — líquido al certificado real del cliente (<em>buque A</em>) (588.203 MT vac) y vapor a API 17.10.2 Tabla 6 (ρv = 9.146 kg/m³).
+            {t('lpg.notePre')}<strong>{t('lpg.noteLiquid')}</strong>{t('lpg.noteLiquidPost')}
+            <strong>{t('lpg.noteCtl')}</strong>{t('lpg.noteAnd')}<strong>{t('lpg.noteVapor')}</strong>
+            {t('lpg.noteFormula')}<strong>{t('lpg.noteTotal')}</strong>{t('lpg.notePost')}<em>{t('lpg.noteVesselA')}</em>{t('lpg.noteEnd')}
           </p>
         </div>
       </main>

@@ -219,6 +219,25 @@ export const opsDict = {
     en: ') (588.203 MT vac) and vapour to API 17.10.2 Table 6 (ρv = 9.146 kg/m³).',
   },
 
+  // ---- Multigrado imperial (multigrado.*) ----------------------------------
+  'multigrado.title': { es: 'Multigrado (imperial)', en: 'Multigrade (imperial)' },
+  'multigrado.heading': { es: 'BQS imperial · apertura/cierre por grado', en: 'Imperial BQS · opening/closing per grade' },
+  'multigrado.engineChip': { es: 'Motor de cálculo · 60 °F · Tablas 6B/13', en: 'Calculation engine · 60 °F · Tables 6B/13' },
+  'multigrado.auditTitle': { es: 'Bunker audit — por grado', en: 'Bunker audit — per grade' },
+  'multigrado.nominatedMt': { es: 'Nominado MT', en: 'Nominated MT' },
+  'multigrado.opening': { es: 'Opening (antes de recibir)', en: 'Opening (before receiving)' },
+  'multigrado.closing': { es: 'Closing (después de recibir)', en: 'Closing (after receiving)' },
+  'multigrado.loadedMtAir': { es: 'Loaded — MT (aire)', en: 'Loaded — MT (air)' },
+  'multigrado.nominated': { es: 'Nominado', en: 'Nominated' },
+  'multigrado.deltaVsNom': { es: 'Δ vs nominado: ', en: 'Δ vs nominated: ' },
+  'multigrado.outTolLop': { es: 'Fuera de tolerancia — emitir LOP', en: 'Out of tolerance — issue LOP' },
+  'multigrado.notePre': { es: 'Celdas blancas = entrada del surveyor (API@60, °C, m³). Celdas ', en: 'White cells = surveyor input (API@60, °C, m³). ' },
+  'multigrado.noteGrey': { es: 'grises', en: 'Grey' },
+  'multigrado.notePost': {
+    es: ' = motor de cálculo imperial (API→ρ60, ITS-68, VCF 6B por banda de API, WCF Tabla 13). Loaded = cierre − apertura. El veredicto por grado (Received vs BDN) usa las capas de tolerancia del motor de cálculo. VLSFO replica el caso de validación de la hoja real del cliente.',
+    en: ' cells = imperial calculation engine (API→ρ60, ITS-68, VCF 6B by API band, WCF Table 13). Loaded = closing − opening. The per-grade verdict (Received vs BDN) uses the calculation engine tolerance layers. VLSFO replicates the validation case from the real client worksheet.',
+  },
+
   // ---- LNG descarga, cuerpo (lngd.*) --------------------------------------
   'lngd.introPre': { es: 'Custody de LNG por ', en: 'LNG custody by ' },
   'lngd.introEnergy': { es: 'energía', en: 'energy' },

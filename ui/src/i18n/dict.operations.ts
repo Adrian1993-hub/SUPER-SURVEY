@@ -42,6 +42,33 @@ export const opsDict = {
     en: 'Innage = RGH − Ullage; marks (dip from reference): Upper = Ullage + Innage/6, Middle = Ullage + Innage/2, Lower = Ullage + 5·Innage/6 (upper/middle/lower zones). Computed by the calculation engine; click a row to view its tank.',
   },
 
+  // ---- Blend (blend.*) -----------------------------------------------------
+  'blend.title': { es: 'Blend — mezcla de fuel oil', en: 'Blend — fuel oil blending' },
+  'blend.heading': { es: 'Blend (commingling) — hasta 8 componentes', en: 'Blend (commingling) — up to 8 components' },
+  'blend.components': { es: 'Componentes', en: 'Components' },
+  'blend.add': { es: 'Añadir', en: 'Add' },
+  'blend.volWtPct': { es: 'Vol% / Peso%', en: 'Vol% / Wt%' },
+  'blend.resulting': { es: 'Producto resultante (blend)', en: 'Resulting product (blend)' },
+  'blend.totalVolume': { es: 'Volumen total (m³)', en: 'Total volume (m³)' },
+  'blend.viscosity': { es: 'Viscosidad', en: 'Viscosity' },
+  'blend.sulfur': { es: 'Azufre', en: 'Sulfur' },
+  'blend.water': { es: 'Agua', en: 'Water' },
+  'blend.sediment': { es: 'Sedimento', en: 'Sediment' },
+  'blend.notePre': { es: 'Reglas de mezcla en el motor de cálculo: ', en: 'Blending rules in the calculation engine: ' },
+  'blend.noteApi': { es: ' por mezcla de densidades (SG=141.5/(131.5+API)),', en: ' by density blending (SG=141.5/(131.5+API)),' },
+  'blend.noteVisc': { es: ' viscosidad por Refutas', en: ' viscosity by Refutas' },
+  'blend.noteFlash': { es: ' (14.534·ln(ln(ν+0.8))+10.975), ', en: ' (14.534·ln(ln(ν+0.8))+10.975), ' },
+  'blend.noteFlashPour': { es: 'flash/pour por índices de mezcla', en: 'flash/pour by blending indices' },
+  'blend.notePost': {
+    es: ' no lineales, y azufre/agua/sedimento lineales por volumen. Anclado al ',
+    en: ' (non-linear), and sulfur/water/sediment linear by volume. Anchored to the real ',
+  },
+  'blend.noteProgram': { es: 'Fuel Oil Blend Program', en: 'Fuel Oil Blend Program' },
+  'blend.noteEnd': {
+    es: ' real (vol 546.5/225, API 33.1/34.6 → 33.5347; azufre 4.4/4.5 → 4.4292). Refutas es canónicamente por peso; aquí por volumen (convención de la hoja). Conversor cSt↔SFS y propiedades extra: pendientes.',
+    en: ' (vol 546.5/225, API 33.1/34.6 → 33.5347; sulfur 4.4/4.5 → 4.4292). Refutas is canonically by weight; here by volume (worksheet convention). cSt↔SFS converter and extra properties: pending.',
+  },
+
   // ---- LNG descarga, cuerpo (lngd.*) --------------------------------------
   'lngd.introPre': { es: 'Custody de LNG por ', en: 'LNG custody by ' },
   'lngd.introEnergy': { es: 'energía', en: 'energy' },

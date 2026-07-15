@@ -11,8 +11,8 @@ use supersurvey_license::{License, LicenseStatus};
 /// Clave PÚBLICA de verificación (par emitido 2026-07-04; la privada la guarda
 /// el dueño del producto fuera del repositorio).
 pub const LICENSE_PUBLIC_KEY: [u8; 32] = [
-    134, 132, 17, 73, 117, 209, 227, 215, 235, 89, 4, 71, 59, 142, 87, 93, 62, 110, 183, 2, 34,
-    55, 171, 129, 194, 77, 7, 53, 143, 235, 236, 179,
+    134, 132, 17, 73, 117, 209, 227, 215, 235, 89, 4, 71, 59, 142, 87, 93, 62, 110, 183, 2, 34, 55,
+    171, 129, 194, 77, 7, 53, 143, 235, 236, 179,
 ];
 
 #[derive(Debug, Serialize)]

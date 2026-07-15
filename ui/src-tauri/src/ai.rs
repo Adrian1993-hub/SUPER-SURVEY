@@ -17,7 +17,8 @@ use std::time::Duration;
 const OLLAMA: &str = "http://127.0.0.1:11434";
 
 /// Guardarraíl doctrinal del asistente (se antepone SIEMPRE a la conversación).
-const SYSTEM_PROMPT: &str = "You are the consultative assistant embedded in a white-label, offline-first \
+const SYSTEM_PROMPT: &str =
+    "You are the consultative assistant embedded in a white-label, offline-first \
 marine cargo & bunker survey application. Audience: petroleum/marine surveyors. \
 STRICT RULES: (1) You must NEVER produce, estimate, correct or adjust official \
 custody figures (volumes, VCF/WCF, masses, MT, energy, densities used for the \
@@ -62,7 +63,9 @@ pub fn system_ai_check() -> Result<String, String> {
     let check = SystemCheck {
         total_mem_mb: sys.total_memory() / 1_048_576,
         available_mem_mb: sys.available_memory() / 1_048_576,
-        cpu_cores: std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
+        cpu_cores: std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1),
         disk_free_mb: disk_free / 1_048_576,
     };
     serde_json::to_string(&check).map_err(|e| e.to_string())

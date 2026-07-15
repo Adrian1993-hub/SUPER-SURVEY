@@ -279,31 +279,75 @@ fn kernel_call(fn_name: String, request_json: String) -> Result<String, String> 
         T: serde::de::DeserializeOwned,
         F: Fn(&T) -> String,
     {
-        let req: T = serde_json::from_str(json).map_err(|e| format!("invalid request JSON: {e}"))?;
+        let req: T =
+            serde_json::from_str(json).map_err(|e| format!("invalid request JSON: {e}"))?;
         Ok(calculate(&req))
     }
     fn out<R: Serialize>(resp: &R) -> String {
         serde_json::to_string(resp).unwrap_or_else(|e| format!("{{\"success\":false,\"errors\":[{{\"code\":\"IPC_BOUNDARY\",\"message\":\"serialize failed: {e}\"}}]}}"))
     }
     match fn_name.as_str() {
-        "bqs_calculate_row" => run(&request_json, |r: &calc::bqs::BqsRowRequestDTO| out(&r.calculate())),
-        "bqs_calculate_row_imperial" => run(&request_json, |r: &calc::bqs60::ImperialRowRequestDTO| out(&r.calculate())),
-        "compare_sources" => run(&request_json, |r: &calc::comparison::ComparisonRequestDTO| out(&r.compare())),
-        "density_tool" => run(&request_json, |r: &calc::density::DensityToolRequestDTO| out(&r.calculate())),
-        "vef_calculate" => run(&request_json, |r: &calc::vef::VefRequestDTO| out(&r.calculate())),
-        "sw_deduction" => run(&request_json, |r: &calc::custody::SwRequestDTO| out(&r.calculate())),
-        "pro_rata" => run(&request_json, |r: &calc::custody::ProRataRequestDTO| out(&r.calculate())),
-        "sampling_levels" => run(&request_json, |r: &calc::sampling::SamplingRequestDTO| out(&r.calculate())),
-        "custody_figure" => run(&request_json, |r: &calc::figures::CustodyFigureRequestDTO| out(&r.calculate())),
-        "draft_survey" => run(&request_json, |r: &calc::draft::DraftSurveyRequestDTO| out(&r.calculate())),
-        "hydrostatic_interpolate" => run(&request_json, |r: &calc::draft::HydrostaticInterpolateRequestDTO| out(&r.calculate())),
-        "reconcile_terminal" => run(&request_json, |r: &calc::reconcile::ReconciliationRequestDTO| out(&r.calculate())),
-        "lng_discharge" => run(&request_json, |r: &calc::lng::LngDischargeRequestDTO| out(&r.calculate())),
-        "lpg_custody" => run(&request_json, |r: &calc::lpg::LpgCustodyRequestDTO| out(&r.calculate())),
-        "costald_ctl" => run(&request_json, |r: &calc::costald::CostaldCtlRequestDTO| out(&r.calculate())),
-        "lpg_vapor_correction" => run(&request_json, |r: &calc::lpg_vapor::LpgVaporRequestDTO| out(&r.calculate())),
-        "blend_calculate" => run(&request_json, |r: &calc::blend::BlendRequestDTO| out(&r.calculate())),
-        "movement_set_calculate" => run(&request_json, |r: &calc::movement::MovementSetRequestDTO| out(&r.calculate())),
+        "bqs_calculate_row" => run(&request_json, |r: &calc::bqs::BqsRowRequestDTO| {
+            out(&r.calculate())
+        }),
+        "bqs_calculate_row_imperial" => {
+            run(&request_json, |r: &calc::bqs60::ImperialRowRequestDTO| {
+                out(&r.calculate())
+            })
+        }
+        "compare_sources" => run(
+            &request_json,
+            |r: &calc::comparison::ComparisonRequestDTO| out(&r.compare()),
+        ),
+        "density_tool" => run(&request_json, |r: &calc::density::DensityToolRequestDTO| {
+            out(&r.calculate())
+        }),
+        "vef_calculate" => run(&request_json, |r: &calc::vef::VefRequestDTO| {
+            out(&r.calculate())
+        }),
+        "sw_deduction" => run(&request_json, |r: &calc::custody::SwRequestDTO| {
+            out(&r.calculate())
+        }),
+        "pro_rata" => run(&request_json, |r: &calc::custody::ProRataRequestDTO| {
+            out(&r.calculate())
+        }),
+        "sampling_levels" => run(&request_json, |r: &calc::sampling::SamplingRequestDTO| {
+            out(&r.calculate())
+        }),
+        "custody_figure" => run(
+            &request_json,
+            |r: &calc::figures::CustodyFigureRequestDTO| out(&r.calculate()),
+        ),
+        "draft_survey" => run(&request_json, |r: &calc::draft::DraftSurveyRequestDTO| {
+            out(&r.calculate())
+        }),
+        "hydrostatic_interpolate" => run(
+            &request_json,
+            |r: &calc::draft::HydrostaticInterpolateRequestDTO| out(&r.calculate()),
+        ),
+        "reconcile_terminal" => run(
+            &request_json,
+            |r: &calc::reconcile::ReconciliationRequestDTO| out(&r.calculate()),
+        ),
+        "lng_discharge" => run(&request_json, |r: &calc::lng::LngDischargeRequestDTO| {
+            out(&r.calculate())
+        }),
+        "lpg_custody" => run(&request_json, |r: &calc::lpg::LpgCustodyRequestDTO| {
+            out(&r.calculate())
+        }),
+        "costald_ctl" => run(&request_json, |r: &calc::costald::CostaldCtlRequestDTO| {
+            out(&r.calculate())
+        }),
+        "lpg_vapor_correction" => run(&request_json, |r: &calc::lpg_vapor::LpgVaporRequestDTO| {
+            out(&r.calculate())
+        }),
+        "blend_calculate" => run(&request_json, |r: &calc::blend::BlendRequestDTO| {
+            out(&r.calculate())
+        }),
+        "movement_set_calculate" => run(
+            &request_json,
+            |r: &calc::movement::MovementSetRequestDTO| out(&r.calculate()),
+        ),
         "kernel_version" => Ok(calc::KERNEL_VERSION.to_string()),
         other => Err(format!("unknown kernel function: {other}")),
     }
@@ -328,7 +372,11 @@ fn backup_on_version_change(data_dir: &std::path::Path, db_path: &std::path::Pat
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-    let from = if last.is_empty() { "prev".to_string() } else { last.replace(['/', '\\'], "_") };
+    let from = if last.is_empty() {
+        "prev".to_string()
+    } else {
+        last.replace(['/', '\\'], "_")
+    };
     let dest = backups.join(format!("supersurvey-v{from}-{stamp}.db"));
     if std::fs::copy(db_path, &dest).is_ok() {
         // Retención: conservar solo los 3 respaldos más recientes (el timestamp
@@ -361,8 +409,12 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             let db_path = data_dir.join("supersurvey.db");
             backup_on_version_change(&data_dir, &db_path);
-            let db = Database::open(&db_path)
-                .map_err(|e| format!("no se pudo abrir la base de datos en {}: {e}", db_path.display()))?;
+            let db = Database::open(&db_path).map_err(|e| {
+                format!(
+                    "no se pudo abrir la base de datos en {}: {e}",
+                    db_path.display()
+                )
+            })?;
             app.manage(AppState { db: Mutex::new(db) });
             Ok(())
         })

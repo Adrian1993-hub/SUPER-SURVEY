@@ -2,9 +2,12 @@
 
 > **Flujos de la aplicación.** Cómo se mueve el usuario de principio a fin. Base para el diseño
 > UI/UX. Alineado con `02-PRD.md` y `00-ULTRAPLAN §4–§5`.
-> Versión: **v0.2** · 2026-07-04 — implementado en la app: stepper del flujo (7 pasos, derivado
-> de la ruta), sidebar agrupada y numerada, barra «Continuar →» en cada etapa y estados vacíos.
-> El gating por estado del trabajo (§4) sigue pendiente (requiere máquina de estados).
+> Versión: **v0.3** · 2026-07-15 — implementado en la app: stepper del flujo (7 pasos, derivado
+> de la ruta), sidebar agrupada y numerada (General · Flujo del trabajo · Operaciones
+> específicas), barra «Continuar →» en cada etapa, estados vacíos, **selector de idioma**
+> (afecta toda la navegación descrita aquí), **operación de Descarga de LNG** (§5) y **flujo del
+> asistente IA opcional** (§11, nuevo). El gating por estado del trabajo (§2) sigue pendiente
+> (requiere máquina de estados).
 
 ---
 
@@ -44,7 +47,7 @@ Draft ──► In Progress ──► Calculated ──► Reported ──► Si
 ## 3. Flujo canónico (todas las operaciones comparten esta espina)
 
 1. **Cover / Job Setup** — fuente maestra: cliente, tipo de operación, producto(s)/grados, partes, puerto, fechas.
-2. **Perfiles** — seleccionar/crear vessel · barge · terminal · perfil de **cálculo** (norma/estándar) · perfil de **tolerancia**. Aquí se definen los tanques (con flag `is_bunker`) y se registra la **fecha/referencia de la tabla de calibración** usada.
+2. **Perfiles** — seleccionar/crear vessel · barge · terminal · perfil de **cálculo** (norma/estándar) · perfil de **tolerancia**. Aquí se definen los tanques y se registra la **tabla de calibración** usada (referencia + puntos, `05-esquema-backend §4.2`) — el surveyor sigue ingresando siempre la lectura de campo.
 3. **Key Meeting** — checklist pre-operación parametrizado por tipo (ver §6).
 4. **Mediciones (Opening / Before)** — captura pareada por tanque; para BQS, **comparación con logbook/ROB**.
 5. **Operación en curso** — (según tipo) seguimiento; intermediate ullages si aplica.
@@ -67,7 +70,7 @@ Draft ──► In Progress ──► Calculated ──► Reported ──► Si
    ├─ Vessel profile (o barcaza): lista de tanques de bunker (is_bunker = true).
    ├─ Calculation profile: norma/estándar + versión de tabla ASTM aplicable.
    └─ Tolerance profile: ISO default + capas (comprador/suplidor/inspección/contrato).
-       └─ Registrar fecha/ref de la tabla de calibración usada.
+       └─ Registrar la tabla de calibración usada (el surveyor ingresa la lectura de campo).
 
 3. Key Meeting (ligero para bunker; ver §6)
    └─ Confirmar grados, tanques a usar, ratas, ROB esperado.
@@ -109,6 +112,7 @@ Draft ──► In Progress ──► Calculated ──► Reported ──► Si
 | **LPG / Gaseros** | Carga **bifásica** (líquido + vapor): captura nivel + **presión + temperatura**; la **masa de vapor cuenta**; CTMS (ver `research/tanques-por-tipo-de-buque.md`). |
 | **Draft Survey** | **No** usa volumen×densidad: cálculo por **desplazamiento/hidrostáticas** (drafts F/M/A, correcciones, deductibles). Ruta de kernel separada. |
 | **Pipeline / Sampling** | Reconciliation de línea / muestreo + calidad (previous cargoes, tank inspection, checklist). |
+| **Descarga de LNG** | Custody por **energía**, no por volumen×densidad. Página independiente `/trabajo/:id/lng-descarga` (fuera de la espina canónica, igual que Multigrado/Draft/Ship↔Shore/LPG/Blend/ROB — acceso directo desde "Operaciones específicas" en la sidebar, no desde Cover). Composición molar (12 componentes) → densidad RKM + GHV → masa → energía bruta/neta → reporte propio `/lng-descarga/reporte`. Hoy es cálculo en vivo del kernel; **no** pasa aún por el ciclo Job/persistencia de §2 (ver `02-PRD §6`). |
 
 ---
 
@@ -178,3 +182,48 @@ Export: PDF · XLSX · JSON técnico (trace)  ──►  estado del trabajo = Re
 - **Discrepancia logbook/ROB > tolerancia** → alerta, sugiere re-medición.
 - **Cálculo no exportable** (p. ej. WCF→MT placeholder pendiente) → se marca "no oficial" hasta resolver hardening (`03-TRD §4.3`).
 - **Trabajo Signed/Closed** → solo lectura; cambios requieren clonar/reabrir (auditado).
+
+---
+
+## 11. Flujo: asistente IA local (opcional, F9)
+
+```
+Primer arranque (solo app de escritorio)
+        │
+        ▼
+¿Ya decidió el usuario en este equipo? (localStorage ss-ai)
+        │ no                                    │ sí
+        ▼                                       ▼
+Diálogo modal:                          Sigue directo (sin interrumpir)
+  1. Advertencia de consumo
+     (RAM/disco explícitos)
+  2. Analizador del equipo
+     (RAM/CPU/disco medidos)
+  3. Veredicto: Puede / Justo / No recomendado
+        │
+        ├─ «Activar»  ──► guarda ss-ai=on  ──► navega a /asistente
+        └─ «Continuar sin IA» ──► guarda ss-ai=off ──► sigue en la app normal
+```
+
+En `/asistente` (accesible también desde la sidebar y desde Configuración en cualquier
+momento): si `ss-ai=on` pero el runtime Ollama no está corriendo → aviso + botón "volver a
+comprobar"; si está corriendo sin modelos → botón de descarga guiada (tamaño explícito); con
+modelo listo → chat con disclaimer permanente ("nunca produce cifras oficiales"). El navegador
+demo siempre muestra "disponible en escritorio" sin ofrecer el diálogo.
+
+---
+
+## 12. Navegar y modificar el diseño visual
+
+La app tiene una **guía de diseño viva** en la ruta `/design` (`ui/src/pages/DesignGuide.tsx`),
+accesible desde la sidebar ("Guía de diseño"). Ahí se ven, lado a lado, las **6 combinaciones**
+del sistema de temas (3 estéticas × claro/oscuro) y todos los componentes base (botones, chips
+de estado, tablas densas, formularios) tal como se usan en producción — es la superficie de
+aceptación visual antes de tocar código.
+
+**Cómo cambiar el diseño en código** (`ui/src/theme/ThemeProvider.tsx` + `ui/src/index.css`):
+1. **Paleta/colores**: tokens OKLCH en `index.css`, bloques `[data-theme='ocean'|'control-room'|'industrial']` × `[data-mode='light'|'dark']`. Cambiar un token ahí se propaga a toda la app (nada de colores sueltos en componentes).
+2. **Añadir una estética nueva**: agregar el `id` a `THEMES` en `ThemeProvider.tsx` + su bloque CSS en `index.css` (claro y oscuro) + entrada i18n `theme.<id>.label/desc` en `dict.ts`.
+3. **Tipografías**: `FONTS` en `ThemeProvider.tsx` (hoy Geist auto-alojada, sin red).
+4. **Densidad de tablas/formularios**: clases `.table-dense` / `.input-dense` en `index.css` (`@layer components`) — una sola fuente para las ~18 páginas que las usan, no se tocan archivo por archivo.
+5. **Verificación visual**: `scripts/screenshot-themes.mjs` (Playwright) genera capturas de las 6 combinaciones sobre las rutas clave; útil para revisar un cambio de tokens sin abrir la app.

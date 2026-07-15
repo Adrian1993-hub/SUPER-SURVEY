@@ -3,7 +3,10 @@
 > **Documento de producto.** Define *qué* construimos y *para quién*. El *cómo* técnico está en
 > `03-TRD.md`; los flujos en `04-appflow.md`; los datos en `05-esquema-backend.md`; el plan por
 > fases en `00-ULTRAPLAN.md`. Alineado con el Decision Log (`00-ULTRAPLAN.md §2`).
-> Versión: **v0.1** · 2026-06-09 · Codename interno: `SuperSurvey` (nombre real = white-label).
+> Versión: **v0.2** · 2026-07-15 · Codename interno: `SuperSurvey` (nombre real = white-label).
+> Cambios desde v0.1: **bilingüe ES/EN completo** (F7, toda la UI + 3 reportes), **operación
+> Descarga de LNG** (F8, custody por energía), **asistente IA local opcional** (F9, opt-in con
+> analizador de equipo). Ver `00-ULTRAPLAN §6` para el estado por fase.
 
 ---
 
@@ -81,14 +84,22 @@ siempre resisten una disputa comercial (NOAD/LOP, P&I, custody transfer).
 - **Comparación entre fuentes** (Vessel vs Barge vs Shore vs BDN/BL) con tolerancia en capas.
 - **Detección de discrepancias** → NOAD / LOP.
 - **Reportes y export** (PDF/XLSX/JSON) con branding/tema.
-- **Bilingüe ES/EN** (incl. reportes bilingües).
+- **Bilingüe ES/EN completo** — toda la interfaz y los 3 reportes (ROB, plantillas
+  inteligentes, LNG), con selector en Configuración y detección automática del idioma
+  del sistema en el primer arranque.
+- **Asistente IA local, opcional** — consultivo (guía de procedimiento, explica el trace,
+  ayuda a redactar NOAD/LOP), 100% offline, activado solo si el usuario lo decide tras
+  ver un análisis del equipo y una advertencia de consumo (ver §6a).
 
 ### 5.2 Lo que NO hace (no-goals)
 
 - **No reemplaza al surveyor** (no mide por él; no inventa datos de campo).
-- **No gestiona tablas de calibración** de buque/tierra: son externas. El surveyor obtiene el
-  volumen de la tabla física y **lo ingresa**; la app solo **registra la fecha/referencia** de la
-  tabla usada (trazabilidad). *(Decisión bloqueada — `00-ULTRAPLAN §2`.)*
+- **La app no calcula la tabla de calibración por el surveyor**: el surveyor siempre **ingresa**
+  la lectura/volumen de campo tal como sale de la tabla física del buque/tierra — la app nunca
+  sustituye esa entrada por su propio cálculo. *(Decisión bloqueada — `00-ULTRAPLAN §2`.)* La
+  app sí puede **guardar** la tabla como referencia estructurada e interpolable para trazabilidad
+  y futuras operaciones (`05-esquema-backend §4.2`); eso es un detalle de implementación que no
+  cambia la decisión de producto.
 - **No es cloud/multiusuario en el MVP** (offline-first; sincronización es futuro, fuera de alcance).
 - **No hace contabilidad/facturación** ni gestión de flota.
 - **No reusa `calcnative.dll`** (caja negra). El motor se reimplementa en Rust desde la norma.
@@ -109,7 +120,26 @@ El legacy soporta 17 `OperationType` (ver `01-analisis §4`). SuperSurvey las pr
 | **Draft Survey** | F5 | Excepción: cálculo por desplazamiento/hidrostáticas (fórmulas ya validadas en `/reference`). |
 | Pipeline Transfer | F5+ | Line displacement / reconciliation. |
 | Sampling / Quality | F5+ | Muestreo, previous cargoes, tank inspection, checklist. |
+| **Descarga de LNG** | **F8** | Custody por **energía** (no por volumen): densidad Klosek-McKinley revisada + GHV, ambos desde composición molar. Página dedicada "LNG (descarga)" + reporte propio. Hoy es cálculo en vivo (kernel), fuera del ciclo Job/persistencia — ver `04-appflow §5`. |
 | Rail-Road | Futuro | Baja prioridad. |
+
+---
+
+## 6a. Asistente IA local (F9, opt-in)
+
+Módulo **opcional** que el usuario activa o no, por equipo, en el primer arranque de la app de
+escritorio:
+
+- **Nunca viaja en el instalador.** El runtime (Ollama) y el modelo (~2–3 GB) se descargan
+  aparte, solo si el usuario acepta.
+- **Analizador de equipo**: mide RAM total/disponible, núcleos CPU y disco libre; da un
+  veredicto (Puede / Justo / No recomendado) **antes** de dejar activar.
+- **Advertencia de consumo** explícita (RAM + disco) siempre visible antes de decidir.
+- **Consultivo por doctrina**: nunca produce cifras oficiales de custodia — esas salen solo
+  del motor de cálculo. Guardarraíl fijo en el prompt del sistema (ver `03-TRD §14`).
+- Decisión cambiable en cualquier momento desde Configuración.
+
+Detalle técnico: `03-TRD §14`. Análisis original: `docs/research/llm-offline.md`.
 
 ---
 
@@ -125,7 +155,7 @@ El legacy soporta 17 `OperationType` (ver `01-analisis §4`). SuperSurvey las pr
 ### 7.2 Perfiles (FR-PRF)
 - **FR-PRF-1 (M):** Perfiles reutilizables de **vessel**, **barge**, **terminal**, **cálculo** (norma/estándar) y **tolerancia**.
 - **FR-PRF-2 (M):** Perfil de tanques del buque/barcaza con flag `is_bunker` (bunker ≠ carga).
-- **FR-PRF-3 (M):** Registrar **fecha/referencia de la tabla de calibración** usada (no la tabla en sí).
+- **FR-PRF-3 (M):** Registrar la tabla de calibración usada (referencia + puntos interpolables, `05-esquema-backend §4.2`); el volumen/lectura de cada medición **siempre lo ingresa el surveyor**, nunca lo deriva la app.
 
 ### 7.3 Key Meeting (FR-KM)
 - **FR-KM-1 (P, base en M):** Checklist de Key Meeting parametrizado por tipo de operación (Ship-Terminal / STS / Barge-Terminal): ratas (initial/max/topping), tanques nominados, grados, OBQ/ROB, line displacement, MAWP/presión, hose sizes, VHF, ESD, certificados, VEF.
@@ -157,12 +187,18 @@ El legacy soporta 17 `OperationType` (ver `01-analisis §4`). SuperSurvey las pr
 
 ### 7.8 White-label e i18n (FR-WL)
 - **FR-WL-1 (M):** Marca configurable vía `branding/brand.toml` (nombre, logo, colores, contacto, pie de reporte). Nada hardcodea "SuperSurvey".
-- **FR-WL-2 (P):** Sistema de **temas** separado de la marca.
-- **FR-WL-3 (M):** Bilingüe **ES/EN** en UI; (P) reportes bilingües.
+- **FR-WL-2 (M):** Sistema de **temas** separado de la marca — 3 estéticas (ocean/control-room/industrial) × claro/oscuro, navegables en `/design`.
+- **FR-WL-3 (M):** ✅ Bilingüe **ES/EN** en **toda** la UI y en los 3 reportes (ROB, plantillas inteligentes, LNG). Selector en Configuración; persiste por equipo (`ss-lang`).
 
 ### 7.9 Auditoría (FR-AUD)
 - **FR-AUD-1 (M):** `calculation_logs` **append-only** (inmutable por triggers).
 - **FR-AUD-2 (M):** Cada cantidad oficial enlaza a su trace y a las entradas/perfiles usados.
+
+### 7.10 Asistente IA (FR-AI, opcional — F9)
+- **FR-AI-1 (P):** Analizador de equipo (RAM/CPU/disco medidos) con veredicto antes de permitir activar.
+- **FR-AI-2 (P):** Opt-in explícito del usuario en el primer arranque; decisión cambiable en Configuración.
+- **FR-AI-3 (P):** Chat consultivo local (sidecar Ollama); guardarraíl "sin cifras oficiales" server-side (no confiar en el prompt del usuario).
+- **FR-AI-4 (Futuro, F9.2):** RAG con citas sobre `docs/research/*` (vector store `sqlite-vec`).
 
 ---
 
@@ -199,5 +235,8 @@ El legacy soporta 17 `OperationType` (ver `01-analisis §4`). SuperSurvey las pr
 ## 11. Roadmap
 
 Resumen en `00-ULTRAPLAN §6` (F0 organización → F1 doctrina+kernel BQS → F2 persistencia+IPC →
-F3 UI BQS → F4 reportes+white-label → F5 resto de operaciones → F6 QA+empaque). El **MVP usable**
-(BQS de punta a punta, F1–F4) es el foco.
+F3 UI BQS → F4 reportes+white-label → F5 resto de operaciones → F6 QA+empaque → **F7 bilingüe
+ES/EN** → **F8 descarga de LNG** → **F9 asistente IA opcional**). El **MVP usable** (BQS de
+punta a punta, F1–F4) es el foco original; F7–F9 son ampliaciones pedidas después de cerrar
+ese alcance. Estado real y % de avance: `00-ULTRAPLAN §6` (fuente de verdad, se actualiza en
+cada sesión).

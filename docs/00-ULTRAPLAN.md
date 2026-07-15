@@ -220,6 +220,24 @@ firma de código Win/Mac, e integrar el plugin runtime del updater
 (`docs/actualizaciones.md`). Re-disparar el build para incluir los últimos
 commits (legibilidad, jargon, bilingüe).
 
+**Auditoría documental 2026-07-15.** A petición del usuario ("actualízalos y
+estudia si están bien"), se revisaron y actualizaron **PRD, TRD, App Flow y
+Esquema de Backend** contra el código/esquema real (no contra lo que decían
+los docs). Hallazgo importante: **`05-esquema-backend.md` describía un
+modelo conceptual de v0.1 (2026-06-09) que nunca coincidió con el esquema
+físico real** (`supersurvey_sqlite_schema_v0_1_3_1_hardened.sql`) — nombres
+de tabla distintos en casi todas las áreas (p. ej. `tank_readings`→
+`measurement_records`, `comparisons`→`comparison_results`, `reports`→
+`report_templates`/`…_packages`/`…_exports`). Se reescribió §2–§8 de ese
+documento verificando cada tabla línea por línea contra el `.sql`. Gaps
+reales confirmados (no de los docs, del producto): **Key Meeting, VEF y
+Sampling/Quality no tienen tabla propia** — son solo UI sin persistencia
+(`VefPanel.tsx`, `SamplingPanel.tsx`). También se corrigió una afirmación
+repetida en PRD/TRD/appflow ("la app no guarda tablas de calibración") que
+contradecía el esquema real (`calibration_tables`/`calibration_points` sí
+persisten, interpolables) — la decisión bloqueada en sí se mantiene: el
+surveyor siempre ingresa la lectura de campo.
+
 ---
 
 ### Historial previo (F6)

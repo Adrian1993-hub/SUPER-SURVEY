@@ -1,9 +1,11 @@
 # Análisis — Asistente IA offline experto en inspecciones marítimas
 
-> **Estado: ANÁLISIS y recomendación** (no implementación). Fase futura **F8**.
-> Fuentes fechadas jul-2026; el ecosistema LLM se mueve rápido, así que los
-> modelos concretos son **candidatos a verificar** en el momento de implementar,
-> no una elección congelada.
+> **Estado: F8.1 PoC IMPLEMENTADO** (2026-07-15) según este análisis: sidecar
+> Ollama + opt-in del usuario con analizador de equipo (`ui/src-tauri/src/ai.rs`,
+> `ui/src/pages/Asistente.tsx`, diálogo de primer arranque). Guardarraíl "sin
+> cifras oficiales" en el system prompt del backend. Pendiente de este plan:
+> RAG con citas (sqlite-vec) y evaluación con inspectores (F8.2).
+> Fuentes fechadas jul-2026; verificar modelo/licencia al momento de fijarlo.
 
 ## 0. Restricción doctrinal (innegociable)
 

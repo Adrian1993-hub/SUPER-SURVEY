@@ -42,6 +42,7 @@ const coreDict = {
   'nav.jobs': { es: 'Trabajos', en: 'Jobs' },
   'nav.tools': { es: 'Utilidades', en: 'Tools' },
   'nav.settings': { es: 'Configuración', en: 'Settings' },
+  'nav.assistant': { es: 'Asistente IA', en: 'AI Assistant' },
   'nav.designGuide': { es: 'Guía de diseño', en: 'Design guide' },
   'nav.jobFlow': { es: 'Flujo del trabajo', en: 'Job flow' },
   'nav.specificOps': { es: 'Operaciones específicas', en: 'Specific operations' },
@@ -238,6 +239,87 @@ const coreDict = {
   'updates.available': { es: 'Actualización disponible: v{version}', en: 'Update available: v{version}' },
   'updates.install': { es: 'Descargar e instalar', en: 'Download and install' },
   'updates.installing': { es: 'Instalando…', en: 'Installing…' },
+
+  // ---- Asistente IA (opt-in, offline) -------------------------------------
+  'ai.title': { es: 'Asistente IA', en: 'AI Assistant' },
+  'ai.setupTitle': { es: '¿Activar el asistente IA local?', en: 'Enable the local AI assistant?' },
+  'ai.setupIntro': {
+    es: 'Asistente consultivo 100% offline: guía de procedimiento, normas y borradores. Es OPCIONAL — el módulo de IA y el modelo (~2–3 GB) se descargan aparte solo si lo activas; el programa funciona igual sin él.',
+    en: 'A 100% offline consultative assistant: procedure guidance, standards and drafts. It is OPTIONAL — the AI module and model (~2–3 GB) download separately only if you enable it; the app works the same without it.',
+  },
+  'ai.memWarning': {
+    es: 'Advertencia de consumo: con la IA activa el equipo usará ~3–4 GB de RAM adicionales mientras respondes preguntas, y ~2–3 GB de disco para el modelo. Recomendado: 16 GB de RAM.',
+    en: 'Consumption warning: with AI enabled this computer will use ~3–4 GB of additional RAM while answering, plus ~2–3 GB of disk for the model. Recommended: 16 GB RAM.',
+  },
+  'ai.analyzer': { es: 'Análisis de este equipo', en: 'This computer' },
+  'ai.ramTotal': { es: 'RAM total', en: 'Total RAM' },
+  'ai.ramAvail': { es: 'RAM disponible', en: 'Available RAM' },
+  'ai.cores': { es: 'Núcleos CPU', en: 'CPU cores' },
+  'ai.diskFree': { es: 'Disco libre', en: 'Free disk' },
+  'ai.verdictOk': {
+    es: 'Este equipo puede correr el programa con IA local (modelo 3–4B).',
+    en: 'This computer can run the app with local AI (3–4B model).',
+  },
+  'ai.verdictTight': {
+    es: 'Justo: la IA puede correr pero con lentitud y menos margen para otras apps. Úsala solo cuando la necesites.',
+    en: 'Tight: AI can run but slowly and with less headroom for other apps. Use it only when needed.',
+  },
+  'ai.verdictNo': {
+    es: 'No recomendado: este equipo no cumple el mínimo para IA local. El programa funciona perfectamente sin IA.',
+    en: 'Not recommended: this computer does not meet the minimum for local AI. The app works perfectly without AI.',
+  },
+  'ai.verdictDisk': {
+    es: 'Disco insuficiente para el modelo (~3 GB necesarios).',
+    en: 'Not enough disk for the model (~3 GB needed).',
+  },
+  'ai.enable': { es: 'Activar asistente IA', en: 'Enable AI assistant' },
+  'ai.skip': { es: 'Continuar sin IA', en: 'Continue without AI' },
+  'ai.changeLater': {
+    es: 'Puedes cambiar esta decisión cuando quieras en Configuración.',
+    en: 'You can change this decision anytime in Settings.',
+  },
+  'ai.desktopOnly': {
+    es: 'El asistente IA corre en la app de escritorio (100% local).',
+    en: 'The AI assistant runs in the desktop app (100% local).',
+  },
+  'ai.disabledTitle': { es: 'Asistente IA desactivado', en: 'AI assistant disabled' },
+  'ai.disabledBody': {
+    es: 'Decidiste no usar la IA en este equipo. Puedes activarla aquí si cambias de opinión — se re-analiza el equipo antes.',
+    en: 'You chose not to use AI on this computer. You can enable it here if you change your mind — the computer is re-analyzed first.',
+  },
+  'ai.ollamaMissing': {
+    es: 'El runtime local (Ollama) no está corriendo. Instálalo desde ollama.com, ábrelo y vuelve a comprobar. Es gratuito y todo queda en tu equipo.',
+    en: 'The local runtime (Ollama) is not running. Install it from ollama.com, start it, and check again. It is free and everything stays on your computer.',
+  },
+  'ai.recheck': { es: 'Volver a comprobar', en: 'Check again' },
+  'ai.noModels': { es: 'Ollama está activo pero sin modelos instalados.', en: 'Ollama is running but no models are installed.' },
+  'ai.pullModel': { es: 'Descargar modelo {model}', en: 'Download model {model}' },
+  'ai.pulling': {
+    es: 'Descargando el modelo… (2–3 GB; puede tardar varios minutos)',
+    en: 'Downloading the model… (2–3 GB; this can take several minutes)',
+  },
+  'ai.model': { es: 'Modelo', en: 'Model' },
+  'ai.ollamaOn': { es: 'Runtime IA activo', en: 'AI runtime running' },
+  'ai.inputPlaceholder': {
+    es: 'Pregunta sobre procedimiento, normas (ASTM/API/GIIGNL) o cómo usar el programa…',
+    en: 'Ask about procedure, standards (ASTM/API/GIIGNL) or how to use the app…',
+  },
+  'ai.send': { es: 'Enviar', en: 'Send' },
+  'ai.thinking': { es: 'Pensando…', en: 'Thinking…' },
+  'ai.disclaimer': {
+    es: 'Asistente consultivo. NUNCA produce cifras oficiales de custodia — toda cantidad oficial sale del motor de cálculo trazable. Verifica siempre contra el cálculo.',
+    en: 'Consultative assistant. It NEVER produces official custody figures — every official quantity comes from the traceable calculation engine. Always verify against the calculation.',
+  },
+  'ai.disable': { es: 'Desactivar IA en este equipo', en: 'Disable AI on this computer' },
+  'ai.settingsDesc': {
+    es: 'Asistente consultivo local (opcional). Estado actual y decisión por equipo.',
+    en: 'Local consultative assistant (optional). Current state and per-computer decision.',
+  },
+  'ai.statusOn': { es: 'Activado', en: 'Enabled' },
+  'ai.statusOff': { es: 'Desactivado', en: 'Disabled' },
+  'ai.statusUndecided': { es: 'Sin decidir (se preguntará al arrancar)', en: 'Undecided (asked at startup)' },
+  'ai.openAssistant': { es: 'Abrir asistente', en: 'Open assistant' },
+  'ai.error': { es: 'Error del asistente: {msg}', en: 'Assistant error: {msg}' },
 
   // ---- Configuración: Acerca de -----------------------------------------
   'about.title': { es: 'Acerca de SuperSurvey', en: 'About SuperSurvey' },

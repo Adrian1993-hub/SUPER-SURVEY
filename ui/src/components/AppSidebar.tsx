@@ -12,6 +12,7 @@ import {
   Droplets,
   Beaker,
   Flame,
+  Bot,
   Palette,
   Settings,
 } from 'lucide-react'
@@ -78,6 +79,10 @@ export function AppSidebar() {
           <NavLink to="/utilidades" className={itemClass}>
             <FlaskConical className="h-4 w-4" />
             <span>{t('nav.tools')}</span>
+          </NavLink>
+          <NavLink to="/asistente" className={itemClass}>
+            <Bot className="h-4 w-4" />
+            <span>{t('nav.assistant')}</span>
           </NavLink>
           <NavLink to="/configuracion" className={itemClass}>
             <Settings className="h-4 w-4" />

@@ -12,8 +12,10 @@ import {
   type FontId,
   type DensityId,
 } from '../theme/ThemeProvider'
+import { Link } from 'react-router-dom'
 import { kernelVersion } from '../lib/kernel'
 import { licenseStatus, checkForUpdates, isDesktop, type UpdateCheck } from '../lib/ipc'
+import { getAiPref } from '../lib/aiPrefs'
 import { useT, useI18n, LANGS, LANG_LABELS } from '../i18n/LanguageProvider'
 import {
   Palette,
@@ -28,6 +30,7 @@ import {
   Cpu,
   Check,
   Languages,
+  Bot,
 } from 'lucide-react'
 
 /** Fila de opciones tipo "segmented cards": una tarjeta por opción, activa resaltada. */
@@ -134,6 +137,26 @@ function UpdatesCard() {
           </Button>
         </div>
       )}
+    </Section>
+  )
+}
+
+// ---- Asistente IA -----------------------------------------------------------
+
+function AiCard() {
+  const t = useT()
+  const pref = getAiPref()
+  const label = pref === 'on' ? t('ai.statusOn') : pref === 'off' ? t('ai.statusOff') : t('ai.statusUndecided')
+  const tone = pref === 'on' ? 'ok' : pref === 'off' ? 'neutral' : 'info'
+  return (
+    <Section icon={Bot} title={t('ai.title')} desc={t('ai.settingsDesc')}>
+      <div className="flex flex-wrap items-center gap-3">
+        <StatusChip tone={tone}>{label}</StatusChip>
+        <Link to="/asistente" className="text-sm text-brand underline-offset-2 hover:underline">
+          {t('ai.openAssistant')} →
+        </Link>
+      </div>
+      <p className="text-[11px] text-muted-foreground">{t('ai.disclaimer')}</p>
     </Section>
   )
 }
@@ -285,6 +308,7 @@ export function Configuracion() {
             {isDesktop() && <p className="text-[11px] text-muted-foreground">{t('settings.windowMemory')}</p>}
           </Section>
 
+          <AiCard />
           <UpdatesCard />
           <AboutCard />
         </div>

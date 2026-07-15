@@ -254,3 +254,55 @@ export async function loadJobDetail(jobId: string): Promise<JobDetail | null> {
     })),
   }
 }
+
+// ---- Asistente IA opcional (F8.1) ------------------------------------------
+// Sidecar Ollama local (http://127.0.0.1:11434) vía comandos Rust — la webview
+// nunca sale de sí misma (CSP intacta). SOLO escritorio; el navegador demo
+// devuelve estados "no disponible" sin lanzar.
+
+export interface AiSystemCheck {
+  totalMemMb: number
+  availableMemMb: number
+  cpuCores: number
+  diskFreeMb: number
+}
+
+/** Análisis del equipo (RAM/CPU/disco medidos) para decidir si puede correr IA. */
+export async function aiSystemCheck(): Promise<AiSystemCheck | null> {
+  if (!isDesktop()) return null
+  const raw = await invoke<string>('system_ai_check')
+  const j = JSON.parse(raw) as { total_mem_mb: number; available_mem_mb: number; cpu_cores: number; disk_free_mb: number }
+  return { totalMemMb: j.total_mem_mb, availableMemMb: j.available_mem_mb, cpuCores: j.cpu_cores, diskFreeMb: j.disk_free_mb }
+}
+
+export interface AiStatus {
+  running: boolean
+  models: string[]
+}
+
+/** ¿Está el sidecar Ollama corriendo y con qué modelos? */
+export async function aiStatus(): Promise<AiStatus> {
+  if (!isDesktop()) return { running: false, models: [] }
+  try {
+    const raw = await invoke<string>('ai_status')
+    return JSON.parse(raw) as AiStatus
+  } catch {
+    return { running: false, models: [] }
+  }
+}
+
+export interface AiMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+/** Chat con el modelo local (guardarraíl aplicado en Rust). */
+export async function aiChat(model: string, messages: AiMessage[]): Promise<string> {
+  const raw = await invoke<string>('ai_chat', { model, messagesJson: JSON.stringify(messages) })
+  return (JSON.parse(raw) as { content: string }).content
+}
+
+/** Descarga un modelo vía Ollama (GBs; puede tardar varios minutos). */
+export async function aiPullModel(model: string): Promise<void> {
+  await invoke<string>('ai_pull_model', { model })
+}

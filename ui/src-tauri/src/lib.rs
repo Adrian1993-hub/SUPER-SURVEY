@@ -9,6 +9,7 @@
 //! - `calculate_bqs_row`   : pure calc (LIVE/SAVE), returns row + trace.
 //! - `save_bqs_calculation`: calc + persist as an append-only calculation_log.
 
+mod ai;
 mod license;
 
 use serde::{Deserialize, Serialize};
@@ -375,7 +376,11 @@ pub fn run() {
             load_measurement_snapshots,
             read_brand_override,
             license_status,
-            kernel_call
+            kernel_call,
+            ai::system_ai_check,
+            ai::ai_status,
+            ai::ai_chat,
+            ai::ai_pull_model
         ])
         .run(tauri::generate_context!())
         .expect("error while running SuperSurvey");

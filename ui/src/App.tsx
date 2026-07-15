@@ -21,6 +21,8 @@ import { LngDescarga } from './pages/LngDescarga'
 import { LngReport } from './pages/LngReport'
 import { Blend } from './pages/Blend'
 import { Utilidades } from './pages/Utilidades'
+import { Asistente } from './pages/Asistente'
+import { AiSetupDialog } from './components/AiSetupDialog'
 import { Configuracion } from './pages/Configuracion'
 import { DesignGuide } from './pages/DesignGuide'
 
@@ -33,6 +35,7 @@ function AppShell() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/trabajos" element={<ListaTrabajos />} />
         <Route path="/utilidades" element={<Utilidades />} />
+        <Route path="/asistente" element={<Asistente />} />
         <Route path="/configuracion" element={<Configuracion />} />
         <Route path="/design" element={<DesignGuide />} />
         <Route path="/trabajo/:id/cover" element={<Cover />} />
@@ -68,6 +71,8 @@ export function App() {
             <AppSidebar />
             <AppShell />
           </div>
+          {/* Primer arranque (escritorio): decisión del usuario sobre la IA local */}
+          <AiSetupDialog />
         </JobMeasurementProvider>
       </BrowserRouter>
     </TooltipProvider>

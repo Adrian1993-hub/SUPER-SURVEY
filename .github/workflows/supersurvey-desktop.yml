@@ -20,6 +20,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  frontend-tests:
+    name: Frontend tests (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install + typecheck + test
+        working-directory: ui
+        run: |
+          npm ci
+          npm run typecheck
+          npm run test
+
   desktop-shell:
     name: Tauri shell compiles
     runs-on: ubuntu-latest

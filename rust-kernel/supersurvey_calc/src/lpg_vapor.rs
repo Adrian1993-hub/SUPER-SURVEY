@@ -295,7 +295,11 @@ impl LpgVaporRequestDTO {
         let total_mass_mt = match &self.liquid_mass_mt {
             Some(l) => {
                 let liquid = DecimalValue::parse(l, "liquid_mass_mt")?.value;
-                Some(round_decimal(liquid + v.vapor_mass_mt, self.decimals, rounding))
+                Some(round_decimal(
+                    liquid + v.vapor_mass_mt,
+                    self.decimals,
+                    rounding,
+                ))
             }
             None => None,
         };

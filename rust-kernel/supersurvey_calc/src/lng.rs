@@ -293,7 +293,11 @@ pub fn gross_mass_kg(volume_m3: Decimal, density_kg_m3: Decimal) -> Decimal {
 }
 
 /// Gross energy [MMBtu] = mass [kg] · lb/kg · GHV(mass) [Btu/lb] / 1e6.
-pub fn gross_energy_mmbtu(mass_kg: Decimal, ghv_mass_btu_lb: Decimal, lb_per_kg: Decimal) -> Decimal {
+pub fn gross_energy_mmbtu(
+    mass_kg: Decimal,
+    ghv_mass_btu_lb: Decimal,
+    lb_per_kg: Decimal,
+) -> Decimal {
     mass_kg * lb_per_kg * ghv_mass_btu_lb / dec!(1000000)
 }
 
@@ -333,18 +337,30 @@ fn parse_req(raw: &Option<String>, field: &'static str) -> KernelResult<Decimal>
 /// Molar composition as strings (mol% or fractions; either works).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LngCompositionDTO {
-    #[serde(default)] pub methane: Option<String>,
-    #[serde(default)] pub ethane: Option<String>,
-    #[serde(default)] pub propane: Option<String>,
-    #[serde(default)] pub iso_butane: Option<String>,
-    #[serde(default)] pub n_butane: Option<String>,
-    #[serde(default)] pub iso_pentane: Option<String>,
-    #[serde(default)] pub n_pentane: Option<String>,
-    #[serde(default)] pub neo_pentane: Option<String>,
-    #[serde(default)] pub hexane_plus: Option<String>,
-    #[serde(default)] pub nitrogen: Option<String>,
-    #[serde(default)] pub carbon_dioxide: Option<String>,
-    #[serde(default)] pub oxygen: Option<String>,
+    #[serde(default)]
+    pub methane: Option<String>,
+    #[serde(default)]
+    pub ethane: Option<String>,
+    #[serde(default)]
+    pub propane: Option<String>,
+    #[serde(default)]
+    pub iso_butane: Option<String>,
+    #[serde(default)]
+    pub n_butane: Option<String>,
+    #[serde(default)]
+    pub iso_pentane: Option<String>,
+    #[serde(default)]
+    pub n_pentane: Option<String>,
+    #[serde(default)]
+    pub neo_pentane: Option<String>,
+    #[serde(default)]
+    pub hexane_plus: Option<String>,
+    #[serde(default)]
+    pub nitrogen: Option<String>,
+    #[serde(default)]
+    pub carbon_dioxide: Option<String>,
+    #[serde(default)]
+    pub oxygen: Option<String>,
 }
 
 impl LngCompositionDTO {
@@ -369,16 +385,26 @@ impl LngCompositionDTO {
 /// Per-component molar volumes at the cargo temperature (m³/kmol) as strings.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LngMolarVolumesDTO {
-    #[serde(default)] pub methane: Option<String>,
-    #[serde(default)] pub ethane: Option<String>,
-    #[serde(default)] pub propane: Option<String>,
-    #[serde(default)] pub iso_butane: Option<String>,
-    #[serde(default)] pub n_butane: Option<String>,
-    #[serde(default)] pub iso_pentane: Option<String>,
-    #[serde(default)] pub n_pentane: Option<String>,
-    #[serde(default)] pub neo_pentane: Option<String>,
-    #[serde(default)] pub hexane_plus: Option<String>,
-    #[serde(default)] pub nitrogen: Option<String>,
+    #[serde(default)]
+    pub methane: Option<String>,
+    #[serde(default)]
+    pub ethane: Option<String>,
+    #[serde(default)]
+    pub propane: Option<String>,
+    #[serde(default)]
+    pub iso_butane: Option<String>,
+    #[serde(default)]
+    pub n_butane: Option<String>,
+    #[serde(default)]
+    pub iso_pentane: Option<String>,
+    #[serde(default)]
+    pub n_pentane: Option<String>,
+    #[serde(default)]
+    pub neo_pentane: Option<String>,
+    #[serde(default)]
+    pub hexane_plus: Option<String>,
+    #[serde(default)]
+    pub nitrogen: Option<String>,
 }
 
 impl LngMolarVolumesDTO {

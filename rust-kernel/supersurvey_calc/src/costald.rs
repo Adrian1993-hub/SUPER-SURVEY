@@ -449,9 +449,8 @@ fn reduced_saturated_volume(tr: Decimal, omega: Decimal) -> Decimal {
         + COSTALD_B * tau_two_thirds
         + COSTALD_C * tau
         + COSTALD_D * tau_four_thirds;
-    let vr_delta =
-        (COSTALD_E + COSTALD_F * tr + COSTALD_G * tr * tr + COSTALD_H * tr * tr * tr)
-            / (tr - dec!(1.00001));
+    let vr_delta = (COSTALD_E + COSTALD_F * tr + COSTALD_G * tr * tr + COSTALD_H * tr * tr * tr)
+        / (tr - dec!(1.00001));
     vr0 * (dec!(1) - omega * vr_delta)
 }
 
@@ -506,7 +505,7 @@ pub(crate) fn cube_root(x: Decimal) -> Decimal {
         return dec!(0);
     }
     let epsilon = dec!(0.000000000000000000000001); // 1e-24
-    // Seed: 1 for x<1 (our τ domain), x for x≥1 — both converge in a few steps.
+                                                    // Seed: 1 for x<1 (our τ domain), x for x≥1 — both converge in a few steps.
     let mut g = if x >= dec!(1) { x } else { dec!(1) };
     for _ in 0..60 {
         let g2 = g * g;
@@ -635,9 +634,7 @@ impl CostaldCtlRequestDTO {
                         "CTL": c.ctl_unrounded.to_string(),
                     }),
                 )
-                .with_formula(
-                    "Vs/V* = V_R0·(1−ω·V_Rδ) ;  CTL = Vs(ref)/Vs(obs) ;  S from rd60",
-                ),
+                .with_formula("Vs/V* = V_R0·(1−ω·V_Rδ) ;  CTL = Vs(ref)/Vs(obs) ;  S from rd60"),
             );
             Some(serde_json::to_value(&trace).unwrap_or(json!(null)))
         } else {
@@ -683,7 +680,11 @@ mod tests {
         assert_eq!(cube_root(dec!(0)), dec!(0));
         assert!(approx(cube_root(dec!(8)), dec!(2), dec!(0.0000000001)));
         assert!(approx(cube_root(dec!(27)), dec!(3), dec!(0.0000000001)));
-        assert!(approx(cube_root(dec!(0.001)), dec!(0.1), dec!(0.0000000001)));
+        assert!(approx(
+            cube_root(dec!(0.001)),
+            dec!(0.1),
+            dec!(0.0000000001)
+        ));
         // τ = 0.177536 → τ^(1/3) ≈ 0.5620 (used in the anchor below).
         let r = cube_root(dec!(0.177536));
         assert!(approx(r * r * r, dec!(0.177536), dec!(0.0000000001)));
@@ -779,7 +780,11 @@ mod tests {
             dec!(44.097),
         )
         .expect("in range");
-        assert!(approx(rho, dec!(530.3009968), dec!(0.01)), "rho was {}", rho);
+        assert!(
+            approx(rho, dec!(530.3009968), dec!(0.01)),
+            "rho was {}",
+            rho
+        );
     }
 
     #[test]

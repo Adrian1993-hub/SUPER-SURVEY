@@ -303,3 +303,121 @@ fn migrations_baseline_sets_user_version_1() {
         .unwrap();
     assert_eq!(v, 1, "el esquema base debe sellar user_version=1");
 }
+
+// ---- Bug #1: idempotent re-save + lossless both-section round-trip ----------
+
+#[test]
+fn find_job_by_ref_reuses_the_same_job() {
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+
+    // The exact ref resolves to the created job; re-saving reuses it (no dup).
+    assert_eq!(
+        db.find_job_by_ref("BQS-DEMO-0142").unwrap().as_deref(),
+        Some(job_id.as_str())
+    );
+    // An unknown ref returns None so the caller creates a fresh job.
+    assert!(db.find_job_by_ref("BQS-UNKNOWN-9999").unwrap().is_none());
+}
+
+#[test]
+fn opening_and_receiving_sections_round_trip_for_hydration() {
+    // Simulates what save_measurement now persists: ONE job, TWO sets (OPENING +
+    // RECEIVING), each with its tank snapshots. Reopening must restore BOTH grids.
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+
+    let after_set = db
+        .create_measurement_set(&NewMeasurementSet {
+            job_id: job_id.clone(),
+            module_type: "VMR".into(),
+            title: "Survey — Vessel".into(),
+            role: "RECEIVING".into(),
+            movement_sign_rule: "CLOSING_MINUS_OPENING".into(),
+        })
+        .unwrap();
+    db.create_tank_row(&NewTankRow {
+        measurement_set_id: after_set.clone(),
+        tank_name: "1 FWD".into(),
+        sequence_no: 1,
+        is_non_nominated: false,
+        tank_profile_snapshot_json: r#"{"tanque":"1 FWD","tov":100.5,"stage":"after"}"#.into(),
+    })
+    .unwrap();
+
+    // OPENING/before grid stored with role REFERENCE (schema role set has no
+    // literal "opening"; it is a baseline grid, not an official custody figure).
+    let before_set = db
+        .create_measurement_set(&NewMeasurementSet {
+            job_id: job_id.clone(),
+            module_type: "VMR".into(),
+            title: "Survey — Vessel (opening)".into(),
+            role: "REFERENCE".into(),
+            movement_sign_rule: "CLOSING_MINUS_OPENING".into(),
+        })
+        .unwrap();
+    db.create_tank_row(&NewTankRow {
+        measurement_set_id: before_set.clone(),
+        tank_name: "1 FWD".into(),
+        sequence_no: 1,
+        is_non_nominated: false,
+        tank_profile_snapshot_json: r#"{"tanque":"1 FWD","tov":40.25,"stage":"before"}"#.into(),
+    })
+    .unwrap();
+
+    // Both sets exist under the one job, keyed by role.
+    let sets = db.list_measurement_sets(&job_id).unwrap();
+    assert_eq!(sets.len(), 2);
+    let opening = sets.iter().rev().find(|s| s.role == "REFERENCE").unwrap();
+    let receiving = sets.iter().rev().find(|s| s.role != "REFERENCE").unwrap();
+
+    // Each section rebuilds losslessly from its own snapshots.
+    let before = db.list_tank_rows(&opening.id).unwrap();
+    let after = db.list_tank_rows(&receiving.id).unwrap();
+    assert!(before[0].tank_profile_snapshot_json.contains("40.25"));
+    assert!(before[0].tank_profile_snapshot_json.contains("before"));
+    assert!(after[0].tank_profile_snapshot_json.contains("100.5"));
+    assert!(after[0].tank_profile_snapshot_json.contains("after"));
+}
+
+// ---- Bug #2: finished state is visible, editable, reversible ----------------
+
+#[test]
+fn mark_completed_is_visible_editable_and_reopenable() {
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+
+    // Fresh job: in progress (no completion stamp, DRAFT report).
+    let j = db.load_job(&job_id).unwrap().unwrap();
+    assert!(j.completed_at.is_none());
+    assert_eq!(j.report_status, "DRAFT");
+
+    // Mark finished: visible stamp + FINAL, surfaced in both load_job and list_jobs.
+    db.set_job_completed(&job_id, true).unwrap();
+    let j = db.load_job(&job_id).unwrap().unwrap();
+    assert!(
+        j.completed_at.is_some(),
+        "finished job must carry completed_at"
+    );
+    assert_eq!(j.report_status, "FINAL");
+    assert!(db.list_jobs().unwrap()[0].completed_at.is_some());
+
+    // A correction after finishing is still allowed: appending an official log
+    // succeeds and the finished mark PERSISTS (finished is a signal, not a lock).
+    let req = bqs_request();
+    let resp = req.calculate();
+    db.append_bqs_calculation(&job_id, None, None, "test", &req, &resp)
+        .unwrap();
+    let j = db.load_job(&job_id).unwrap().unwrap();
+    assert!(
+        j.completed_at.is_some(),
+        "editing must not clear the finished mark"
+    );
+    assert_eq!(j.active_log_count, 1);
+
+    // Explicit reopen clears the mark (back to in-progress / DRAFT).
+    db.set_job_completed(&job_id, false).unwrap();
+    let j = db.load_job(&job_id).unwrap().unwrap();
+    assert!(j.completed_at.is_none());
+    assert_eq!(j.report_status, "DRAFT");
+}

@@ -42,6 +42,8 @@ export function createLocalJob(input: NewLocalJob): StoredJob {
     clientRef: input.clientRef ?? null,
     createdAt: now,
     updatedAt: now,
+    completedAt: null,
+    reportStatus: 'DRAFT',
     activeLogCount: 0,
   }
   try {
@@ -52,4 +54,20 @@ export function createLocalJob(input: NewLocalJob): StoredJob {
     /* quota/unavailable → in-memory only this session */
   }
   return job
+}
+
+/** Mark a browser-demo job finished (or reopen it) — mirrors the desktop
+ *  `set_job_completed` so the "Finalizada" badge behaves the same in the demo. */
+export function setLocalJobCompleted(jobId: string, completed: boolean): void {
+  try {
+    const now = new Date().toISOString()
+    const next = listLocalJobs().map((j) =>
+      j.id === jobId
+        ? { ...j, completedAt: completed ? now : null, reportStatus: completed ? 'FINAL' : 'DRAFT', updatedAt: now }
+        : j,
+    )
+    if (typeof localStorage !== 'undefined') localStorage.setItem(KEY, JSON.stringify(next))
+  } catch {
+    /* quota/unavailable → ignore */
+  }
 }

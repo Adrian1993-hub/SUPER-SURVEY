@@ -1,17 +1,18 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { EstadoBadge } from '../components/EstadoBadge'
+import { StatusChip } from '../components/ui/status'
 import { TopBar } from '../components/TopBar'
 import { jobs } from '../data/demoJobs'
-import { listStoredJobs, createJob, isDesktop, loadMeasurementSnapshots, type StoredJob } from '../lib/ipc'
+import { listStoredJobs, createJob, isDesktop, loadMeasurementSections, setJobCompleted, type StoredJob } from '../lib/ipc'
 import { useJobMeasurement } from '../lib/jobStore'
 import { type VmrTank } from '../data/vmr'
 import { EmptyState } from '../components/EmptyState'
 import { useT } from '../i18n/LanguageProvider'
-import { Plus, ChevronRight, Database, X } from 'lucide-react'
+import { Plus, ChevronRight, Database, X, CheckCircle2, RotateCcw } from 'lucide-react'
 
 const OP_TYPES = ['BUNKER_LOADING', 'BUNKER_DELIVERY', 'CARGO_LOADING', 'CARGO_DISCHARGE', 'LPG_DISCHARGE', 'BLEND']
 const inputCls = 'w-full rounded-md border border-input bg-transparent px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring'
@@ -23,7 +24,7 @@ export function ListaTrabajos() {
   const [showForm, setShowForm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [form, setForm] = useState({ jobRef: '', operationType: 'BUNKER_LOADING', clientRef: '', portName: '' })
-  const { setAfter } = useJobMeasurement()
+  const { setBefore, setAfter } = useJobMeasurement()
 
   const reload = () =>
     listStoredJobs()
@@ -37,17 +38,34 @@ export function ListaTrabajos() {
   const handleRowClick = (jobId: string) => navigate(`/trabajo/${jobId}/cover`)
   const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
-  // Abrir un trabajo guardado: hidrata la sección "after" desde los snapshots
-  // (escritorio/SQLite). En el navegador no hay snapshots y se conserva el
-  // borrador local; luego navega al trabajo.
+  // Abrir un trabajo guardado: hidrata AMBAS rejillas (apertura + después) desde
+  // los snapshots (escritorio/SQLite), de modo que reabrir para corregir una
+  // comparación no pierde lo medido. En el navegador no hay snapshots y se
+  // conserva el borrador local; luego navega al trabajo.
   async function openStoredJob(j: StoredJob) {
     try {
-      const snaps = await loadMeasurementSnapshots(j.id)
-      if (snaps.length > 0) setAfter(snaps.map((s) => JSON.parse(s) as VmrTank))
+      const { before, after } = await loadMeasurementSections(j.id)
+      if (before.length > 0) setBefore(before.map((s) => JSON.parse(s) as VmrTank))
+      if (after.length > 0) setAfter(after.map((s) => JSON.parse(s) as VmrTank))
     } catch {
       /* si falla la carga, navegamos igual */
     }
     navigate(`/trabajo/${j.id}/cover`)
+  }
+
+  // Marcar/desmarcar "finalizada" sin bloquear la edición: el trabajo sigue
+  // abierto para correcciones; el estado queda visible y los cálculos guardados
+  // (append-only) registran cualquier cambio posterior.
+  async function toggleFinished(e: MouseEvent, j: StoredJob) {
+    e.stopPropagation()
+    const next = !j.completedAt
+    if (next && !window.confirm(t('jobs.finishConfirm'))) return
+    try {
+      await setJobCompleted(j.id, next)
+      await reload()
+    } catch (err) {
+      window.alert((err as Error).message)
+    }
   }
 
   async function onCreate(e: FormEvent) {
@@ -143,7 +161,8 @@ export function ListaTrabajos() {
                       <TableHead>{t('jobs.port')}</TableHead>
                       <TableHead className="w-[120px] text-right font-mono">{t('jobs.created')}</TableHead>
                       <TableHead className="w-[110px] text-right font-mono">{t('jobs.calcs')}</TableHead>
-                      <TableHead className="w-[50px]" />
+                      <TableHead className="w-[130px]">{t('common.status')}</TableHead>
+                      <TableHead className="w-[150px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -161,7 +180,27 @@ export function ListaTrabajos() {
                         <TableCell className="text-right font-mono tabular-nums">{j.createdAt.slice(0, 10)}</TableCell>
                         <TableCell className="text-right font-mono tabular-nums">{j.activeLogCount}</TableCell>
                         <TableCell>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          {j.completedAt ? (
+                            <StatusChip tone="ok" title={t('jobs.finishedOn', { date: j.completedAt.slice(0, 10) })}>
+                              <CheckCircle2 className="h-3 w-3" /> {t('jobs.finished')}
+                            </StatusChip>
+                          ) : (
+                            <StatusChip tone="info">{t('jobs.inProgress')}</StatusChip>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => toggleFinished(e, j)}
+                              title={j.completedAt ? t('jobs.reopenTitle') : t('jobs.finishTitle')}
+                              className="inline-flex items-center gap-1 rounded-md border border-input px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                            >
+                              {j.completedAt ? <RotateCcw className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
+                              {j.completedAt ? t('jobs.reopen') : t('jobs.markFinished')}
+                            </button>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

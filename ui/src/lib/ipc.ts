@@ -5,7 +5,7 @@
 // it is written, so a stored number is always traceable to its inputs.
 
 import { bqsRowRequest, type BqsRowInput } from './kernel'
-import { listLocalJobs, createLocalJob, type NewLocalJob } from './localJobs'
+import { listLocalJobs, createLocalJob, setLocalJobCompleted, type NewLocalJob } from './localJobs'
 
 /** True when running inside the Tauri desktop shell (not the browser demo). */
 export function isDesktop(): boolean {
@@ -32,8 +32,10 @@ export interface SaveMeasurementInput {
   moduleType?: string
   role?: string
   movementSignRule?: string
-  /** Per-tank VmrTank JSON snapshots, for lossless hydration on reload. */
+  /** After/receiving VmrTank JSON snapshots, for lossless hydration on reload. */
   tankSnapshots?: string[]
+  /** Opening/before VmrTank JSON snapshots — persisted so reopening restores both grids. */
+  beforeTankSnapshots?: string[]
 }
 
 export interface SaveMeasurementResult {
@@ -60,6 +62,7 @@ export async function saveMeasurement(input: SaveMeasurementInput): Promise<Save
     movement_sign_rule: input.movementSignRule ?? 'CLOSING_MINUS_OPENING',
     rows: input.rows.map((r) => bqsRowRequest({ ...r, scope: 'SAVE' })),
     tank_snapshots: input.tankSnapshots ?? [],
+    before_snapshots: input.beforeTankSnapshots ?? [],
   }
   const res = await invoke<{
     job_id: string
@@ -87,6 +90,10 @@ export interface StoredJob {
   clientRef: string | null
   createdAt: string
   updatedAt: string
+  /** Set when the operation was marked finished; null while in progress. */
+  completedAt: string | null
+  /** DRAFT | PRELIMINARY | IN_REVIEW | FINAL | REVISED | VOID. */
+  reportStatus: string
   activeLogCount: number
 }
 export interface StoredMeasurementSet {
@@ -123,6 +130,8 @@ interface RawJob {
   client_ref: string | null
   created_at: string
   updated_at: string
+  completed_at: string | null
+  report_status: string
   active_log_count: number
 }
 const fromRawJob = (r: RawJob): StoredJob => ({
@@ -135,6 +144,8 @@ const fromRawJob = (r: RawJob): StoredJob => ({
   clientRef: r.client_ref,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
+  completedAt: r.completed_at ?? null,
+  reportStatus: r.report_status ?? 'DRAFT',
   activeLogCount: r.active_log_count,
 })
 
@@ -163,6 +174,31 @@ export async function createJob(input: NewLocalJob): Promise<string> {
 export async function loadMeasurementSnapshots(jobId: string): Promise<string[]> {
   if (!isDesktop()) return []
   return invoke<string[]>('load_measurement_snapshots', { jobId })
+}
+
+export interface MeasurementSections {
+  /** Opening/before grid snapshots (VmrTank JSON). */
+  before: string[]
+  /** After/receiving grid snapshots (VmrTank JSON). */
+  after: string[]
+}
+
+/** Both measurement grids of a saved job for lossless hydration on reopen —
+ *  empty sections in the browser demo (no SQLite). */
+export async function loadMeasurementSections(jobId: string): Promise<MeasurementSections> {
+  if (!isDesktop()) return { before: [], after: [] }
+  return invoke<MeasurementSections>('load_measurement_sections', { jobId })
+}
+
+/** Mark a stored job finished (or reopen it). Finishing is a VISIBLE state, not a
+ *  lock: the job stays editable for corrections and each edit is recorded by the
+ *  append-only calculation_logs. No-op in the browser demo. */
+export async function setJobCompleted(jobId: string, completed: boolean): Promise<void> {
+  if (!isDesktop()) {
+    setLocalJobCompleted(jobId, completed)
+    return
+  }
+  await invoke<void>('set_job_completed', { jobId, completed })
 }
 
 // ---- Actualizaciones -----------------------------------------------------

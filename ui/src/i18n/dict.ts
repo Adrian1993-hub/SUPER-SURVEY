@@ -113,6 +113,20 @@ const coreDict = {
   'jobs.savedSqlite': { es: '(SQLite local)', en: '(local SQLite)' },
   'jobs.savedBrowser': { es: '(este navegador)', en: '(this browser)' },
   'jobs.demoJobs': { es: 'Trabajos de ejemplo (demo)', en: 'Example jobs (demo)' },
+  'jobs.finished': { es: 'Finalizada', en: 'Finished' },
+  'jobs.inProgress': { es: 'En progreso', en: 'In progress' },
+  'jobs.finishedOn': { es: 'Finalizada el {date}', en: 'Finished on {date}' },
+  'jobs.markFinished': { es: 'Finalizar', en: 'Finish' },
+  'jobs.reopen': { es: 'Reabrir', en: 'Reopen' },
+  'jobs.finishTitle': {
+    es: 'Marcar la operación como finalizada (seguirá editable para correcciones)',
+    en: 'Mark the operation finished (it stays editable for corrections)',
+  },
+  'jobs.reopenTitle': { es: 'Reabrir la operación (vuelve a «en progreso»)', en: 'Reopen the operation (back to “in progress”)' },
+  'jobs.finishConfirm': {
+    es: '¿Marcar esta operación como finalizada? Seguirá abierta para correcciones; los cambios quedan registrados.',
+    en: 'Mark this operation as finished? It stays open for corrections; changes are recorded.',
+  },
 
   // ---- Utilidades (herramientas de densidad) ----------------------------
   'tools.intro': {

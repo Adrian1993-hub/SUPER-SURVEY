@@ -74,9 +74,46 @@ struct SaveMeasurementArgs {
     role: String,
     movement_sign_rule: String,
     rows: Vec<BqsRowRequestDTO>,
-    /// Per-tank VmrTank JSON snapshots (lossless source for hydration on load).
+    /// Per-tank VmrTank JSON snapshots of the AFTER/receiving section (lossless
+    /// source for hydration on load).
     #[serde(default)]
     tank_snapshots: Vec<String>,
+    /// Per-tank VmrTank JSON snapshots of the OPENING/before section. Persisted
+    /// as a second measurement set so reopening restores BOTH grids losslessly.
+    #[serde(default)]
+    before_snapshots: Vec<String>,
+}
+
+/// Role used for the OPENING/before measurement set. The schema's role set has
+/// no literal "opening"; REFERENCE fits a baseline grid that is NOT an official
+/// custody figure (it carries no calculation_logs). Kept in one place so the save
+/// and both load paths agree on how the before-grid is identified.
+const OPENING_ROLE: &str = "REFERENCE";
+
+/// Persist one section's per-tank snapshots as tank rows under a measurement set.
+/// The real tank name lives inside the VmrTank snapshot (`tanque`); fall back to
+/// a positional label only when the snapshot is missing/blank.
+fn persist_tank_rows(db: &Database, set_id: &str, snapshots: &[String]) -> Result<(), String> {
+    for (i, snap) in snapshots.iter().enumerate() {
+        let tank_name = serde_json::from_str::<serde_json::Value>(snap)
+            .ok()
+            .as_ref()
+            .and_then(|v| v.get("tanque"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("Tank {}", i + 1));
+        db.create_tank_row(&NewTankRow {
+            measurement_set_id: set_id.to_string(),
+            tank_name,
+            sequence_no: (i + 1) as i64,
+            is_non_nominated: false,
+            tank_profile_snapshot_json: snap.clone(),
+        })
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 #[derive(Debug, Serialize)]
@@ -93,48 +130,52 @@ fn save_measurement(
     args: SaveMeasurementArgs,
 ) -> Result<SaveMeasurementResult, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let job_id = db
-        .create_job(&NewJob {
-            job_ref: args.job_ref,
-            operation_family: args.operation_family,
-            operation_type: args.operation_type,
-            report_ref: args.report_ref,
-            client_ref: args.client_ref,
-            port_name: args.port_name,
-        })
-        .map_err(|e| e.to_string())?;
+    // Idempotent by job_ref: reuse an existing job so reopening + re-saving a
+    // correction stays ONE operation instead of piling up duplicate jobs.
+    let job_id = match db
+        .find_job_by_ref(&args.job_ref)
+        .map_err(|e| e.to_string())?
+    {
+        Some(existing) => existing,
+        None => db
+            .create_job(&NewJob {
+                job_ref: args.job_ref.clone(),
+                operation_family: args.operation_family.clone(),
+                operation_type: args.operation_type.clone(),
+                report_ref: args.report_ref.clone(),
+                client_ref: args.client_ref.clone(),
+                port_name: args.port_name.clone(),
+            })
+            .map_err(|e| e.to_string())?,
+    };
     let set_id = db
         .create_measurement_set(&NewMeasurementSet {
             job_id: job_id.clone(),
-            module_type: args.module_type,
-            title: args.module_title,
-            role: args.role,
-            movement_sign_rule: args.movement_sign_rule,
+            module_type: args.module_type.clone(),
+            title: args.module_title.clone(),
+            role: args.role.clone(),
+            movement_sign_rule: args.movement_sign_rule.clone(),
         })
         .map_err(|e| e.to_string())?;
 
-    // Persist a full per-tank snapshot per row (the lossless source for hydration).
-    for (i, snap) in args.tank_snapshots.iter().enumerate() {
-        // The real tank name lives inside the VmrTank snapshot (`tanque`). Use it so
-        // the denormalized column matches the data; fall back to a positional label
-        // only when the snapshot is missing/blank.
-        let tank_name = serde_json::from_str::<serde_json::Value>(snap)
-            .ok()
-            .as_ref()
-            .and_then(|v| v.get("tanque"))
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(str::to_string)
-            .unwrap_or_else(|| format!("Tank {}", i + 1));
-        db.create_tank_row(&NewTankRow {
-            measurement_set_id: set_id.clone(),
-            tank_name,
-            sequence_no: (i + 1) as i64,
-            is_non_nominated: false,
-            tank_profile_snapshot_json: snap.clone(),
-        })
-        .map_err(|e| e.to_string())?;
+    // AFTER/receiving section: full per-tank snapshots (lossless hydration source).
+    persist_tank_rows(&db, &set_id, &args.tank_snapshots)?;
+
+    // OPENING/before section: snapshots only, no calculation_logs — the official
+    // figures are untouched; this exists purely so reopening restores both grids.
+    // Stored with role REFERENCE (the schema's closed role set has no "opening";
+    // REFERENCE fits an opening grid that is NOT an official custody figure).
+    if !args.before_snapshots.is_empty() {
+        let before_set = db
+            .create_measurement_set(&NewMeasurementSet {
+                job_id: job_id.clone(),
+                module_type: args.module_type.clone(),
+                title: format!("{} (opening)", args.module_title),
+                role: OPENING_ROLE.to_string(),
+                movement_sign_rule: args.movement_sign_rule.clone(),
+            })
+            .map_err(|e| e.to_string())?;
+        persist_tank_rows(&db, &before_set, &args.before_snapshots)?;
     }
 
     let mut saved = 0usize;
@@ -225,8 +266,9 @@ fn create_job(state: tauri::State<'_, AppState>, args: CreateJobArgs) -> Result<
     .map_err(|e| e.to_string())
 }
 
-/// Tank-row snapshots (VmrTank JSON) of the most recent measurement set for a
+/// Tank-row snapshots (VmrTank JSON) of the most recent AFTER/receiving set for a
 /// job — the lossless source the UI parses to rebuild the measurement grid.
+/// (OPENING sets are excluded here; use `load_measurement_sections` for both.)
 #[tauri::command]
 fn load_measurement_snapshots(
     state: tauri::State<'_, AppState>,
@@ -236,7 +278,7 @@ fn load_measurement_snapshots(
     let sets = db
         .list_measurement_sets(&job_id)
         .map_err(|e| e.to_string())?;
-    let last = match sets.last() {
+    let last = match sets.iter().rev().find(|s| s.role != OPENING_ROLE) {
         Some(s) => s,
         None => return Ok(vec![]),
     };
@@ -245,6 +287,58 @@ fn load_measurement_snapshots(
         .into_iter()
         .map(|r| r.tank_profile_snapshot_json)
         .collect())
+}
+
+/// Both measurement grids of a job for lossless hydration on reopen: the latest
+/// OPENING set (`before`) and the latest receiving set (`after`). Empty vecs when
+/// a section was never saved.
+#[derive(Debug, Serialize)]
+struct MeasurementSections {
+    before: Vec<String>,
+    after: Vec<String>,
+}
+
+#[tauri::command]
+fn load_measurement_sections(
+    state: tauri::State<'_, AppState>,
+    job_id: String,
+) -> Result<MeasurementSections, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let sets = db
+        .list_measurement_sets(&job_id)
+        .map_err(|e| e.to_string())?;
+    let snaps_of = |set: &MeasurementSetRow| -> Result<Vec<String>, String> {
+        Ok(db
+            .list_tank_rows(&set.id)
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|r| r.tank_profile_snapshot_json)
+            .collect())
+    };
+    let before = match sets.iter().rev().find(|s| s.role == OPENING_ROLE) {
+        Some(s) => snaps_of(s)?,
+        None => vec![],
+    };
+    let after = match sets.iter().rev().find(|s| s.role != OPENING_ROLE) {
+        Some(s) => snaps_of(s)?,
+        None => vec![],
+    };
+    Ok(MeasurementSections { before, after })
+}
+
+/// Mark a job finished (`completed=true`) or reopen it (`false`). Finishing is a
+/// VISIBLE state, not a lock — the job stays editable so corrections after
+/// comparing with other parties are possible, and each edit is recorded by the
+/// append-only calculation_logs timestamp.
+#[tauri::command]
+fn set_job_completed(
+    state: tauri::State<'_, AppState>,
+    job_id: String,
+    completed: bool,
+) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.set_job_completed(&job_id, completed)
+        .map_err(|e| e.to_string())
 }
 
 /// Read an optional runtime branding override (brand.json) from the app config
@@ -426,6 +520,8 @@ pub fn run() {
             load_job_detail,
             create_job,
             load_measurement_snapshots,
+            load_measurement_sections,
+            set_job_completed,
             read_brand_override,
             license_status,
             kernel_call,

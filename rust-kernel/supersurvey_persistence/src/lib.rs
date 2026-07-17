@@ -116,6 +116,45 @@ impl Database {
             })
     }
 
+    /// Find an existing job id by its (surveyor) reference. Lets a re-save of the
+    /// same worksheet reuse ONE job — reopening to correct a comparison against
+    /// other parties stays a single operation instead of duplicating the job.
+    pub fn find_job_by_ref(&self, job_ref: &str) -> Result<Option<String>> {
+        self.conn
+            .query_row(
+                "SELECT id FROM jobs WHERE job_ref = ?1 ORDER BY created_at, id LIMIT 1",
+                [job_ref],
+                |r| r.get(0),
+            )
+            .map(Some)
+            .or_else(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                other => Err(other),
+            })
+    }
+
+    /// Mark a job finished (or reopen it). Finishing stamps `completed_at` and
+    /// moves `report_status` to FINAL; reopening clears both. Editing a finished
+    /// job stays ALLOWED on purpose — corrections after comparing with other
+    /// parties are normal — and every such edit is recorded by the append-only
+    /// `calculation_logs` timestamp, so "done" is visible without being a lock.
+    pub fn set_job_completed(&self, job_id: &str, completed: bool) -> Result<()> {
+        if completed {
+            self.conn.execute(
+                "UPDATE jobs SET completed_at = datetime('now'), report_status = 'FINAL',
+                    updated_at = datetime('now') WHERE id = ?1",
+                [job_id],
+            )?;
+        } else {
+            self.conn.execute(
+                "UPDATE jobs SET completed_at = NULL, report_status = 'DRAFT',
+                    updated_at = datetime('now') WHERE id = ?1",
+                [job_id],
+            )?;
+        }
+        Ok(())
+    }
+
     // ---------------- Measurement structure ----------------
 
     pub fn create_measurement_set(&self, set: &NewMeasurementSet) -> Result<String> {
@@ -273,7 +312,7 @@ impl Database {
     pub fn list_jobs(&self) -> Result<Vec<JobSummary>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, job_ref, operation_family, operation_type, port_name, report_ref,
-                    client_ref, created_at, updated_at,
+                    client_ref, created_at, updated_at, completed_at, report_status,
                     (SELECT count(*) FROM calculation_logs c
                        WHERE c.job_id = jobs.id AND c.status = 'ACTIVE')
              FROM jobs ORDER BY created_at DESC, id",
@@ -286,7 +325,7 @@ impl Database {
     pub fn load_job(&self, job_id: &str) -> Result<Option<JobSummary>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, job_ref, operation_family, operation_type, port_name, report_ref,
-                    client_ref, created_at, updated_at,
+                    client_ref, created_at, updated_at, completed_at, report_status,
                     (SELECT count(*) FROM calculation_logs c
                        WHERE c.job_id = jobs.id AND c.status = 'ACTIVE')
              FROM jobs WHERE id = ?1",
@@ -380,7 +419,9 @@ fn job_summary_from_row(r: &rusqlite::Row<'_>) -> Result<JobSummary> {
         client_ref: r.get(6)?,
         created_at: r.get(7)?,
         updated_at: r.get(8)?,
-        active_log_count: r.get(9)?,
+        completed_at: r.get(9)?,
+        report_status: r.get(10)?,
+        active_log_count: r.get(11)?,
     })
 }
 
@@ -461,6 +502,10 @@ pub struct JobSummary {
     pub client_ref: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    /// Set when the operation has been marked finished; `None` while in progress.
+    pub completed_at: Option<String>,
+    /// DRAFT | PRELIMINARY | IN_REVIEW | FINAL | REVISED | VOID.
+    pub report_status: String,
     pub active_log_count: i64,
 }
 

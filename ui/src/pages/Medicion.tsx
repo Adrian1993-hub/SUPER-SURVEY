@@ -257,8 +257,10 @@ export function Medicion() {
   const action = cmp?.recommendedAction ?? 'NONE'
   const excedidas = (cmp?.pairs ?? []).filter((p) => !p.withinAll)
 
-  // Guardado (solo escritorio): persiste la sección "after receiving" como un
-  // measurement set + un calculation_log inmutable por tanque.
+  // Guardado (solo escritorio): persiste la sección "after receiving" (con un
+  // calculation_log inmutable por tanque) Y la sección "opening/before" (solo
+  // snapshots), de modo que reabrir el trabajo restaura AMBAS rejillas sin
+  // pérdida. Las cifras oficiales salen solo del "after".
   const desktop = isDesktop()
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
@@ -280,6 +282,7 @@ export function Medicion() {
         portName: h.puerto,
         rows,
         tankSnapshots: after.map((t) => JSON.stringify(t)),
+        beforeTankSnapshots: before.map((t) => JSON.stringify(t)),
       })
       setSaveMsg(
         t('medicion.saveOk', {

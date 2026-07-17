@@ -207,6 +207,13 @@ const coreDict = {
   'settings.toDark': { es: 'Cambiar a modo oscuro', en: 'Switch to dark mode' },
   'settings.font': { es: 'Fuente', en: 'Font' },
   'settings.density': { es: 'Densidad de tablas', en: 'Table density' },
+  'settings.decimal': { es: 'Separador decimal', en: 'Decimal separator' },
+  'settings.decimalDot': { es: 'Punto', en: 'Period' },
+  'settings.decimalComma': { es: 'Coma', en: 'Comma' },
+  'settings.decimalDesc': {
+    es: 'Cómo se teclean y muestran los decimales en la captura. No afecta el cálculo: el kernel siempre trabaja en punto internamente.',
+    en: 'How decimals are typed and shown during capture. Does not affect the calculation: the kernel always works with a period internally.',
+  },
   'settings.language': { es: 'Idioma', en: 'Language' },
   'settings.languageDesc': {
     es: 'Idioma de la interfaz. Los estándares técnicos (ASTM, API, unidades) se mantienen.',

@@ -163,6 +163,16 @@ export const flowDict = {
     es: 'Densidad {d} kg/L fuera del rango típico de {g}',
     en: 'Density {d} kg/L outside the typical range for {g}',
   },
+  'medicion.rangeOor': {
+    es: 'Fuera de rango plausible [{min}–{max} {unit}]: {pct}% {dir}',
+    en: 'Outside plausible range [{min}–{max} {unit}]: {pct}% {dir}',
+  },
+  'medicion.rangeAbove': { es: 'sobre el máximo', en: 'above the maximum' },
+  'medicion.rangeBelow': { es: 'bajo el mínimo', en: 'below the minimum' },
+  'medicion.rangeSummary': {
+    es: '{n} valor(es) fuera de rango plausible — peor caso: {pct}% fuera de banda. Revisa antes de calcular (aviso, no bloqueo).',
+    en: '{n} value(s) outside plausible range — worst case: {pct}% out of band. Review before calculating (advisory, not a block).',
+  },
   'medicion.statMtVac': { es: 'Peso (MT) en vacío', en: 'Weight (MT) in vacuum' },
   'medicion.statGsv': { es: 'Gross Standard Vol @15°C', en: 'Gross Standard Vol @15°C' },
   'medicion.statWcf': { es: 'WCF Tabla 56', en: 'WCF Table 56' },

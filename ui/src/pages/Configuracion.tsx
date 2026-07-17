@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom'
 import { kernelVersion } from '../lib/kernel'
 import { licenseStatus, checkForUpdates, isDesktop, type UpdateCheck } from '../lib/ipc'
 import { getAiPref } from '../lib/aiPrefs'
+import { useDecimalSep, setDecimalSep, type DecimalSep } from '../lib/num'
 import { useT, useI18n, LANGS, LANG_LABELS } from '../i18n/LanguageProvider'
 import {
   Palette,
@@ -31,6 +32,7 @@ import {
   Check,
   Languages,
   Bot,
+  Hash,
 } from 'lucide-react'
 
 /** Fila de opciones tipo "segmented cards": una tarjeta por opción, activa resaltada. */
@@ -219,6 +221,7 @@ function AboutCard() {
 export function Configuracion() {
   const { theme, mode, font, density, setTheme, setMode, setFont, setDensity } = useTheme()
   const { lang, setLang } = useI18n()
+  const sep = useDecimalSep()
   const t = useT()
 
   return (
@@ -303,6 +306,29 @@ export function Configuracion() {
                 onChange={(d: DensityId) => setDensity(d)}
                 options={DENSITIES.map((d) => ({ id: d.id, label: t(`density.${d.id}.label`), desc: t(`density.${d.id}.desc`) }))}
               />
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <Hash className="h-3.5 w-3.5" /> {t('settings.decimal')}
+              </div>
+              <div className="flex gap-2">
+                {(['dot', 'comma'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setDecimalSep(s as DecimalSep)}
+                    aria-pressed={sep === s}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                      sep === s ? 'border-brand bg-brand/5' : 'border-border hover:border-brand/40'
+                    }`}
+                  >
+                    <span className="font-mono">{s === 'dot' ? '1234.56' : '1234,56'}</span>
+                    {t(s === 'dot' ? 'settings.decimalDot' : 'settings.decimalComma')}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">{t('settings.decimalDesc')}</p>
             </div>
 
             {isDesktop() && <p className="text-[11px] text-muted-foreground">{t('settings.windowMemory')}</p>}

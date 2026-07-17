@@ -13,7 +13,8 @@ import { isDesktop, saveMeasurement } from '../lib/ipc'
 import { useJobMeasurement } from '../lib/jobStore'
 import { sectionTotals, useComputedRows, useTransferred, type CalcFields, type TableVersion } from '../lib/useBqsRows'
 import { ArrowUp, ArrowDown, Minus, Plus, Trash2, AlertTriangle, CheckCircle2, FileText, Cpu, Save, RotateCcw } from 'lucide-react'
-import { parseDec } from '../lib/num'
+import { parseDec, formatDec, formatDecNatural, useDecimalSep } from '../lib/num'
+import { checkRange, FIELD_RANGES, type RangeField } from '../lib/ranges'
 import { useT } from '../i18n/LanguageProvider'
 
 const blankTank = (): VmrTank => ({
@@ -27,14 +28,64 @@ const thBase = ''
 const tdDisp = ''
 const tdGrey = 'cell-grey'
 
-function NumCell({ value, onChange, step = 0.001 }: { value: number; onChange: (n: number) => void; step?: number }) {
+/** Título de aviso cuando un valor sale de su banda plausible: dice cuánto y en
+ *  qué % excede (el «qué tan fuera de rango»). */
+function rangeTitle(t: ReturnType<typeof useT>, field: RangeField, value: number): string | undefined {
+  const v = checkRange(field, value)
+  if (v.ok) return undefined
+  const r = FIELD_RANGES[field]
+  return t('medicion.rangeOor', {
+    min: formatDecNatural(r.min) || '0',
+    max: formatDecNatural(r.max),
+    unit: r.unit,
+    dir: v.bound === 'max' ? t('medicion.rangeAbove') : t('medicion.rangeBelow'),
+    pct: v.pct.toFixed(1),
+  })
+}
+
+/** Input decimal consciente del separador configurado: mantiene el texto crudo
+ *  mientras se edita (permite teclear «0,» o «-»), lo formatea con el separador
+ *  al perder el foco, y parsea con parseDec (coma o punto). Aviso de rango
+ *  opcional (borde rojo + tooltip con el exceso). Nunca toca el kernel. */
+function DecimalInput({
+  value,
+  onChange,
+  range,
+  className,
+}: {
+  value: number
+  onChange: (n: number) => void
+  range?: RangeField
+  className: string
+}) {
+  useDecimalSep() // re-render al cambiar el separador
+  const t = useT()
+  const [draft, setDraft] = useState<string | null>(null)
+  const bad = range ? !checkRange(range, value).ok : false
+  return (
+    <input
+      inputMode="decimal"
+      value={draft ?? formatDecNatural(value)}
+      onFocus={() => setDraft(formatDecNatural(value))}
+      onChange={(e) => {
+        setDraft(e.target.value)
+        onChange(parseDec(e.target.value))
+      }}
+      onBlur={() => setDraft(null)}
+      aria-invalid={bad || undefined}
+      title={range ? rangeTitle(t, range, value) : undefined}
+      className={`${className} ${bad ? 'text-danger ring-1 ring-danger' : ''}`}
+    />
+  )
+}
+
+function NumCell({ value, onChange, range }: { value: number; onChange: (n: number) => void; step?: number; range?: RangeField }) {
   return (
     <td className="border border-border p-0">
-      <input
-        type="number"
-        step={step}
+      <DecimalInput
         value={value}
-        onChange={(e) => onChange(parseDec(e.target.value))}
+        onChange={onChange}
+        range={range}
         className="w-full bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
       />
     </td>
@@ -64,22 +115,42 @@ interface SectionProps {
 
 function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }: SectionProps) {
   const t = useT()
+  useDecimalSep() // re-render de las celdas al cambiar el separador
   const tot = sectionTotals(tanks, calc)
+
+  // "Impacto" de validación: celdas fuera de banda plausible (densidad, temp) y
+  // el peor exceso — aviso, no bloqueo (el kernel sigue siendo la autoridad).
+  const oor = tanks.flatMap((tk) => {
+    const out: number[] = []
+    const d = checkRange('density15', tk.densidad15)
+    if (!d.ok) out.push(d.pct)
+    const tm = checkRange('temp', tk.temp)
+    if (!tm.ok) out.push(tm.pct)
+    return out
+  })
+  const worstPct = oor.length ? Math.max(...oor) : 0
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base uppercase tracking-wide">{title}</CardTitle>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-            <span><span className="text-muted-foreground">{t('flowShared.draftFore')} </span><span className="font-mono">{drafts.draftFore.toFixed(2)}</span></span>
-            <span><span className="text-muted-foreground">{t('medicion.draftAft')} </span><span className="font-mono">{drafts.draftAft.toFixed(2)}</span></span>
-            <span><span className="text-muted-foreground">Trim </span><span className="font-mono">{drafts.trim.toFixed(2)}</span></span>
-            <span><span className="text-muted-foreground">List </span><span className="font-mono">{drafts.list.toFixed(2)}</span></span>
+            <span><span className="text-muted-foreground">{t('flowShared.draftFore')} </span><span className="font-mono">{formatDec(drafts.draftFore, 2)}</span></span>
+            <span><span className="text-muted-foreground">{t('medicion.draftAft')} </span><span className="font-mono">{formatDec(drafts.draftAft, 2)}</span></span>
+            <span><span className="text-muted-foreground">Trim </span><span className="font-mono">{formatDec(drafts.trim, 2)}</span></span>
+            <span><span className="text-muted-foreground">List </span><span className="font-mono">{formatDec(drafts.list, 2)}</span></span>
             <span className="rounded bg-brand/15 px-2 py-0.5 font-medium text-brand">Trim {drafts.trimApplied ? t('flowShared.applied') : t('flowShared.notApplied')}</span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
+        {oor.length > 0 && (
+          <div className="status-warn mb-3 flex items-center gap-2 rounded-lg border p-2.5 text-xs font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
+            <span>{t('medicion.rangeSummary', { n: oor.length, pct: worstPct.toFixed(1) })}</span>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="table-dense w-full border-collapse">
             <thead>
@@ -126,7 +197,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                         className={`w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring ${oor ? 'text-warning ring-1 ring-warning' : ''}`}
                       />
                     </td>
-                    <NumCell value={tk.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} />
+                    <NumCell value={tk.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} range="density15" />
                     <NumCell value={tk.tablesRefHeight} onChange={(n) => onUpdate(i, { tablesRefHeight: n })} />
                     <NumCell value={tk.measRefHeight} onChange={(n) => onUpdate(i, { measRefHeight: n })} />
                     <NumCell value={tk.level} onChange={(n) => onUpdate(i, { level: n })} />
@@ -138,7 +209,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                     {/* Temp con flecha en cierre */}
                     <td className="border border-border p-0">
                       <div className="flex items-center justify-end gap-1 pr-1">
-                        <input type="number" step={0.1} value={tk.temp} onChange={(e) => onUpdate(i, { temp: parseDec(e.target.value) })} className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                        <DecimalInput value={tk.temp} onChange={(n) => onUpdate(i, { temp: n })} range="temp" className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
                         {prev && <DeltaArrow prev={p?.temp} curr={tk.temp} />}
                       </div>
                     </td>
@@ -146,16 +217,16 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                     <td className={tdGrey}>
                       <div className="flex items-center justify-end gap-1">
                         {prev && <DeltaArrow prev={p?.tov} curr={tk.tov} />}
-                        {tk.tov.toFixed(3)}
+                        {formatDec(tk.tov, 3)}
                       </div>
                     </td>
                     <NumCell value={tk.freeWaterLevel} onChange={(n) => onUpdate(i, { freeWaterLevel: n })} />
-                    <td className={tdGrey}>{tk.freeWaterVol.toFixed(3)}</td>
-                    <td className={tdGrey}>{(c ? c.gov : tk.gov).toFixed(3)}</td>
-                    <td className={tdGrey}>{(c ? c.vcf : tk.vcf).toFixed(4)}</td>
-                    <td className={tdGrey}>{(c ? c.gsv : tk.gsv).toFixed(3)}</td>
-                    <td className={tdGrey}>{(c ? c.wcf56 : tk.wcf56).toFixed(4)}</td>
-                    <td className={`${tdGrey} font-semibold`}>{(c ? c.mt : tk.mt).toFixed(3)}</td>
+                    <td className={tdGrey}>{formatDec(tk.freeWaterVol, 3)}</td>
+                    <td className={tdGrey}>{formatDec(c ? c.gov : tk.gov, 3)}</td>
+                    <td className={tdGrey}>{formatDec(c ? c.vcf : tk.vcf, 4)}</td>
+                    <td className={tdGrey}>{formatDec(c ? c.gsv : tk.gsv, 3)}</td>
+                    <td className={tdGrey}>{formatDec(c ? c.wcf56 : tk.wcf56, 4)}</td>
+                    <td className={`${tdGrey} font-semibold`}>{formatDec(c ? c.mt : tk.mt, 3)}</td>
                     <td className="border border-border text-center">
                       <button onClick={() => onRemove(i)} title={t('medicion.removeTank')} className="text-muted-foreground hover:text-danger">
                         <Trash2 className="mx-auto h-3.5 w-3.5" />
@@ -169,20 +240,20 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                 <td className={`${thBase} text-left`}>{t('flowShared.totals')}</td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
-                <td className={tdDisp}>{tot.densidad.toFixed(4)}</td>
+                <td className={tdDisp}>{formatDec(tot.densidad, 4)}</td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
-                <td className={tdDisp}>{tot.temp.toFixed(1)}</td>
-                <td className={tdDisp}>{tot.tov.toFixed(3)}</td>
+                <td className={tdDisp}>{formatDec(tot.temp, 1)}</td>
+                <td className={tdDisp}>{formatDec(tot.tov, 3)}</td>
                 <td className={thBase}></td>
                 <td className={thBase}></td>
-                <td className={tdDisp}>{tot.gov.toFixed(3)}</td>
-                <td className={tdDisp}>{tot.vcf.toFixed(4)}</td>
-                <td className={tdDisp}>{tot.gsv.toFixed(3)}</td>
-                <td className={tdDisp}>{tot.wcf.toFixed(4)}</td>
-                <td className={tdDisp}>{tot.mt.toFixed(3)}</td>
+                <td className={tdDisp}>{formatDec(tot.gov, 3)}</td>
+                <td className={tdDisp}>{formatDec(tot.vcf, 4)}</td>
+                <td className={tdDisp}>{formatDec(tot.gsv, 3)}</td>
+                <td className={tdDisp}>{formatDec(tot.wcf, 4)}</td>
+                <td className={tdDisp}>{formatDec(tot.mt, 3)}</td>
                 <td className={thBase}></td>
               </tr>
             </tbody>
@@ -201,6 +272,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
 export function Medicion() {
   const { id } = useParams<{ id: string }>()
   const t = useT()
+  useDecimalSep() // re-render de los indicadores al cambiar el separador
   const job = getJob(id || '1')
   const h = vmrData.header
   // Estado compartido por trabajo: editar aquí se refleja en el Reporte.
@@ -370,7 +442,7 @@ export function Medicion() {
               </div>
               <div className="mt-4 flex items-center gap-2 border-t pt-3 text-sm">
                 <span className="text-muted-foreground">{t('medicion.supplierDensityAt15')}</span>
-                <span className="rounded bg-brand/15 px-2 py-0.5 font-mono font-semibold text-brand">{h.suppliersDensity.toFixed(4)} kg/L</span>
+                <span className="rounded bg-brand/15 px-2 py-0.5 font-mono font-semibold text-brand">{formatDec(h.suppliersDensity, 4)} kg/L</span>
                 <span className="text-xs text-muted-foreground">{t('medicion.useAfterReceiving')}</span>
               </div>
             </CardContent>
@@ -396,11 +468,11 @@ export function Medicion() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <Stat label={t('flowShared.supplierDensity')} value={tr.suppliersDensity.toFixed(4)} unit="kg/L" />
-                <Stat label={t('medicion.statGsv')} value={tr.gsv.toFixed(3)} unit="m³" />
-                <Stat label={t('medicion.statMtVac')} value={tr.mtVac.toFixed(3)} unit="MT" />
-                <Stat label={t('medicion.statWcf')} value={tr.wcf56.toFixed(4)} unit="" />
-                <Stat label={t('medicion.statMtAir')} value={tr.mtAir.toFixed(3)} unit="MT" highlight />
+                <Stat label={t('flowShared.supplierDensity')} value={formatDec(tr.suppliersDensity, 4)} unit="kg/L" />
+                <Stat label={t('medicion.statGsv')} value={formatDec(tr.gsv, 3)} unit="m³" />
+                <Stat label={t('medicion.statMtVac')} value={formatDec(tr.mtVac, 3)} unit="MT" />
+                <Stat label={t('medicion.statWcf')} value={formatDec(tr.wcf56, 4)} unit="" />
+                <Stat label={t('medicion.statMtAir')} value={formatDec(tr.mtAir, 3)} unit="MT" highlight />
               </div>
 
               {action !== 'NONE' ? (

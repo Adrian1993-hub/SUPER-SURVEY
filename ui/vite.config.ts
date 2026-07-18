@@ -36,5 +36,17 @@ export default defineConfig(({ mode }) => ({
         : []),
     ],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // React + router en su propio chunk estable: cambia raras veces, así el
+        // navegador lo cachea entre releases mientras el código de app varía.
+        // (xlsx ya es dynamic-import → su propio chunk; no se toca aquí.)
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
   server: { port: 5173, strictPort: true },
 }))

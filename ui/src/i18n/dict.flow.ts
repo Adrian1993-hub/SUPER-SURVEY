@@ -169,6 +169,15 @@ export const flowDict = {
   },
   'medicion.rangeAbove': { es: 'sobre el máximo', en: 'above the maximum' },
   'medicion.rangeBelow': { es: 'bajo el mínimo', en: 'below the minimum' },
+  // Nombres accesibles de las celdas de la rejilla (lectores de pantalla).
+  'medicion.a11yNom': { es: 'Nominado', en: 'Nominated' },
+  'medicion.a11yGauge': { es: 'Tipo de medición (U/S/G)', en: 'Gauge type (U/S/G)' },
+  'medicion.a11yDensity': { es: 'Densidad a 15 °C', en: 'Density at 15 °C' },
+  'medicion.a11yTblRef': { es: 'Altura de referencia (tabla)', en: 'Reference height (table)' },
+  'medicion.a11yMedRef': { es: 'Altura de referencia (medida)', en: 'Reference height (measured)' },
+  'medicion.a11yLevel': { es: 'Nivel (sounding/ullage)', en: 'Level (sounding/ullage)' },
+  'medicion.a11yTemp': { es: 'Temperatura', en: 'Temperature' },
+  'medicion.a11yFw': { es: 'Agua libre (nivel)', en: 'Free water (level)' },
   'medicion.rangeSummary': {
     es: '{n} valor(es) fuera de rango plausible — peor caso: {pct}% fuera de banda. Revisa antes de calcular (aviso, no bloqueo).',
     en: '{n} value(s) outside plausible range — worst case: {pct}% out of band. Review before calculating (advisory, not a block).',

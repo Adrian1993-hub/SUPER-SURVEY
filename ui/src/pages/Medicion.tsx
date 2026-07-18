@@ -52,15 +52,22 @@ function DecimalInput({
   onChange,
   range,
   className,
+  label,
 }: {
   value: number
   onChange: (n: number) => void
   range?: RangeField
   className: string
+  /** Nombre accesible (aria-label) — p. ej. «4 FWD · Densidad a 15 °C». */
+  label?: string
 }) {
   useDecimalSep() // re-render al cambiar el separador
   const t = useT()
   const [draft, setDraft] = useState<string | null>(null)
+  // El aviso de rango (title) es la DESCRIPCIÓN accesible; aria-invalid marca el
+  // estado. Juntos, un lector de pantalla anuncia «entrada no válida, fuera de
+  // rango…» sobre la celda ya nombrada por aria-label.
+  const title = range ? rangeTitle(t, range, value) : undefined
   const bad = range ? !checkRange(range, value).ok : false
   return (
     <input
@@ -72,20 +79,22 @@ function DecimalInput({
         onChange(parseDec(e.target.value))
       }}
       onBlur={() => setDraft(null)}
+      aria-label={label}
       aria-invalid={bad || undefined}
-      title={range ? rangeTitle(t, range, value) : undefined}
+      title={title}
       className={`${className} ${bad ? 'text-danger ring-1 ring-danger' : ''}`}
     />
   )
 }
 
-function NumCell({ value, onChange, range }: { value: number; onChange: (n: number) => void; step?: number; range?: RangeField }) {
+function NumCell({ value, onChange, range, label }: { value: number; onChange: (n: number) => void; step?: number; range?: RangeField; label?: string }) {
   return (
     <td className="border border-border p-0">
       <DecimalInput
         value={value}
         onChange={onChange}
         range={range}
+        label={label}
         className="w-full bg-transparent px-1.5 py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
       />
     </td>
@@ -152,27 +161,27 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
           </div>
         )}
         <div className="overflow-x-auto">
-          <table className="table-dense w-full border-collapse">
+          <table className="table-dense w-full border-collapse" aria-label={title}>
             <thead>
               <tr>
-                <th className={`${thBase} text-left`}>{t('flowShared.tank')}</th>
-                <th className={thBase}>Nom</th>
-                <th className={`${thBase} text-left`}>{t('flowShared.grade')}</th>
-                <th className={`${thBase} text-right`}>Dens@15</th>
-                <th className={`${thBase} text-right`}>Tbl Ref</th>
-                <th className={`${thBase} text-right`}>Med Ref</th>
-                <th className={`${thBase} text-right`}>Level</th>
-                <th className={thBase}>U/S/G</th>
-                <th className={`${thBase} text-right`}>Temp °C</th>
-                <th className={`${thBase} text-right`}>TOV m³</th>
-                <th className={`${thBase} text-right`}>FW Lvl</th>
-                <th className={`${thBase} text-right`}>FW m³</th>
-                <th className={`${thBase} text-right`}>GOV m³</th>
-                <th className={`${thBase} text-right`}>VCF 54B</th>
-                <th className={`${thBase} text-right`}>GSV@15</th>
-                <th className={`${thBase} text-right`}>WCF 56</th>
-                <th className={`${thBase} text-right`}>MT</th>
-                <th className={thBase}></th>
+                <th scope="col" className={`${thBase} text-left`}>{t('flowShared.tank')}</th>
+                <th scope="col" className={thBase}>Nom</th>
+                <th scope="col" className={`${thBase} text-left`}>{t('flowShared.grade')}</th>
+                <th scope="col" className={`${thBase} text-right`}>Dens@15</th>
+                <th scope="col" className={`${thBase} text-right`}>Tbl Ref</th>
+                <th scope="col" className={`${thBase} text-right`}>Med Ref</th>
+                <th scope="col" className={`${thBase} text-right`}>Level</th>
+                <th scope="col" className={thBase}>U/S/G</th>
+                <th scope="col" className={`${thBase} text-right`}>Temp °C</th>
+                <th scope="col" className={`${thBase} text-right`}>TOV m³</th>
+                <th scope="col" className={`${thBase} text-right`}>FW Lvl</th>
+                <th scope="col" className={`${thBase} text-right`}>FW m³</th>
+                <th scope="col" className={`${thBase} text-right`}>GOV m³</th>
+                <th scope="col" className={`${thBase} text-right`}>VCF 54B</th>
+                <th scope="col" className={`${thBase} text-right`}>GSV@15</th>
+                <th scope="col" className={`${thBase} text-right`}>WCF 56</th>
+                <th scope="col" className={`${thBase} text-right`}>MT</th>
+                <th scope="col" className={thBase}></th>
               </tr>
             </thead>
             <tbody>
@@ -180,36 +189,42 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                 const p = prev?.[i]
                 const c = calc[i]
                 const oor = densityOutOfRange(tk.grade, tk.densidad15)
+                // Nombre accesible por celda: «<tanque> · <campo>», para que un
+                // lector de pantalla anuncie qué tanque y qué medición se edita.
+                const tankName = tk.tanque.trim() || `${t('flowShared.tank')} ${i + 1}`
+                const al = (field: string) => `${tankName} · ${field}`
                 return (
                   <tr key={i}>
                     <td className="border border-border p-0">
-                      <input value={tk.tanque} onChange={(e) => onUpdate(i, { tanque: e.target.value })} className="w-24 bg-transparent px-1.5 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                      <input value={tk.tanque} onChange={(e) => onUpdate(i, { tanque: e.target.value })} aria-label={`${t('flowShared.tank')} ${i + 1}`} className="w-24 bg-transparent px-1.5 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
                     </td>
                     <td className="border border-border text-center">
-                      <input type="checkbox" checked={tk.nominado} onChange={(e) => onUpdate(i, { nominado: e.target.checked })} className="h-3.5 w-3.5" />
+                      <input type="checkbox" checked={tk.nominado} onChange={(e) => onUpdate(i, { nominado: e.target.checked })} aria-label={al(t('medicion.a11yNom'))} className="h-3.5 w-3.5" />
                     </td>
                     <td className="border border-border p-0">
                       <input
                         list="fuel-grades"
                         value={tk.grade}
                         onChange={(e) => onUpdate(i, { grade: e.target.value })}
+                        aria-label={al(t('flowShared.grade'))}
+                        aria-invalid={oor || undefined}
                         title={oor ? t('medicion.densityOor', { d: tk.densidad15, g: tk.grade }) : undefined}
                         className={`w-16 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring ${oor ? 'text-warning ring-1 ring-warning' : ''}`}
                       />
                     </td>
-                    <NumCell value={tk.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} range="density15" />
-                    <NumCell value={tk.tablesRefHeight} onChange={(n) => onUpdate(i, { tablesRefHeight: n })} />
-                    <NumCell value={tk.measRefHeight} onChange={(n) => onUpdate(i, { measRefHeight: n })} />
-                    <NumCell value={tk.level} onChange={(n) => onUpdate(i, { level: n })} />
+                    <NumCell value={tk.densidad15} onChange={(n) => onUpdate(i, { densidad15: n })} step={0.0001} range="density15" label={al(t('medicion.a11yDensity'))} />
+                    <NumCell value={tk.tablesRefHeight} onChange={(n) => onUpdate(i, { tablesRefHeight: n })} label={al(t('medicion.a11yTblRef'))} />
+                    <NumCell value={tk.measRefHeight} onChange={(n) => onUpdate(i, { measRefHeight: n })} label={al(t('medicion.a11yMedRef'))} />
+                    <NumCell value={tk.level} onChange={(n) => onUpdate(i, { level: n })} label={al(t('medicion.a11yLevel'))} />
                     <td className="border border-border p-0 text-center">
-                      <select value={tk.usg} onChange={(e) => onUpdate(i, { usg: e.target.value as VmrTank['usg'] })} className="w-full bg-transparent px-1 py-1 text-center text-[11px] focus:outline-none">
+                      <select value={tk.usg} onChange={(e) => onUpdate(i, { usg: e.target.value as VmrTank['usg'] })} aria-label={al(t('medicion.a11yGauge'))} className="w-full bg-transparent px-1 py-1 text-center text-[11px] focus:outline-none">
                         <option>S</option><option>U</option><option>G</option>
                       </select>
                     </td>
                     {/* Temp con flecha en cierre */}
                     <td className="border border-border p-0">
                       <div className="flex items-center justify-end gap-1 pr-1">
-                        <DecimalInput value={tk.temp} onChange={(n) => onUpdate(i, { temp: n })} range="temp" className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
+                        <DecimalInput value={tk.temp} onChange={(n) => onUpdate(i, { temp: n })} range="temp" label={al(t('medicion.a11yTemp'))} className="w-12 bg-transparent py-1 text-right font-mono text-[11px] tabular-nums focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring" />
                         {prev && <DeltaArrow prev={p?.temp} curr={tk.temp} />}
                       </div>
                     </td>
@@ -220,7 +235,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                         {formatDec(tk.tov, 3)}
                       </div>
                     </td>
-                    <NumCell value={tk.freeWaterLevel} onChange={(n) => onUpdate(i, { freeWaterLevel: n })} />
+                    <NumCell value={tk.freeWaterLevel} onChange={(n) => onUpdate(i, { freeWaterLevel: n })} label={al(t('medicion.a11yFw'))} />
                     <td className={tdGrey}>{formatDec(tk.freeWaterVol, 3)}</td>
                     <td className={tdGrey}>{formatDec(c ? c.gov : tk.gov, 3)}</td>
                     <td className={tdGrey}>{formatDec(c ? c.vcf : tk.vcf, 4)}</td>
@@ -228,7 +243,7 @@ function Section({ title, drafts, tanks, prev, calc, onUpdate, onRemove, onAdd }
                     <td className={tdGrey}>{formatDec(c ? c.wcf56 : tk.wcf56, 4)}</td>
                     <td className={`${tdGrey} font-semibold`}>{formatDec(c ? c.mt : tk.mt, 3)}</td>
                     <td className="border border-border text-center">
-                      <button onClick={() => onRemove(i)} title={t('medicion.removeTank')} className="text-muted-foreground hover:text-danger">
+                      <button onClick={() => onRemove(i)} title={t('medicion.removeTank')} aria-label={al(t('medicion.removeTank'))} className="text-muted-foreground hover:text-danger">
                         <Trash2 className="mx-auto h-3.5 w-3.5" />
                       </button>
                     </td>

@@ -2,7 +2,7 @@
 
 > **Documento maestro.** Reemplaza cualquier plan anterior. El prototipo .NET/WPF queda
 > únicamente como referencia histórica en `/reference`.
-> Última actualización: **2026-06-29** (F0–F5 completas; en F6 — empaque/QA; instaladores v0.1.0 generados).
+> Última actualización: **2026-07-23** (F0–F8 en su mayoría completas; instaladores v0.1.0 generados; hardening post-revisión full-stack + fase de diseño interactivo del área de Parámetros/Perfiles en mockups navegables, pendiente de llevar a código).
 
 ---
 
@@ -181,6 +181,59 @@ volumen × densidad (ver `/reference` para las fórmulas ya validadas: un draft 
 ---
 
 ## 10. Estado actual y próximos pasos inmediatos
+
+> **Actualizado 2026-07-23.** Dos frentes desde la auditoría del 15-jul:
+> **(A) endurecimiento a raíz de una revisión full-stack** y **(B) fase de diseño
+> interactivo** del área de Parámetros/Perfiles (en mockups navegables, aún por
+> llevar a código).
+
+**A · Endurecimiento post-revisión (`/fullstack-reviewer`).** Siete hallazgos trabajados en
+orden, con la **regla transversal verificada**: ninguna mejora altera el cálculo final
+(`cargo test` verde; en la frontera IPC `String(number)` siempre usa punto):
+- **Bug #1 — round-trip sin pérdida** (`bbdf8ac`): persistir/hidratar la medición completa
+  (opening/before + after) idéntica — `find_job_by_ref`, set OPENING (`role=REFERENCE`), `persist_tank_rows`.
+- **Bug #2 — estado "Finalizada"** (`bbdf8ac`): la operación terminada **se ve como tal pero
+  sigue editable** (el surveyor la reabre para corregir al cotejar con otras casas) y las
+  ediciones post-cierre **quedan registradas**. NO se bloquea el trabajo.
+- **#3 — separador decimal configurable** (coma/punto, elegido de antemano) + validación de rango
+  que muestra **qué tan fuera de rango** está cada valor (`b6441f7`).
+- **#4 — tests de frontend** (vitest + jsdom: num, ranges, jobStore) + CI (`001cb15`).
+- **#5 — code-splitting** por ruta (React.lazy + Suspense; chunk react-vendor) (`3e03325`).
+- **#6 — property-based tests del kernel** (proptest: round-trips, monotonía, cotas de blend) (`b044bf0`).
+- **#7 — a11y** de la rejilla de medición (nombres accesibles + scope de columnas) (`1be68be`).
+- **CI en rojo por formato** → normalizado bajo el toolchain pineado (rustfmt 1.8.0) (`811c495`).
+
+**B · Fase de diseño interactivo (mockups navegables — NO en código todavía).** A pedido del
+usuario se abrió un "ambiente en vivo" (Claude Artifacts con los tokens OKLCH reales de la app)
+para iterar la interfaz viendo cada cambio. Se rediseñaron **Medición, Lanzador de operaciones,
+Toolbox (11 herramientas)** y — el grande — el **área de Parámetros/Perfiles**, con estas
+decisiones de dirección (a implementar en la próxima fase de código):
+- **Pantalla de Parámetros adaptativa por operación.** El esquema de parámetros, las pestañas y
+  las **partes** cambian según la operación: **Carga** (tierra→buque) · **Descarga** (buque→tierra)
+  · **BQS** (barcaza→buque) · **STS** (buque nodriza↔lanzadera) · **ROB** (solo buque) ·
+  **LNG** (por energía, ISO 6976, sin D1250) · **LPG** (COSTALD 11.2.4 + fase vapor 17.10.2) ·
+  **Draft** (UNECE, por desplazamiento). **Blend se retira** de aquí (es herramienta, no operación con perfil).
+- **El perfil se liga a la entidad.** Al guardar, el perfil queda asignado al **buque** o a la
+  **terminal y sus tanques** — activando el modelo **hoy dormido** del esquema
+  (`asset_profiles.default_calculation_profile_id` + `calculation_profiles` tipo SHIP/SHORE/LPG/DRAFT +
+  `job_assets.profile_snapshot_json` como foto para cotejar). Materializa "guardar barco/terminal →
+  se le asigna un parámetro → se coteja con la otra parte".
+- **Dos vistas** (como el config legacy PARAMETERS|DETAILS): **Parámetros de cálculo** y
+  **Detalles y tanques** (identidad del buque/terminal + configuración de aforo + lista de tanques con
+  posición de aforo A/C/F). Perfiles guardables/nombrables + importar/exportar (calcular sobre la misma
+  base que la otra casa).
+- Detalles finos: **precisión/redondeo** explícito; columna **"Factor por"** aclarada; **muestreo**
+  ampliado a **API MPMS Ch 8.1/8.2** (spot/running/all-levels/composite + niveles); panel de
+  **asistente IA contextual** ("¿dudas de esta pantalla?"), consultivo y sin cifras de custodia.
+- **Corrección verificada:** la norma de draft rusa NO es "GOST 8.849" (inexistente) sino
+  **GOST R 59145-2020** (2021).
+
+**Pendiente de esta fase (próximo trabajo de código):** llevar el rediseño de Parámetros/Perfiles a la
+app real — reescribir `Perfiles.tsx` en la línea adaptativa, **activar las tablas dormidas**
+(`asset_profiles`/`tank_profiles`/`calculation_profiles`) con sus helpers de persistencia, y añadir la
+pantalla **Detalles y tanques**. Los mockups aprobados (Artifacts) son la referencia visual.
+
+---
 
 > **Actualizado 2026-07-10.** F0–F6 completas/casi; en curso dos ampliaciones
 > nuevas: **F7 bilingüe ES/EN** y **F8 descarga de LNG**.

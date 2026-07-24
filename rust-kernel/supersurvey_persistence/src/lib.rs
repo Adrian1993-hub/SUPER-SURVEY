@@ -27,6 +27,14 @@ fn new_id() -> String {
     Uuid::new_v4().to_string()
 }
 
+/// Serialize a value to a JSON snapshot column. Serialization of the calc DTOs is
+/// infallible in practice (plain `derive(Serialize)`, no maps/custom impls), but we
+/// PROPAGATE any error rather than persist a placeholder stub: a corrupt snapshot
+/// must never enter the append-only `calculation_logs` (it could never be fixed).
+fn to_json_str<T: serde::Serialize>(value: &T) -> Result<String> {
+    serde_json::to_string(value).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))
+}
+
 /// Migraciones versionadas vía `PRAGMA user_version`.
 ///
 /// v1 = esquema base (SCHEMA_SQL es idempotente: `CREATE TABLE IF NOT EXISTS`).
@@ -299,27 +307,17 @@ impl Database {
         request: &BqsRowRequestDTO,
         response: &BqsRowResponseDTO,
     ) -> Result<String> {
-        let to_json = |label: &str, value: serde_json::Value| {
-            serde_json::to_string(&value).unwrap_or_else(|_| format!("{{\"error\":\"{label}\"}}"))
-        };
-        let input_snapshot_json = serde_json::to_string(request)
-            .unwrap_or_else(|_| "{\"error\":\"request\"}".to_string());
-        let output_snapshot_json = serde_json::to_string(response)
-            .unwrap_or_else(|_| "{\"error\":\"response\"}".to_string());
-        let method_snapshot_json = to_json(
-            "method",
-            serde_json::json!({ "engine": "bqs", "astm_table": request.astm_table }),
-        );
-        let precision_snapshot_json = to_json(
-            "precision",
-            serde_json::json!({
-                "rounding_rule": request.rounding_rule,
-                "intermediate_rounding": request.intermediate_rounding,
-                "observed_volume_decimals": request.observed_volume_decimals,
-                "standard_volume_decimals": request.standard_volume_decimals,
-                "weight_decimals": request.weight_decimals,
-            }),
-        );
+        let input_snapshot_json = to_json_str(request)?;
+        let output_snapshot_json = to_json_str(response)?;
+        let method_snapshot_json =
+            to_json_str(&serde_json::json!({ "engine": "bqs", "astm_table": request.astm_table }))?;
+        let precision_snapshot_json = to_json_str(&serde_json::json!({
+            "rounding_rule": request.rounding_rule,
+            "intermediate_rounding": request.intermediate_rounding,
+            "observed_volume_decimals": request.observed_volume_decimals,
+            "standard_volume_decimals": request.standard_volume_decimals,
+            "weight_decimals": request.weight_decimals,
+        }))?;
         let trace_json = response.trace_json.as_ref().map(|t| t.to_string());
 
         self.append_calculation_log(&NewCalculationLog {

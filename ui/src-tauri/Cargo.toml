@@ -29,6 +29,13 @@ reqwest = { version = "0.12", default-features = false, features = ["json"] }
 # Perfil release endurecido (anti-RE, F3): menos símbolos y debug info en el
 # ejecutable distribuido. Ver docs/seguridad.md.
 [profile.release]
+# Intentional (anti-reverse-engineering + smaller binary/fewer symbols). Trade-off:
+# an UNEXPECTED panic aborts the whole process instead of unwinding per-command.
+# Reviewed and kept because the risk is mitigated: the kernel is defensively coded
+# (guards for empty inputs, div-by-zero, out-of-table-range, positivity) so calc
+# errors return in-band via the response DTO (never panic), and save_measurement is
+# transactional (an abort mid-save rolls back — no half-written custody record).
+# Revisit only if per-command isolation is later required over binary size.
 panic = "abort"
 strip = true
 lto = true

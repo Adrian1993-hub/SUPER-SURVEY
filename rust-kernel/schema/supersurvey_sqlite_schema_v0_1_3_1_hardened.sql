@@ -454,8 +454,14 @@ CREATE INDEX IF NOT EXISTS idx_measurement_set_summaries_cache ON measurement_se
 -- =========================
 CREATE TABLE IF NOT EXISTS calculation_logs (
     id TEXT PRIMARY KEY,
-    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    measurement_set_id TEXT REFERENCES measurement_sets(id) ON DELETE CASCADE,
+    -- Logs are append-only and PIN their parents: ON DELETE RESTRICT (not CASCADE)
+    -- so deleting a job/set that still has logs fails cleanly with an FK error,
+    -- instead of cascading into the append-only no-delete trigger below (which
+    -- would RAISE(ABORT) with an opaque message). Jobs with logs are non-deletable
+    -- by design; a future "void job" path should soft-void, never hard-delete.
+    -- (Applies to newly created databases; existing DBs keep their prior FK.)
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
+    measurement_set_id TEXT REFERENCES measurement_sets(id) ON DELETE RESTRICT,
     measurement_record_id TEXT REFERENCES measurement_records(id),
     calculation_scope TEXT NOT NULL CHECK(calculation_scope IN ('LIVE','SAVE','EXPORT','TRACE_VIEW','QA_TEST')),
     calculation_type TEXT NOT NULL,           -- UNIT_CONVERSION, TANK_QTY, MOVEMENT, VCF, WCF, COMPARISON, DRAFT

@@ -82,6 +82,18 @@ impl Database {
         &self.conn
     }
 
+    /// Run `f` inside a single SQLite transaction, committing only if it returns
+    /// `Ok`. Uses `unchecked_transaction()` so it works over the shared
+    /// `&Connection` the repo methods already borrow; any error (or early return)
+    /// drops the transaction and rolls everything back — so a composite write like
+    /// `save_measurement` is all-or-nothing instead of leaving a half-written record.
+    pub fn with_transaction<T>(&self, f: impl FnOnce(&Self) -> Result<T>) -> Result<T> {
+        let tx = self.conn.unchecked_transaction()?;
+        let out = f(self)?;
+        tx.commit()?;
+        Ok(out)
+    }
+
     // ---------------- Jobs ----------------
 
     pub fn create_job(&self, job: &NewJob) -> Result<String> {
@@ -193,6 +205,33 @@ impl Database {
         Ok(id)
     }
 
+    /// Find an existing measurement set for a job by role (oldest first), so a
+    /// re-save reuses the same set instead of piling up duplicates.
+    pub fn find_measurement_set(&self, job_id: &str, role: &str) -> Result<Option<String>> {
+        self.conn
+            .query_row(
+                "SELECT id FROM measurement_sets WHERE job_id = ?1 AND role = ?2
+                 ORDER BY created_at, id LIMIT 1",
+                params![job_id, role],
+                |r| r.get(0),
+            )
+            .map(Some)
+            .or_else(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                other => Err(other),
+            })
+    }
+
+    /// Replace a set's grid on re-save: drop the previous snapshot rows so they are
+    /// rewritten, not duplicated. Tank rows carry no official figures (those live in
+    /// `calculation_logs`) and have no immutability trigger, so this is safe.
+    pub fn delete_tank_rows(&self, set_id: &str) -> Result<usize> {
+        self.conn.execute(
+            "DELETE FROM measurement_tank_rows WHERE measurement_set_id = ?1",
+            [set_id],
+        )
+    }
+
     pub fn create_measurement_record(&self, record: &NewMeasurementRecord) -> Result<String> {
         let id = new_id();
         self.conn.execute(
@@ -296,6 +335,18 @@ impl Database {
             precision_snapshot_json,
             trace_json,
         })
+    }
+
+    /// Mark all currently-ACTIVE logs of a job as SUPERSEDED. Called before a
+    /// re-save so a correction does not double the official figures: the previous
+    /// logs stay for lineage but stop counting as the live (ACTIVE) set. Only the
+    /// `status` changes, which the append-only payload-immutable trigger permits.
+    pub fn supersede_active_logs(&self, job_id: &str) -> Result<usize> {
+        self.conn.execute(
+            "UPDATE calculation_logs SET status = 'SUPERSEDED'
+             WHERE job_id = ?1 AND status = 'ACTIVE'",
+            [job_id],
+        )
     }
 
     pub fn count_active_calculation_logs(&self, job_id: &str) -> Result<i64> {

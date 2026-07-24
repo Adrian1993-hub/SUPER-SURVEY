@@ -134,6 +134,17 @@ pub fn compute_bqs_tank_row(
             "free_water",
         ));
     }
+    // The weight step below multiplies GSV by WCF (t/m³) and density (kg/L = t/m³),
+    // so the product is tonnes ONLY when the observed volume is in cubic metres.
+    // The metric BQS path is m³-only by design (barrels go through the imperial
+    // bqs60 path); reject any other unit rather than silently emit a wrong weight.
+    if input.tov.unit != VolumeUnit::CubicMeters {
+        return Err(KernelError::with_field(
+            KernelErrorCode::IncompatibleUnits,
+            "Metric BQS requires the observed volume in cubic metres (m³); use the imperial path for barrels.",
+            "tov_unit",
+        ));
+    }
 
     let vcf_comp = vcf_for(&input, precision.rounding_rule)?;
     let wcf_comp = table_56_wcf(

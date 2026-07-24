@@ -93,7 +93,11 @@ const OPENING_ROLE: &str = "REFERENCE";
 /// Persist one section's per-tank snapshots as tank rows under a measurement set.
 /// The real tank name lives inside the VmrTank snapshot (`tanque`); fall back to
 /// a positional label only when the snapshot is missing/blank.
-fn persist_tank_rows(db: &Database, set_id: &str, snapshots: &[String]) -> Result<(), String> {
+fn persist_tank_rows(
+    db: &Database,
+    set_id: &str,
+    snapshots: &[String],
+) -> supersurvey_persistence::Result<()> {
     for (i, snap) in snapshots.iter().enumerate() {
         let tank_name = serde_json::from_str::<serde_json::Value>(snap)
             .ok()
@@ -110,8 +114,7 @@ fn persist_tank_rows(db: &Database, set_id: &str, snapshots: &[String]) -> Resul
             sequence_no: (i + 1) as i64,
             is_non_nominated: false,
             tank_profile_snapshot_json: snap.clone(),
-        })
-        .map_err(|e| e.to_string())?;
+        })?;
     }
     Ok(())
 }
@@ -129,81 +132,98 @@ fn save_measurement(
     state: tauri::State<'_, AppState>,
     args: SaveMeasurementArgs,
 ) -> Result<SaveMeasurementResult, String> {
+    // job_ref is the idempotency key; a blank one would collapse unrelated
+    // operations onto one job, so reject it up front.
+    if args.job_ref.trim().is_empty() {
+        return Err("job_ref must not be empty".to_string());
+    }
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    // Idempotent by job_ref: reuse an existing job so reopening + re-saving a
-    // correction stays ONE operation instead of piling up duplicate jobs.
-    let job_id = match db
-        .find_job_by_ref(&args.job_ref)
-        .map_err(|e| e.to_string())?
-    {
-        Some(existing) => existing,
-        None => db
-            .create_job(&NewJob {
+    // The whole section persists in ONE transaction: on any mid-failure nothing
+    // is committed, so there is never a half-written custody record.
+    db.with_transaction(|db| {
+        // Idempotent by job_ref: reuse an existing job so reopening + re-saving a
+        // correction stays ONE operation instead of piling up duplicate jobs.
+        let job_id = match db.find_job_by_ref(&args.job_ref)? {
+            Some(existing) => existing,
+            None => db.create_job(&NewJob {
                 job_ref: args.job_ref.clone(),
                 operation_family: args.operation_family.clone(),
                 operation_type: args.operation_type.clone(),
                 report_ref: args.report_ref.clone(),
                 client_ref: args.client_ref.clone(),
                 port_name: args.port_name.clone(),
-            })
-            .map_err(|e| e.to_string())?,
-    };
-    let set_id = db
-        .create_measurement_set(&NewMeasurementSet {
-            job_id: job_id.clone(),
-            module_type: args.module_type.clone(),
-            title: args.module_title.clone(),
-            role: args.role.clone(),
-            movement_sign_rule: args.movement_sign_rule.clone(),
-        })
-        .map_err(|e| e.to_string())?;
+            })?,
+        };
 
-    // AFTER/receiving section: full per-tank snapshots (lossless hydration source).
-    persist_tank_rows(&db, &set_id, &args.tank_snapshots)?;
+        // A re-save is a correction, not an addition: retire the previous official
+        // figures (ACTIVE -> SUPERSEDED) so the live set is exactly this save, and
+        // reuse+rewrite the grids instead of accumulating duplicate sets/rows/logs.
+        db.supersede_active_logs(&job_id)?;
 
-    // OPENING/before section: snapshots only, no calculation_logs — the official
-    // figures are untouched; this exists purely so reopening restores both grids.
-    // Stored with role REFERENCE (the schema's closed role set has no "opening";
-    // REFERENCE fits an opening grid that is NOT an official custody figure).
-    if !args.before_snapshots.is_empty() {
-        let before_set = db
-            .create_measurement_set(&NewMeasurementSet {
+        // AFTER/receiving section: full per-tank snapshots (lossless hydration source).
+        let set_id = match db.find_measurement_set(&job_id, &args.role)? {
+            Some(existing) => {
+                db.delete_tank_rows(&existing)?;
+                existing
+            }
+            None => db.create_measurement_set(&NewMeasurementSet {
                 job_id: job_id.clone(),
                 module_type: args.module_type.clone(),
-                title: format!("{} (opening)", args.module_title),
-                role: OPENING_ROLE.to_string(),
+                title: args.module_title.clone(),
+                role: args.role.clone(),
                 movement_sign_rule: args.movement_sign_rule.clone(),
-            })
-            .map_err(|e| e.to_string())?;
-        persist_tank_rows(&db, &before_set, &args.before_snapshots)?;
-    }
+            })?,
+        };
+        persist_tank_rows(db, &set_id, &args.tank_snapshots)?;
 
-    let mut saved = 0usize;
-    let mut skipped = 0usize;
-    for req in &args.rows {
-        let resp = req.calculate();
-        if !resp.success {
-            skipped += 1;
-            continue;
+        // OPENING/before section: snapshots only, no calculation_logs — the official
+        // figures are untouched; this exists purely so reopening restores both grids.
+        // Stored with role REFERENCE (the schema's closed role set has no "opening";
+        // REFERENCE fits an opening grid that is NOT an official custody figure).
+        if !args.before_snapshots.is_empty() {
+            let before_set = match db.find_measurement_set(&job_id, OPENING_ROLE)? {
+                Some(existing) => {
+                    db.delete_tank_rows(&existing)?;
+                    existing
+                }
+                None => db.create_measurement_set(&NewMeasurementSet {
+                    job_id: job_id.clone(),
+                    module_type: args.module_type.clone(),
+                    title: format!("{} (opening)", args.module_title),
+                    role: OPENING_ROLE.to_string(),
+                    movement_sign_rule: args.movement_sign_rule.clone(),
+                })?,
+            };
+            persist_tank_rows(db, &before_set, &args.before_snapshots)?;
         }
-        db.append_bqs_calculation(
-            &job_id,
-            Some(&set_id),
-            None,
-            supersurvey_calc::KERNEL_VERSION,
-            req,
-            &resp,
-        )
-        .map_err(|e| e.to_string())?;
-        saved += 1;
-    }
 
-    Ok(SaveMeasurementResult {
-        job_id,
-        measurement_set_id: set_id,
-        saved,
-        skipped,
+        let mut saved = 0usize;
+        let mut skipped = 0usize;
+        for req in &args.rows {
+            let resp = req.calculate();
+            if !resp.success {
+                skipped += 1;
+                continue;
+            }
+            db.append_bqs_calculation(
+                &job_id,
+                Some(&set_id),
+                None,
+                supersurvey_calc::KERNEL_VERSION,
+                req,
+                &resp,
+            )?;
+            saved += 1;
+        }
+
+        Ok(SaveMeasurementResult {
+            job_id,
+            measurement_set_id: set_id,
+            saved,
+            skipped,
+        })
     })
+    .map_err(|e| e.to_string())
 }
 
 /// List all stored jobs (newest first) for the Trabajos screen.

@@ -321,6 +321,102 @@ fn find_job_by_ref_reuses_the_same_job() {
 }
 
 #[test]
+fn re_save_supersedes_and_reuses_instead_of_duplicating() {
+    // What save_measurement does on a re-save (reopen-to-correct): supersede the
+    // prior ACTIVE logs, reuse the same set, and replace its rows — so official
+    // figures and grids do NOT accumulate duplicates on each save.
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+    let request = bqs_request();
+    let response = request.calculate();
+    assert!(response.success);
+
+    let mut save_once = || {
+        // Supersede prior official figures, then reuse-or-create the set + rewrite rows.
+        db.supersede_active_logs(&job_id).unwrap();
+        let set = match db.find_measurement_set(&job_id, "RECEIVING").unwrap() {
+            Some(existing) => {
+                db.delete_tank_rows(&existing).unwrap();
+                existing
+            }
+            None => db
+                .create_measurement_set(&NewMeasurementSet {
+                    job_id: job_id.clone(),
+                    module_type: "VMR".into(),
+                    title: "After receiving".into(),
+                    role: "RECEIVING".into(),
+                    movement_sign_rule: "CLOSING_MINUS_OPENING".into(),
+                })
+                .unwrap(),
+        };
+        db.create_tank_row(&NewTankRow {
+            measurement_set_id: set.clone(),
+            tank_name: "4 AFT S".into(),
+            sequence_no: 1,
+            is_non_nominated: false,
+            tank_profile_snapshot_json: "{}".into(),
+        })
+        .unwrap();
+        db.append_bqs_calculation(&job_id, Some(&set), None, "t", &request, &response)
+            .unwrap();
+        set
+    };
+
+    let first = save_once();
+    let second = save_once(); // re-save (a correction)
+    assert_eq!(
+        first, second,
+        "re-save must reuse the same set, not create a new one"
+    );
+
+    // No duplication: still ONE set, ONE row, ONE ACTIVE log after re-saving.
+    assert_eq!(db.list_measurement_sets(&job_id).unwrap().len(), 1);
+    assert_eq!(db.list_tank_rows(&second).unwrap().len(), 1);
+    assert_eq!(db.count_active_calculation_logs(&job_id).unwrap(), 1);
+    // The prior log is retained (append-only) but marked SUPERSEDED: 2 total, 1 active.
+    assert_eq!(
+        count(
+            &db,
+            "select count(*) from calculation_logs where status='SUPERSEDED'"
+        ),
+        1
+    );
+    assert_eq!(count(&db, "select count(*) from calculation_logs"), 2);
+}
+
+#[test]
+fn with_transaction_rolls_back_on_mid_failure() {
+    // A composite write that fails partway must leave NOTHING behind (atomicity):
+    // no half-written custody record.
+    let db = Database::open_in_memory().unwrap();
+    let job_id = demo_job(&db);
+
+    let res = db.with_transaction(|db| {
+        // First write succeeds within the transaction…
+        let set = db.create_measurement_set(&NewMeasurementSet {
+            job_id: job_id.clone(),
+            module_type: "VMR".into(),
+            title: "rollback".into(),
+            role: "RECEIVING".into(),
+            movement_sign_rule: "CLOSING_MINUS_OPENING".into(),
+        })?;
+        // …then a second write fails (FK: tank row references a nonexistent set).
+        db.create_tank_row(&NewTankRow {
+            measurement_set_id: "does-not-exist".into(),
+            tank_name: "x".into(),
+            sequence_no: 1,
+            is_non_nominated: false,
+            tank_profile_snapshot_json: "{}".into(),
+        })?;
+        Ok(set)
+    });
+
+    assert!(res.is_err(), "the transaction must surface the error");
+    // The set inserted before the failure must be rolled back — zero partial state.
+    assert_eq!(db.list_measurement_sets(&job_id).unwrap().len(), 0);
+}
+
+#[test]
 fn opening_and_receiving_sections_round_trip_for_hydration() {
     // Simulates what save_measurement now persists: ONE job, TWO sets (OPENING +
     // RECEIVING), each with its tank snapshots. Reopening must restore BOTH grids.

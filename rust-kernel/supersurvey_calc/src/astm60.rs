@@ -156,13 +156,25 @@ fn vcf60_from_alpha(
     group: Option<Table6bProductGroup>,
     decimals: u32,
     rounding: SystemRoundingRule,
-) -> Table6Computation {
+) -> KernelResult<Table6Computation> {
+    // Table 6 shares Table 54's observed-temperature domain (-18..150 C); outside
+    // it the equation extrapolates with no table backing. Mirror the metric guard
+    // (astm::table_54_vcf) so the imperial path fails loudly instead of returning a
+    // plausible-but-unsupported VCF.
+    let t_celsius = (temp_f - dec!(32)) / dec!(1.8);
+    if t_celsius < dec!(-18.0) || t_celsius > dec!(150.0) {
+        return Err(KernelError::with_field(
+            KernelErrorCode::OutOfTableRange,
+            format!("Temperature {temp_f} F ({t_celsius} C) outside supported Table 6 range -18 to 150 C."),
+            "temperature",
+        ));
+    }
     let t68 = its90_to_its68_fahrenheit(temp_f);
     let dt = t68 - BASE_TEMP_F;
     let x = alpha * dt;
     let exponent = -(x * (dec!(1) + dec!(0.8) * x));
     let vcf_unrounded = exp_taylor(exponent);
-    Table6Computation {
+    Ok(Table6Computation {
         vcf: round_decimal(vcf_unrounded, decimals, rounding),
         vcf_unrounded,
         alpha60: alpha,
@@ -170,7 +182,7 @@ fn vcf60_from_alpha(
         density60_kg_m3: rho,
         api,
         product_group: group,
-    }
+    })
 }
 
 /// Table 6B (refined products, 60 °F): VCF from API gravity and observed °F.
@@ -181,8 +193,15 @@ pub fn table_6b_vcf(
     rounding: SystemRoundingRule,
 ) -> KernelResult<Table6Computation> {
     let rho = density60_from_api(api)?;
+    if rho < dec!(653.0) || rho > dec!(1075.0) {
+        return Err(KernelError::with_field(
+            KernelErrorCode::OutOfTableRange,
+            format!("Density {rho} kg/m3 @60F (API {api}) outside Table 6B range 653.0-1075.0."),
+            "api",
+        ));
+    }
     let group = select_6b_group(api);
-    Ok(vcf60_from_alpha(
+    vcf60_from_alpha(
         alpha_6b(group, rho),
         api,
         rho,
@@ -190,7 +209,7 @@ pub fn table_6b_vcf(
         Some(group),
         decimals,
         rounding,
-    ))
+    )
 }
 
 /// Table 6A (crude oil, 60 °F): VCF from API gravity and observed °F.
@@ -201,10 +220,15 @@ pub fn table_6a_vcf(
     rounding: SystemRoundingRule,
 ) -> KernelResult<Table6Computation> {
     let rho = density60_from_api(api)?;
+    if rho < dec!(610.6) || rho > dec!(1075.0) {
+        return Err(KernelError::with_field(
+            KernelErrorCode::OutOfTableRange,
+            format!("Density {rho} kg/m3 @60F (API {api}) outside Table 6A range 610.6-1075.0."),
+            "api",
+        ));
+    }
     let alpha = dec!(341.0957) / (rho * rho);
-    Ok(vcf60_from_alpha(
-        alpha, api, rho, temp_f, None, decimals, rounding,
-    ))
+    vcf60_from_alpha(alpha, api, rho, temp_f, None, decimals, rounding)
 }
 
 /// Table 13 (weight, metric tons per barrel, weight in air) from API gravity.
@@ -235,4 +259,38 @@ pub fn table_13_wcf(
         density60_kg_m3: density60_from_api(api)?,
         api,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const R: SystemRoundingRule = SystemRoundingRule::HalfUp;
+
+    #[test]
+    fn in_range_inputs_succeed() {
+        // API 40 (rho60 ~825 kg/m3) at 80 F (~26.7 C): well inside the table domain.
+        assert!(table_6b_vcf(dec!(40.0), dec!(80.0), DEFAULT_VCF60_DECIMALS, R).is_ok());
+        // API 25 (rho60 ~904) crude via 6A at 60 F.
+        assert!(table_6a_vcf(dec!(25.0), dec!(60.0), DEFAULT_VCF60_DECIMALS, R).is_ok());
+    }
+
+    #[test]
+    fn out_of_range_temperature_is_rejected() {
+        // 400 F ~ 204 C, above the 150 C ceiling: must fail instead of extrapolating.
+        let err = table_6b_vcf(dec!(40.0), dec!(400.0), DEFAULT_VCF60_DECIMALS, R).unwrap_err();
+        assert_eq!(err.code, KernelErrorCode::OutOfTableRange);
+        // -40 F ~ -40 C, below the -18 C floor.
+        let err = table_6a_vcf(dec!(25.0), dec!(-40.0), DEFAULT_VCF60_DECIMALS, R).unwrap_err();
+        assert_eq!(err.code, KernelErrorCode::OutOfTableRange);
+    }
+
+    #[test]
+    fn out_of_range_density_is_rejected() {
+        // API 120 -> rho60 ~562 kg/m3, below both table floors (653 for 6B, 610.6 for 6A).
+        let err = table_6b_vcf(dec!(120.0), dec!(80.0), DEFAULT_VCF60_DECIMALS, R).unwrap_err();
+        assert_eq!(err.code, KernelErrorCode::OutOfTableRange);
+        let err = table_6a_vcf(dec!(120.0), dec!(80.0), DEFAULT_VCF60_DECIMALS, R).unwrap_err();
+        assert_eq!(err.code, KernelErrorCode::OutOfTableRange);
+    }
 }

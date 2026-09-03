@@ -331,7 +331,7 @@ fn re_save_supersedes_and_reuses_instead_of_duplicating() {
     let response = request.calculate();
     assert!(response.success);
 
-    let mut save_once = || {
+    let save_once = || {
         // Supersede prior official figures, then reuse-or-create the set + rewrite rows.
         db.supersede_active_logs(&job_id).unwrap();
         let set = match db.find_measurement_set(&job_id, "RECEIVING").unwrap() {

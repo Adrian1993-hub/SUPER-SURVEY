@@ -1,5 +1,5 @@
 //! Draft survey QA — anchored to the validated .NET prototype worksheet (vessel
-//! anonymized) and cross-checked against the MV YUNNAN report. Hydrostatics are
+//! anonymized) and cross-checked against a reference bulk-carrier report. Hydrostatics are
 //! displayed rounded to 3 dp, so net/cargo validate to ~0.5 MT.
 
 use rust_decimal::Decimal;
@@ -84,7 +84,7 @@ fn cargo_discharged_by_difference() {
     close(cargo, dec!(2409.733), dec!(0.5), "cargo");
 }
 
-/// MV YUNNAN: cargo = net_initial − net_final (pure difference, no hydrostatics).
+/// Reference bulk carrier: cargo = net_initial − net_final (pure difference, no hydrostatics).
 #[test]
 fn yunnan_cargo_by_difference() {
     let cargo = cargo_by_difference(dec!(33862.480), dec!(29781.693));

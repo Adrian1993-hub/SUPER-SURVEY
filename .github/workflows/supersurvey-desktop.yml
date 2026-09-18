@@ -94,3 +94,10 @@ jobs:
       - name: Clippy (compiles + lints the shell)
         working-directory: ui/src-tauri
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
+
+      # The shell carries the custody-critical save orchestration (transaction,
+      # supersede-on-resave). It was linted but never tested; run its tests so any
+      # coverage added there actually gates the build.
+      - name: Test the shell
+        working-directory: ui/src-tauri
+        run: cargo test --locked

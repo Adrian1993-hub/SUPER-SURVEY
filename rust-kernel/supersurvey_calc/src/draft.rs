@@ -1,7 +1,7 @@
 //! Draft (draught) survey — bulk cargo by displacement, per the UNECE "Code of
 //! Uniform Standards and Procedures for the Performance of Draught Surveys".
 //! Ported from the validated .NET prototype (DraftSurveyCalculator) to Decimal;
-//! cross-checked against the MV YUNNAN report (cargo 4 080.787 MT) and the
+//! cross-checked against a reference bulk-carrier report (cargo 4 080.787 MT) and the
 //! prototype's anchored worksheet. See docs/research/draft-survey.md.
 //!
 //! Per condition (initial / final), from drafts already corrected to the
